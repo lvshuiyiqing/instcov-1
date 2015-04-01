@@ -1,4 +1,4 @@
-//===-- instcov.cpp - Instruction class definition --------------*- C++ -*-===//
+//===-- InstCov.cpp --------- main file -------------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,13 +8,12 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the FrontendAction for InstCov
+/// \brief This file contains the basic infrastructures for InstCov
 ///
 //===----------------------------------------------------------------------===//
 #include <cstdio>
 #include <memory>
 #include <string>
-#include <sstream>
 
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -26,70 +25,12 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
+#include "InstCovASTVisitor.h"
 
 using namespace clang;
 using namespace clang::tooling;
 
 static llvm::cl::OptionCategory ToolingInstCovCategory("InstCov Category");
-
-// By implementing RecursiveASTVisitor, we can specify which AST nodes
-// we're interested in by overriding relevant methods.
-class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
-public:
-  MyASTVisitor(Rewriter &R) : TheRewriter(R) {}
-
-  bool VisitStmt(Stmt *s) {
-    // Only care about If statements.
-    if (isa<IfStmt>(s)) {
-      IfStmt *IfStatement = cast<IfStmt>(s);
-      Stmt *Then = IfStatement->getThen();
-
-      TheRewriter.InsertText(Then->getLocStart(), "// the 'if' part\n", true,
-                             true);
-
-      Stmt *Else = IfStatement->getElse();
-      if (Else)
-        TheRewriter.InsertText(Else->getLocStart(), "// the 'else' part\n",
-                               true, true);
-    }
-
-    return true;
-  }
-
-  bool VisitFunctionDecl(FunctionDecl *f) {
-    // Only function definitions (with bodies), not declarations.
-    if (f->hasBody()) {
-      Stmt *FuncBody = f->getBody();
-
-      // Type name as string
-      QualType QT = f->getReturnType();
-      std::string TypeStr = QT.getAsString();
-
-      // Function name
-      DeclarationName DeclName = f->getNameInfo().getName();
-      std::string FuncName = DeclName.getAsString();
-
-      // Add comment before
-      std::stringstream SSBefore;
-      SSBefore << "// Begin function " << FuncName << " returning " << TypeStr
-               << "\n";
-      SourceLocation ST = f->getSourceRange().getBegin();
-      TheRewriter.InsertText(ST, SSBefore.str(), true, true);
-
-      // And after
-      std::stringstream SSAfter;
-      SSAfter << "\n// End function " << FuncName;
-      ST = FuncBody->getLocEnd().getLocWithOffset(1);
-      TheRewriter.InsertText(ST, SSAfter.str(), true, true);
-    }
-
-    return true;
-  }
-
-private:
-  Rewriter &TheRewriter;
-};
-
 // Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser.
 class InstCovASTConsumer : public ASTConsumer {
@@ -106,7 +47,7 @@ class InstCovASTConsumer : public ASTConsumer {
   }
 
 private:
-  MyASTVisitor Visitor;
+  InstCovASTVisitor Visitor;
 };
 
 class InstCovAction : public ASTFrontendAction {
