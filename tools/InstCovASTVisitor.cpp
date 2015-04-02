@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <sstream>
-
+#include <cstdio>
 #include "clang/Lex/Lexer.h"
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -31,6 +31,21 @@ using namespace clang;
 
 namespace{
 
+  bool AskYesOrNo(const std::string &Prompt) {
+    char c = 0;
+    while (true) {
+      llvm::errs() << Prompt << ". Yes or no (y/n)?";
+      c = getchar();
+      if (c == 'y') {
+        return true;
+      }
+      if (c == 'n') {
+        return false;
+      }
+    }
+    return false;
+  }
+  
   SourceLocation findSemiAfterLocation(Rewriter &R, SourceLocation sl) {
     llvm::errs() << "finding semicolon after location\n";
     SourceManager &SM = R.getSourceMgr();
@@ -98,10 +113,10 @@ namespace{
     }
   }
 
-  void InstElseBlock(IfStmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
+  void InstNewElseBlock(IfStmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
     std::stringstream ss;
     ss << " else\n Dump(" << id << ", " << bid << ");\n";
-    R.InsertText(s->getLocEnd().getLocWithOffset(1), ss.str(), true, true);
+    R.InsertText(FindEndLoc(s, R), ss.str(), true, true);
   }
   
   void InstExpr(Expr *e, Rewriter &R, uint64_t id, uint64_t bid) {
@@ -110,19 +125,23 @@ namespace{
 }
 
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
+  if (!AskYesOrNo("instrument here")) {
+    return true;
+  }
   // Only care about If statements.
   llvm::errs() << "Instrumenting IfStmt\n";
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();
 
-  InstInBlock(Then, TheRewriter, 0, 0);
 
   Stmt *Else = IfStatement->getElse();
   if (Else) {
     InstInBlock(Else, TheRewriter, 0, 1);
   } else {
-    InstElseBlock(s, TheRewriter, 0, 1);
+    InstNewElseBlock(s, TheRewriter, 0, 1);
   }
+
+  InstInBlock(Then, TheRewriter, 0, 0);
 
   return true;
 }
