@@ -27,10 +27,12 @@
 #include "llvm/Support/raw_ostream.h"
 #include "InstCovASTVisitor.h"
 
+extern llvm::cl::opt<bool> InstBranches;
+
 using namespace clang;
 
 namespace{
-
+  std::string INSTCOV_FUNC_NAME = "instcov_dump";
   bool AskYesOrNo(const std::string &Prompt) {
     char c = 0;
     while (true) {
@@ -50,7 +52,7 @@ namespace{
   }
   
   SourceLocation findSemiAfterLocation(Rewriter &R, SourceLocation sl) {
-    llvm::errs() << "finding semicolon after location\n";
+    // llvm::errs() << "finding semicolon after location\n";
     SourceManager &SM = R.getSourceMgr();
     if (sl.isMacroID()) {
       // in a macro, return invalid
@@ -79,7 +81,7 @@ namespace{
       llvm::errs() << "ERR: the next location is not a semicolon\n";
       return SourceLocation();
     }
-    llvm::errs() << "SUCCESS: semicolon found\n";
+    // llvm::errs() << "SUCCESS: semicolon found\n";
     return tok.getLocation();
   }
 
@@ -97,13 +99,13 @@ namespace{
   void InstCompoundStmt(CompoundStmt *s, Rewriter &R,
                         uint64_t id, uint64_t bid) {
     std::stringstream ss;
-    ss << "\nDump(" << id << ", " << bid << ");";
+    ss << "\n" << INSTCOV_FUNC_NAME << "(" << id << ", " << bid << ");";
     R.InsertTextAfter(s->getLBracLoc().getLocWithOffset(1), ss.str());
   }
 
   void InstSingleStmt(Stmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
     std::stringstream ss;
-    ss << "{\nDump(" << id << ", " << bid << ");\n";
+    ss << "{\n" << INSTCOV_FUNC_NAME << "(" << id << ", " << bid << ");\n";
     R.InsertTextAfter(s->getLocStart(), ss.str());
     R.InsertTextBefore(FindEndLoc(s, R), "\n}");
   }
@@ -119,7 +121,7 @@ namespace{
   void InstAfterBody(SourceLocation endLoc, Rewriter &R,
                      uint64_t id, uint64_t bid) {
     std::stringstream ss;
-    ss << " \n Dump(" << id << ", " << bid << ");";
+    ss << " \n " << INSTCOV_FUNC_NAME << "(" << id << ", " << bid << ");";
     R.InsertTextBefore(endLoc, ss.str());
   }
   
@@ -128,13 +130,15 @@ namespace{
 }
 
 bool InstCovASTVisitor::VisitFunctionDecl(FunctionDecl *s) {
-  s->dump();
+  // s->dump();
   return true;
 }
 
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
+  if (!InstBranches) {
+    return true;
+  }
   // Only care about If statements.
-  llvm::errs() << "Instrumenting IfStmt\n";
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();
 
@@ -153,6 +157,9 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
+  if (!InstBranches) {
+    return true;
+  }
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
   InstInBlock(s->getBody(), TheRewriter, 0, 0);
@@ -160,6 +167,9 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
+  if (!InstBranches) {
+    return true;
+  }
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
   InstInBlock(s->getBody(), TheRewriter, 0, 0);
@@ -167,10 +177,13 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
+  if (!InstBranches) {
+    return true;
+  }
   TheRewriter.InsertTextAfter(s->getCond()->getLocStart(), "(");
   uint64_t id = 0;
   std::stringstream ss;
-  ss << ") ? Dump(" << id << ", 0), 1 : Dump(" << id << ", 1), 0";
+  ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << id << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "(" << id << ", 1), 0)";
   TheRewriter.InsertTextBefore(s->getRParenLoc(), ss.str());
   return true;
 }

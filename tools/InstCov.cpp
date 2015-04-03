@@ -11,6 +11,7 @@
 /// \brief This file contains the basic infrastructures for InstCov
 ///
 //===----------------------------------------------------------------------===//
+
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -27,10 +28,18 @@
 #include "llvm/Support/raw_ostream.h"
 #include "InstCovASTVisitor.h"
 
+using namespace llvm;
 using namespace clang;
 using namespace clang::tooling;
 
-static llvm::cl::OptionCategory ToolingInstCovCategory("InstCov Category");
+cl::OptionCategory InstCovCategory("InstCov Category");
+cl::opt<bool> InstBranches(
+    "inst-branches",
+    cl::desc("enable instrumentation for if/for/while/do"),
+    cl::cat(InstCovCategory),
+    cl::init(true));
+    
+
 // Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser.
 class InstCovASTConsumer : public ASTConsumer {
@@ -72,11 +81,10 @@ class InstCovAction : public ASTFrontendAction {
 };
 
 int main(int argc, const char **argv) {
-  CommonOptionsParser OptionsParser(argc, argv, ToolingInstCovCategory);
+  CommonOptionsParser OptionsParser(argc, argv, InstCovCategory);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
 
-  
   Tool.run(newFrontendActionFactory<InstCovAction>().get());
   return 0;
 }
