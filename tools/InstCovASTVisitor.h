@@ -28,6 +28,10 @@ public:
   InstCovASTVisitor(clang::Rewriter &R) : TheRewriter(R) {}
 
   bool VisitIfStmt(clang::IfStmt *s);
+  bool VisitForStmt(clang::ForStmt *s);
+  bool VisitWhileStmt(clang::WhileStmt *s);
+  bool VisitFunctionDecl(clang::FunctionDecl *s);
+  bool VisitDoStmt(clang::DoStmt *s);
   
 private:
   clang::Rewriter &TheRewriter;

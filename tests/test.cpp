@@ -6,6 +6,10 @@ int main(int argc, char *argv[]) {
       f() ;
     else
       f() ;
+
+  if (true)
+    ;
+  
   return 0;
 }
 

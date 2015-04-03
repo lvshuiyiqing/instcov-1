@@ -88,7 +88,7 @@ namespace{
     SourceManager &SM = R.getSourceMgr();
     SourceLocation EndSL = s->getLocEnd();
     char TailChar = *SM.getCharacterData(EndSL);
-    if (TailChar == '}') {
+    if (TailChar == '}' || TailChar == ';') {
       return EndSL.getLocWithOffset(1);
     }
     return findSemiAfterLocation(R, EndSL).getLocWithOffset(1);
@@ -97,7 +97,7 @@ namespace{
   void InstCompoundStmt(CompoundStmt *s, Rewriter &R,
                         uint64_t id, uint64_t bid) {
     std::stringstream ss;
-    ss << "\nDump(" << id << ", " << bid << ");\n";
+    ss << "\nDump(" << id << ", " << bid << ");";
     R.InsertTextAfter(s->getLBracLoc().getLocWithOffset(1), ss.str());
   }
 
@@ -105,7 +105,7 @@ namespace{
     std::stringstream ss;
     ss << "{\nDump(" << id << ", " << bid << ");\n";
     R.InsertTextAfter(s->getLocStart(), ss.str());
-    R.InsertTextBefore(FindEndLoc(s, R), "\n}\n");
+    R.InsertTextBefore(FindEndLoc(s, R), "\n}");
   }
 
   void InstInBlock(Stmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
@@ -116,21 +116,23 @@ namespace{
     }
   }
 
-  void InstNewElseBlock(IfStmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
+  void InstAfterBody(SourceLocation endLoc, Rewriter &R,
+                     uint64_t id, uint64_t bid) {
     std::stringstream ss;
-    ss << " else\n Dump(" << id << ", " << bid << ");\n";
-    R.InsertTextBefore(FindEndLoc(s, R), ss.str());
+    ss << " \n Dump(" << id << ", " << bid << ");";
+    R.InsertTextBefore(endLoc, ss.str());
   }
   
   void InstExpr(Expr *e, Rewriter &R, uint64_t id, uint64_t bid) {
   }
+}
 
+bool InstCovASTVisitor::VisitFunctionDecl(FunctionDecl *s) {
+  s->dump();
+  return true;
 }
 
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
-  // if (!AskYesOrNo("instrument here")) {
-  //   return true;
-  // }
   // Only care about If statements.
   llvm::errs() << "Instrumenting IfStmt\n";
   IfStmt *IfStatement = cast<IfStmt>(s);
@@ -140,10 +142,36 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   if (Else) {
     InstInBlock(Else, TheRewriter, 0, 1);
   } else {
-    InstNewElseBlock(s, TheRewriter, 0, 1);
+    SourceLocation ThenBodyEndLoc = FindEndLoc(Then, TheRewriter);
+    InstAfterBody(ThenBodyEndLoc, TheRewriter, 0, 1);
+    TheRewriter.InsertTextBefore(ThenBodyEndLoc, "else");
   }
 
   InstInBlock(Then, TheRewriter, 0, 0);
 
   return true;
 }
+
+bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
+  SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
+  InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
+  InstInBlock(s->getBody(), TheRewriter, 0, 0);
+  return true;
+}
+
+bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
+  SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
+  InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
+  InstInBlock(s->getBody(), TheRewriter, 0, 0);
+  return true;
+}
+
+bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
+  TheRewriter.InsertTextAfter(s->getCond()->getLocStart(), "(");
+  uint64_t id = 0;
+  std::stringstream ss;
+  ss << ") ? Dump(" << id << ", 0), 1 : Dump(" << id << ", 1), 0";
+  TheRewriter.InsertTextBefore(s->getRParenLoc(), ss.str());
+  return true;
+}
+
