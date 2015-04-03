@@ -36,6 +36,9 @@ namespace{
     while (true) {
       llvm::errs() << Prompt << ". Yes or no (y/n)?";
       c = getchar();
+      while (c == ' ' || c == '\t' || c == '\n') {
+        c = getchar();
+      }
       if (c == 'y') {
         return true;
       }
@@ -95,14 +98,14 @@ namespace{
                         uint64_t id, uint64_t bid) {
     std::stringstream ss;
     ss << "\nDump(" << id << ", " << bid << ");\n";
-    R.InsertText(s->getLBracLoc().getLocWithOffset(1), ss.str(), true, true);
+    R.InsertTextAfter(s->getLBracLoc().getLocWithOffset(1), ss.str());
   }
 
   void InstSingleStmt(Stmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
     std::stringstream ss;
     ss << "{\nDump(" << id << ", " << bid << ");\n";
-    R.InsertText(s->getLocStart(), ss.str(), 0, 0);
-    R.InsertText(FindEndLoc(s, R), "\n}\n", true, true);
+    R.InsertTextAfter(s->getLocStart(), ss.str());
+    R.InsertTextBefore(FindEndLoc(s, R), "\n}\n");
   }
 
   void InstInBlock(Stmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
@@ -116,7 +119,7 @@ namespace{
   void InstNewElseBlock(IfStmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
     std::stringstream ss;
     ss << " else\n Dump(" << id << ", " << bid << ");\n";
-    R.InsertText(FindEndLoc(s, R), ss.str(), true, true);
+    R.InsertTextBefore(FindEndLoc(s, R), ss.str());
   }
   
   void InstExpr(Expr *e, Rewriter &R, uint64_t id, uint64_t bid) {
@@ -125,14 +128,13 @@ namespace{
 }
 
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
-  if (!AskYesOrNo("instrument here")) {
-    return true;
-  }
+  // if (!AskYesOrNo("instrument here")) {
+  //   return true;
+  // }
   // Only care about If statements.
   llvm::errs() << "Instrumenting IfStmt\n";
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();
-
 
   Stmt *Else = IfStatement->getElse();
   if (Else) {
