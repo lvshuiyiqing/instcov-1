@@ -25,7 +25,8 @@
 
 class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
 public:
-  InstCovASTVisitor(clang::Rewriter &R) : TheRewriter(R) {}
+  InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
+      : TheRewriter(R), TheASTContext(C) {}
 
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
@@ -34,6 +35,9 @@ public:
   bool VisitDoStmt(clang::DoStmt *s);
   
 private:
+  bool MCDCVisitExpr(clang::Expr *e);
+
   clang::Rewriter &TheRewriter;
+  clang::ASTContext &TheASTContext;
 };
 

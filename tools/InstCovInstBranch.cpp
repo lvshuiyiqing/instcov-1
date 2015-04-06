@@ -139,6 +139,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   if (!InstBranches) {
     return true;
   }
+  MCDCVisitExpr(s->getCond());
   // Only care about If statements.
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();

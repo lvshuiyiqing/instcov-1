@@ -50,7 +50,7 @@ cl::opt<bool> InstExprs(
 // by the Clang parser.
 class InstCovASTConsumer : public ASTConsumer {
  public:
-  InstCovASTConsumer(Rewriter &R) : Visitor(R) {}
+  InstCovASTConsumer(Rewriter &R, ASTContext &C) : Visitor(R, C) {}
 
   // Override the method that gets called for each parsed top-level
   // declaration.
@@ -80,7 +80,7 @@ class InstCovAction : public ASTFrontendAction {
     llvm::errs() << "** Creating AST consumer for: " << InFile << "\n";
     TheRewriter.setSourceMgr(Compiler.getSourceManager(), Compiler.getLangOpts());
     return std::unique_ptr<clang::ASTConsumer>(
-        new InstCovASTConsumer(TheRewriter));
+        new InstCovASTConsumer(TheRewriter, Compiler.getASTContext()));
   }
  private:
   Rewriter TheRewriter;
