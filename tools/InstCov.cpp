@@ -33,12 +33,18 @@ using namespace clang;
 using namespace clang::tooling;
 
 cl::OptionCategory InstCovCategory("InstCov Category");
+
 cl::opt<bool> InstBranches(
     "inst-branches",
     cl::desc("enable instrumentation for if/for/while/do"),
     cl::cat(InstCovCategory),
     cl::init(true));
-    
+
+cl::opt<bool> InstExprs(
+    "inst-expr",
+    cl::desc("enable expression instrumentation for MC/DC"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
 
 // Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser.

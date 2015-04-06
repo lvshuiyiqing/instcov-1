@@ -1,4 +1,4 @@
-//===-- InstCovASTVisitor.cpp --- InstCovASTVisitor declaration -*- C++ -*-===//
+//===-- InstCovInstBranch.cpp -- InstCov branch instrumentation -*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,8 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the definitions for InstcovASTVisitor
+/// \brief This file contains the definitions for branch
+/// instrumentation functions in InstcovASTVisitor
 ///
 //===----------------------------------------------------------------------===//
 
