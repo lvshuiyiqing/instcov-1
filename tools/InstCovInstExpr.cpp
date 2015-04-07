@@ -100,6 +100,19 @@ bool InstCovASTVisitor::MCDCVisitExpr(Expr *e) {
 }
 
 void InstCovASTVisitor::MCDCVisitIfStmt(IfStmt *s) {
+  std::vector<Expr *> CondExprs = ExtractMCDCLeaves(
+      s->getCond(), TheASTContext);
+  for (auto it = CondExprs.begin(), ie = CondExprs.end();
+       it != ie; ++it) {
+    std::string line;
+    llvm::raw_string_ostream os(line);
+    os << "Dump(0, (";
+    (*it)->printPretty(os, nullptr,
+                       PrintingPolicy(TheASTContext.getLangOpts()));
+    os << ") ? 0 : 1);\n";
+    os.flush();
+    TheRewriter.InsertTextAfter(s->getLocStart(), line);
+  }
 }
 
 void InstCovASTVisitor::MCDCVisitForStmt(ForStmt *s) {
@@ -110,4 +123,5 @@ void InstCovASTVisitor::MCDCVisitWhileStmt(WhileStmt *s) {
 
 void InstCovASTVisitor::MCDCVisitDoStmt(DoStmt *s) {
 }
+
 
