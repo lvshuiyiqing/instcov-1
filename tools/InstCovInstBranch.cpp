@@ -130,16 +130,11 @@ namespace{
   }
 }
 
-bool InstCovASTVisitor::VisitFunctionDecl(FunctionDecl *s) {
-  // s->dump();
-  return true;
-}
-
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
+  MCDCVisitIfStmt(s);
   if (!InstBranches) {
     return true;
   }
-  MCDCVisitExpr(s->getCond());
   // Only care about If statements.
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();
@@ -159,6 +154,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
+  MCDCVisitForStmt(s);
   if (!InstBranches) {
     return true;
   }
@@ -169,6 +165,7 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
+  MCDCVisitWhileStmt(s);
   if (!InstBranches) {
     return true;
   }
@@ -179,6 +176,7 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
+  MCDCVisitDoStmt(s);
   if (!InstBranches) {
     return true;
   }

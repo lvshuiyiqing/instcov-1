@@ -69,15 +69,15 @@ class InstCovAction : public ASTFrontendAction {
  public:
   virtual void EndSourceFileAction() override {
     SourceManager &SM = TheRewriter.getSourceMgr();
-    llvm::errs() << "** EndSourceFileAction for: "
-                 << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
+    // llvm::errs() << "** EndSourceFileAction for: "
+    //              << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
 
     TheRewriter.getEditBuffer(SM.getMainFileID()).write(llvm::outs());
   }
 
   virtual std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(
       clang::CompilerInstance &Compiler, llvm::StringRef InFile) override {
-    llvm::errs() << "** Creating AST consumer for: " << InFile << "\n";
+    // llvm::errs() << "** Creating AST consumer for: " << InFile << "\n";
     TheRewriter.setSourceMgr(Compiler.getSourceManager(), Compiler.getLangOpts());
     return std::unique_ptr<clang::ASTConsumer>(
         new InstCovASTConsumer(TheRewriter, Compiler.getASTContext()));

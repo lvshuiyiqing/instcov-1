@@ -31,9 +31,13 @@ public:
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
   bool VisitWhileStmt(clang::WhileStmt *s);
-  bool VisitFunctionDecl(clang::FunctionDecl *s);
   bool VisitDoStmt(clang::DoStmt *s);
-  
+
+  void MCDCVisitIfStmt(clang::IfStmt *s);
+  void MCDCVisitForStmt(clang::ForStmt *s);
+  void MCDCVisitWhileStmt(clang::WhileStmt *s);
+  void MCDCVisitDoStmt(clang::DoStmt *s);
+
 private:
   bool MCDCVisitExpr(clang::Expr *e);
 
