@@ -8,11 +8,10 @@ MCDC coverage recording.
 To use the tool, you need to follow these steps:
 
 1. Convert your original source code into an intermediate form using
-instcov. The code will be injected with profiling code (**Note the
-terminating double dashes**):
+instcov. The code will be injected with profiling code:
 
   <path-to-instcov>/instcov <your-source-file> [other compilation
-  args] --
+  args] --  (**Note the terminating double dashes**)
 
 2. Build the instrumented code by explicitly including "instcov_rt.h"
 during the compiling process, and explicitly linking with
