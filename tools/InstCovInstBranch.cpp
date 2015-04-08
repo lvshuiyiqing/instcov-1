@@ -28,7 +28,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "InstCovASTVisitor.h"
 
-extern llvm::cl::opt<bool> InstBranches;
+extern llvm::cl::opt<bool> InstDecisions;
 
 using namespace clang;
 
@@ -125,14 +125,11 @@ namespace{
     ss << " \n " << INSTCOV_FUNC_NAME << "(" << id << ", " << bid << ");";
     R.InsertTextBefore(endLoc, ss.str());
   }
-  
-  void InstExpr(Expr *e, Rewriter &R, uint64_t id, uint64_t bid) {
-  }
 }
 
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   MCDCVisitIfStmt(s);
-  if (!InstBranches) {
+  if (!InstDecisions) {
     return true;
   }
   // Only care about If statements.
@@ -155,7 +152,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
 
 bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
   MCDCVisitForStmt(s);
-  if (!InstBranches) {
+  if (!InstDecisions) {
     return true;
   }
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
@@ -166,7 +163,7 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
 
 bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   MCDCVisitWhileStmt(s);
-  if (!InstBranches) {
+  if (!InstDecisions) {
     return true;
   }
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
@@ -177,7 +174,7 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
 
 bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   MCDCVisitDoStmt(s);
-  if (!InstBranches) {
+  if (!InstDecisions) {
     return true;
   }
   TheRewriter.InsertTextAfter(s->getCond()->getLocStart(), "(");

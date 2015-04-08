@@ -30,7 +30,7 @@
 #include <vector>
 #include <stack>
 
-extern llvm::cl::opt<bool> InstExprs;
+extern llvm::cl::opt<bool> InstConditions;
 
 using namespace clang;
 
@@ -90,38 +90,61 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
 }
 }
 
-bool InstCovASTVisitor::MCDCVisitExpr(Expr *e) {
-  std::vector<Expr*> leaves = ExtractMCDCLeaves(e, TheASTContext);
-  for (auto it = leaves.begin(); it != leaves.end(); ++it) {
-    (*it)->dumpPretty(TheASTContext);
-    llvm::errs() << "\n";
+void InstCovASTVisitor::MCDCVisitExpr(Expr *e) {
+  TheRewriter.InsertTextAfter(e->getLocStart(), "(");
+  std::vector<Expr *> CondExprs = ExtractMCDCLeaves(
+      e, TheASTContext);
+  for (auto it = CondExprs.begin(), ie = CondExprs.end();
+       it != ie; ++it) {
+    std::string dumper;
+    llvm::raw_string_ostream os(dumper);
+    os << "instcov_dump(0, (";
+    (*it)->printPretty(os, nullptr,
+                       PrintingPolicy(TheASTContext.getLangOpts()));
+    os << ") ? 0 : 1), ";
+    os.flush();
+    TheRewriter.InsertTextAfter(e->getLocStart(), dumper);
   }
-  return true;
+  SourceLocation endLoc = Lexer::getLocForEndOfToken(
+      e->getLocEnd(), 0, TheRewriter.getSourceMgr(),
+      TheRewriter.getLangOpts());
+  TheRewriter.InsertTextBefore(endLoc, ")");
 }
 
 void InstCovASTVisitor::MCDCVisitIfStmt(IfStmt *s) {
-  std::vector<Expr *> CondExprs = ExtractMCDCLeaves(
-      s->getCond(), TheASTContext);
-  for (auto it = CondExprs.begin(), ie = CondExprs.end();
-       it != ie; ++it) {
-    std::string line;
-    llvm::raw_string_ostream os(line);
-    os << "Dump(0, (";
-    (*it)->printPretty(os, nullptr,
-                       PrintingPolicy(TheASTContext.getLangOpts()));
-    os << ") ? 0 : 1);\n";
-    os.flush();
-    TheRewriter.InsertTextAfter(s->getLocStart(), line);
+  if (!InstConditions) {
+    return;
   }
+  Expr *Expr4Instr = s->getCond();
+  if (s->getConditionVariable()) {
+    Expr4Instr = s->getConditionVariable()->getInit();
+  }
+  MCDCVisitExpr(Expr4Instr);
 }
 
 void InstCovASTVisitor::MCDCVisitForStmt(ForStmt *s) {
+  if (!InstConditions) {
+    return;
+  }
+  if (s->getCond()) {
+    MCDCVisitExpr(s->getCond());
+  }
 }
 
 void InstCovASTVisitor::MCDCVisitWhileStmt(WhileStmt *s) {
+  if (!InstConditions) {
+    return;
+  }
+  Expr *Expr4Instr = s->getCond();
+  if (s->getConditionVariable()) {
+    Expr4Instr = s->getConditionVariable()->getInit();
+  }
+  MCDCVisitExpr(Expr4Instr);
 }
 
 void InstCovASTVisitor::MCDCVisitDoStmt(DoStmt *s) {
+  if (!InstConditions) {
+    return;
+  }
+  MCDCVisitExpr(s->getCond());
 }
-
-

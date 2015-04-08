@@ -3,7 +3,7 @@ int f() {
 }
 
 int main(int argc, char *argv[]) {
-  if (true)
+  if (bool tmp = true)
     if (true)
       f() ;
     else

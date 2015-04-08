@@ -39,7 +39,7 @@ public:
   void MCDCVisitDoStmt(clang::DoStmt *s);
 
 private:
-  bool MCDCVisitExpr(clang::Expr *e);
+  void MCDCVisitExpr(clang::Expr *e);
 
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
