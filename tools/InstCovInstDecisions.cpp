@@ -1,4 +1,4 @@
-//===-- InstCovInstBranch.cpp -- InstCov branch instrumentation -*- C++ -*-===//
+//===-- InstCovInstDecisions.cpp --- decision instrumentation ---*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the definitions for branch
+/// \brief This file contains the definitions for decision
 /// instrumentation functions in InstcovASTVisitor
 ///
 //===----------------------------------------------------------------------===//

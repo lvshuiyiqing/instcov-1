@@ -1,4 +1,4 @@
-//===-- InstCovInstExpr.cpp --- InstCov expr instrumentation ===-*- C++ -*-===//
+//===-- InstCovInstConditions.cpp -- condition instrumentation --*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the definitions for expr
+/// \brief This file contains the definitions for condition
 /// instrumentation functions in InstcovASTVisitor
 ///
 //===----------------------------------------------------------------------===//
