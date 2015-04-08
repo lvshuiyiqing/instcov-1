@@ -13,6 +13,10 @@ instcov. The code will be injected with profiling code:
   <path-to-instcov>/instcov <your-source-file> [other compilation
   args] --  (**Note the terminating double dashes**)
 
+  For the default option, only branch coverage recording is enabled.
+  If you want to enable MCDC coverage recording, please check the help
+  messages using "instcov --help".
+
 2. Build the instrumented code by explicitly including "instcov_rt.h"
 during the compiling process, and explicitly linking with
 "libinstcov_rt.a".
