@@ -1,0 +1,35 @@
+===============================
+InstCov README
+-------------------------------
+
+InstCov is a Clang-based instrumentation tool for branch coverage and
+MCDC coverage recording.
+
+To use the tool, you need to follow these steps:
+
+1. Convert your original source code into an intermediate form using
+instcov. The code will be injected with profiling code (**Note the
+terminating double dashes**):
+
+  <path-to-instcov>/instcov <your-source-file> [other compilation
+  args] --
+
+2. Build the instrumented code by explicitly including "instcov_rt.h"
+during the compiling process, and explicitly linking with
+"libinstcov_rt.a".
+
+Then all should be fine.
+
+Alternatively, you can use the wrapper scripts shipped with this
+package. You need to customize the directories in the scripts before
+using them. The descriptions for the scripts are as follows:
+
+instcov.sh: it's just a redirection of instcov, if you don't want to
+modify your PATH environment
+
+ccwraper.sh: a wrapper for compiling the transformed code. It will
+automatically add "-include" and "-l" options to the compiler and
+linker.
+
+
+
