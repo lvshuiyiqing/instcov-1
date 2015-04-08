@@ -18,7 +18,14 @@ terminating double dashes**):
 during the compiling process, and explicitly linking with
 "libinstcov_rt.a".
 
-Then all should be fine.
+Then all should be fine. After you run your program, the trace file
+will be written into "instcov.dump". You can change the file name by
+setting environment variable "INSTCOV_FILE".
+
+Also, the trace file could be written in binary mode. You need to set
+environment variable "INSTCOV_BINARY_MODE" to "TRUE" or "YES" to
+enable binary mode.
+
 
 Alternatively, you can use the wrapper scripts shipped with this
 package. You need to customize the directories in the scripts before
