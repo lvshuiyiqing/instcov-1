@@ -5,6 +5,8 @@ operates on Clang AST. It recursively traverses the AST, and when a
 conditional statement node is visited, it instruments necessary
 recording code into the original source code using clang::Rewriter.
 
+The current implementation works with Clang 3.6.
+
 ## Implementation Choices
 Theoretically, there are three possible implementation strategies:
 
