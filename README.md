@@ -10,11 +10,9 @@ To use the tool, you need to follow these steps:
 1. Convert your original source code into an intermediate form using
 instcov. The code will be injected with profiling code:
 
-  ```
-  <path-to-instcov>/instcov <your-source-file> [other compilation
-  args] --
-  ```
-  **(Note the terminating double dashes)**
+        <path-to-instcov>/instcov <your-source-file> [other compilation
+        args] --
+    **Note the terminating double dashes!!!**
 
   For the default option, only branch coverage recording is enabled.
   If you want to enable MCDC coverage recording, please check the help
