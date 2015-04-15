@@ -91,15 +91,17 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
 }
 }
 
-void InstCovASTVisitor::MCDCVisitExpr(Expr *e) {
+void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
   TheRewriter.InsertTextAfter(e->getLocStart(), "(");
   std::vector<Expr *> CondExprs = ExtractMCDCLeaves(
       e, TheASTContext);
   for (auto it = CondExprs.begin(), ie = CondExprs.end();
        it != ie; ++it) {
+    DIM.registerStmt(*it, p);
+    UUID uuid = DIM.getUUID(*it);
     std::string dumper;
     llvm::raw_string_ostream os(dumper);
-    os << "instcov_dump(0, (";
+    os << "instcov_dump(" << uuid.toArgString() << ", (";
     (*it)->printPretty(os, nullptr,
                        PrintingPolicy(TheASTContext.getLangOpts()));
     os << ") ? 0 : 1), ";
