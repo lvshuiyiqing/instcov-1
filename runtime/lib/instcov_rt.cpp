@@ -17,10 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
-extern "C" {
-  void instcov_dump(uint64_t id, uint64_t bid);
-}
+#include "instcov_rt.h"
 
 std::string GenDumpFileName(void) {
   std::string DumpFile;
@@ -53,20 +50,22 @@ static class InstCovLogger {
     TraceFile.close();
   }
   
-  void LogText(uint64_t id, uint64_t bid) {
-    TraceFile << "(" << id << ", " << bid << ")\n";
+  void LogText(uint64_t id_high, uint64_t id_low, uint64_t bid) {
+    TraceFile << "(" << std::hex << "0x" << id_high << id_low  << ", "
+              << std::dec << bid << ")\n";
   }
 
-  void LogBinary(uint64_t id, uint64_t bid) {
-    TraceFile.write((char*)&id, sizeof(id));
+  void LogBinary(uint64_t id_high, uint64_t id_low, uint64_t bid) {
+    TraceFile.write((char*)&id_high, sizeof(id_high));
+    TraceFile.write((char*)&id_low, sizeof(id_low));
     TraceFile.write((char*)&bid, sizeof(bid));
   }
   
-  void Log(uint64_t id, uint64_t bid) {
+  void Log(uint64_t id_high, uint64_t id_low, uint64_t bid) {
     if (BinaryMode) {
-      LogBinary(id, bid);
+      LogBinary(id_high, id_low, bid);
     } else {
-      LogText(id, bid);
+      LogText(id_high, id_low, bid);
     }
   }
 
@@ -77,7 +76,7 @@ static class InstCovLogger {
 
 }
 
-void instcov_dump(uint64_t id, uint64_t bid) {
-  staInstCovLogger.Log(id, bid);
+void instcov_dump(uint64_t id_high, uint64_t id_low, uint64_t bid) {
+  staInstCovLogger.Log(id_high, id_low, bid);
 }
 

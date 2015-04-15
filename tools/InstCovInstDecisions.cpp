@@ -26,11 +26,13 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "InstCovASTVisitor.h"
+#include "instcov/InstCovASTVisitor.h"
+#include "instcov/uuid.h"
 
 extern llvm::cl::opt<bool> InstDecisions;
 
 using namespace clang;
+using namespace instcov;
 
 namespace{
   std::string INSTCOV_FUNC_NAME = "instcov_dump";
@@ -132,6 +134,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   if (!InstDecisions) {
     return true;
   }
+  DIM.registerStmt(s, nullptr);
   // Only care about If statements.
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();
@@ -155,6 +158,7 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
   if (!InstDecisions) {
     return true;
   }
+  DIM.registerStmt(s, nullptr);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
   InstInBlock(s->getBody(), TheRewriter, 0, 0);
@@ -166,6 +170,7 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   if (!InstDecisions) {
     return true;
   }
+  DIM.registerStmt(s, nullptr);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
   InstInBlock(s->getBody(), TheRewriter, 0, 0);
@@ -177,6 +182,7 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   if (!InstDecisions) {
     return true;
   }
+  DIM.registerStmt(s, nullptr);
   TheRewriter.InsertTextAfter(s->getCond()->getLocStart(), "(");
   uint64_t id = 0;
   std::stringstream ss;

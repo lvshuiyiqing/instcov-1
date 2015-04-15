@@ -1,0 +1,72 @@
+//===-- DbgInfoMgr.h ------ debug info manager declaration ------*- C++ -*-===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// \brief This file contains the declarations for the debug info manager
+///
+//===----------------------------------------------------------------------===//
+
+#ifndef DBGINFOMGR_H_
+#define DBGINFOMGR_H_
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include "uuid.h"
+#include <vector>
+#include <map>
+
+namespace clang {
+class Stmt;
+}
+
+namespace instcov {
+class DbgInfoEntry {
+ public:
+  DbgInfoEntry(void)
+      : S(nullptr), P(nullptr), Line(0), Col(0) {}
+  DbgInfoEntry(const clang::Stmt *s, const clang::Stmt *p,
+               llvm::StringRef file, unsigned line, unsigned col,
+               instcov::UUID uuid)
+      : S(s), P(p), File(file), Line(line), Col(col), UUID(uuid) {}
+      
+ public:
+  const clang::Stmt *S;  // this stmt/expr
+  const clang::Stmt *P;  // parent
+  std::vector<clang::Stmt *> Children;
+  llvm::StringRef File;
+  unsigned Line;
+  unsigned Col;
+  instcov::UUID UUID;
+};
+
+class DbgInfoMgr {
+ public:
+  DbgInfoMgr(llvm::StringRef MainFileName);
+  ~DbgInfoMgr(void);
+
+ private:
+  DbgInfoMgr(const DbgInfoMgr &right);
+  const DbgInfoMgr &operator = (const DbgInfoMgr &right);
+  
+ public:
+  void registerStmt(clang::Stmt *s, clang::Stmt *p);
+  instcov::UUID getUUID(clang::Stmt *s) const;
+
+ private:
+  void dump(void) const;
+
+ private:
+  std::map<clang::Stmt *, DbgInfoEntry> DbgInfo;
+  std::vector<clang::Stmt *> StoreOrder;
+  llvm::raw_fd_ostream *File;
+};
+}
+
+#endif  // DBGINFOMGR_H_

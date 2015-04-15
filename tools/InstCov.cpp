@@ -26,11 +26,12 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "InstCovASTVisitor.h"
+#include "instcov/InstCovASTVisitor.h"
 
 using namespace llvm;
 using namespace clang;
 using namespace clang::tooling;
+using namespace instcov;
 
 cl::OptionCategory InstCovCategory("InstCov Category");
 
@@ -56,11 +57,8 @@ class InstCovASTConsumer : public ASTConsumer {
 
   // Override the method that gets called for each parsed top-level
   // declaration.
-  virtual bool HandleTopLevelDecl(DeclGroupRef DR) {
-    for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b)
-      // Traverse the declaration using our AST visitor.
-      Visitor.TraverseDecl(*b);
-    return true;
+  virtual void HandleTranslationUnit(ASTContext &Context) {
+    Visitor.TraverseDecl(Context.getTranslationUnitDecl());
   }
 
 private:

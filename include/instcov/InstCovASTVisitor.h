@@ -12,6 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#ifndef INSTCOVAST_VISITOR_H_
+#define INSTCOVAST_VISITOR_H_
+
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -22,11 +25,15 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
+#include "instcov/DbgInfoMgr.h"
 
+namespace instcov{
 class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
 public:
   InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
-      : TheRewriter(R), TheASTContext(C) {}
+      : TheRewriter(R), TheASTContext(C),
+        DIM(R.getSourceMgr().getFileEntryForID(
+            R.getSourceMgr().getMainFileID())->getName()) {}
 
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
@@ -43,5 +50,8 @@ private:
 
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
+  DbgInfoMgr DIM;
 };
+}
 
+#endif  // INSTCOVAST_VISITOR_H_

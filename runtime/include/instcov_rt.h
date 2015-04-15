@@ -19,5 +19,5 @@
 #endif  // __cplusplus
 
 extern "C" {
-void instcov_dump(uint64_t id, uint64_t bid);
+  void instcov_dump(uint64_t id_high, uint64_t id_low, uint64_t bid);
 }

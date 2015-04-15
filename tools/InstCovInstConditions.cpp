@@ -26,13 +26,14 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "InstCovASTVisitor.h"
+#include "instcov/InstCovASTVisitor.h"
 #include <vector>
 #include <stack>
 
 extern llvm::cl::opt<bool> InstConditions;
 
 using namespace clang;
+using namespace instcov;
 
 namespace {
 enum EXPR_TYPE {
