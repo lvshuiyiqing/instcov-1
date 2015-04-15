@@ -100,31 +100,31 @@ namespace{
   }
   
   void InstCompoundStmt(CompoundStmt *s, Rewriter &R,
-                        uint64_t id, uint64_t bid) {
+                        UUID uuid, uint64_t bid) {
     std::stringstream ss;
-    ss << "\n" << INSTCOV_FUNC_NAME << "(" << id << ", " << bid << ");";
+    ss << "\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", " << bid << ");";
     R.InsertTextAfter(s->getLBracLoc().getLocWithOffset(1), ss.str());
   }
 
-  void InstSingleStmt(Stmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
+  void InstSingleStmt(Stmt *s, Rewriter &R, UUID uuid, uint64_t bid) {
     std::stringstream ss;
-    ss << "{\n" << INSTCOV_FUNC_NAME << "(" << id << ", " << bid << ");\n";
+    ss << "{\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", " << bid << ");\n";
     R.InsertTextAfter(s->getLocStart(), ss.str());
     R.InsertTextBefore(FindEndLoc(s, R), "\n}");
   }
 
-  void InstInBlock(Stmt *s, Rewriter &R, uint64_t id, uint64_t bid) {
+  void InstInBlock(Stmt *s, Rewriter &R, UUID uuid, uint64_t bid) {
     if (isa<CompoundStmt>(s)) {
-      InstCompoundStmt(cast<CompoundStmt>(s), R, id, bid);
+      InstCompoundStmt(cast<CompoundStmt>(s), R, uuid, bid);
     } else {
-      InstSingleStmt(s, R, id, bid);
+      InstSingleStmt(s, R, uuid, bid);
     }
   }
 
   void InstAfterBody(SourceLocation endLoc, Rewriter &R,
-                     uint64_t id, uint64_t bid) {
+                     UUID uuid, uint64_t bid) {
     std::stringstream ss;
-    ss << " \n " << INSTCOV_FUNC_NAME << "(" << id << ", " << bid << ");";
+    ss << " \n " << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", " << bid << ");";
     R.InsertTextBefore(endLoc, ss.str());
   }
 }
@@ -135,20 +135,21 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
     return true;
   }
   DIM.registerStmt(s, nullptr);
+  UUID uuid = DIM.getUUID(s);
   // Only care about If statements.
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();
 
   Stmt *Else = IfStatement->getElse();
   if (Else) {
-    InstInBlock(Else, TheRewriter, 0, 1);
+    InstInBlock(Else, TheRewriter, uuid, 0);
   } else {
     SourceLocation ThenBodyEndLoc = FindEndLoc(Then, TheRewriter);
-    InstAfterBody(ThenBodyEndLoc, TheRewriter, 0, 1);
+    InstAfterBody(ThenBodyEndLoc, TheRewriter, uuid, 0);
     TheRewriter.InsertTextBefore(ThenBodyEndLoc, "else");
   }
 
-  InstInBlock(Then, TheRewriter, 0, 0);
+  InstInBlock(Then, TheRewriter, uuid, 1);
 
   return true;
 }
@@ -159,9 +160,10 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
     return true;
   }
   DIM.registerStmt(s, nullptr);
+  UUID uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
-  InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
-  InstInBlock(s->getBody(), TheRewriter, 0, 0);
+  InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
+  InstInBlock(s->getBody(), TheRewriter, uuid, 1);
   return true;
 }
 
@@ -171,9 +173,10 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
     return true;
   }
   DIM.registerStmt(s, nullptr);
+  UUID uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
-  InstAfterBody(BodyEndLoc, TheRewriter, 0, 1);
-  InstInBlock(s->getBody(), TheRewriter, 0, 0);
+  InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
+  InstInBlock(s->getBody(), TheRewriter, uuid, 1);
   return true;
 }
 
@@ -184,9 +187,11 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   }
   DIM.registerStmt(s, nullptr);
   TheRewriter.InsertTextAfter(s->getCond()->getLocStart(), "(");
-  uint64_t id = 0;
+  UUID uuid = DIM.getUUID(s);
   std::stringstream ss;
-  ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << id << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "(" << id << ", 1), 0)";
+  ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
+     << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
+     << ", 1), 0)";
   TheRewriter.InsertTextBefore(s->getRParenLoc(), ss.str());
   return true;
 }
