@@ -26,9 +26,9 @@ Then all should be fine. After you run your program, the trace file
 will be written into `instcov.dump`. You can change the file name by
 setting environment variable `INSTCOV_FILE`.
 
-Also, the trace file could be written in binary mode. You need to set
-environment variable `INSTCOV_BINARY_MODE` to `TRUE` or `YES` to
-enable binary mode.
+The trace file will be written in binary mode by default. Also, the trace file
+could be written in text mode. You need to set environment variable
+`INSTCOV_TEXT_MODE` to `TRUE` or `YES` to enable text mode.
 
 ## Using the scripts
 Alternatively, you can use the wrapper scripts shipped with this
