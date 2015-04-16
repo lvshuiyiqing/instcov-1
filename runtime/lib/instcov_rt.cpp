@@ -19,6 +19,12 @@
 #include <string>
 #include "instcov_rt.h"
 
+namespace {
+const char INSTCOV_DUMP_MAGIC[] = "INSTCOV_DUMP";
+const char INSTCOV_DUMP_VERSION[] = "1";
+
+}
+
 std::string GenDumpFileName(void) {
   std::string DumpFile;
   if (char *env_file_name = getenv("INSTCOV_FILE")) {
@@ -30,12 +36,12 @@ std::string GenDumpFileName(void) {
 }
 
 bool IsBinaryMode(void) {
-  char *env_binary_mode = getenv("INSTCOV_BINARY_MODE");
-  if (env_binary_mode&&
-      (!strcmp(env_binary_mode, "YES") || !strcmp(env_binary_mode, "TRUE"))) {
-    return true;
+  char *env_text_mode = getenv("INSTCOV_TEXT_MODE");
+  if (env_text_mode&&
+      (!strcmp(env_text_mode, "YES") || !strcmp(env_text_mode, "TRUE"))) {
+    return false;
   }
-  return false;
+  return true;
 }
 
 namespace {
@@ -44,10 +50,16 @@ static class InstCovLogger {
   InstCovLogger(void) {
     TraceFile.open(GenDumpFileName().c_str());
     BinaryMode = IsBinaryMode();
+    LogMagic();
   }
 
   ~InstCovLogger(void) {
     TraceFile.close();
+  }
+
+  void LogMagic(void) {
+    TraceFile.write(INSTCOV_DUMP_MAGIC, sizeof(INSTCOV_DUMP_MAGIC)-1);
+    TraceFile.write(INSTCOV_DUMP_VERSION, sizeof(INSTCOV_DUMP_VERSION)-1);
   }
   
   void LogText(uint64_t id_high, uint64_t id_low, uint64_t bid) {
