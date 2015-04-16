@@ -32,7 +32,7 @@ DbgInfoMgr::DbgInfoMgr(StringRef MainFileName) {
   StringRef DbgFileName = MainFileName.str() + ".dbginfo";
   File = new raw_fd_ostream(DbgFileName, EC, llvm::sys::fs::F_None);
   if (EC) {
-    llvm::errs() << "cannot open debug info file, exiiting\n";
+    llvm::errs() << "cannot open debug info file, exiting\n";
     exit(1);
   }
 }
