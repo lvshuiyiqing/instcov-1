@@ -24,6 +24,7 @@
 
 namespace clang {
 class Stmt;
+class SourceManager;
 }
 
 namespace instcov {
@@ -39,10 +40,10 @@ class DbgInfoEntry {
  public:
   const clang::Stmt *S;  // this stmt/expr
   const clang::Stmt *P;  // parent
-  std::vector<clang::Stmt *> Children;
+  std::vector<const clang::Stmt *> Children;
   llvm::StringRef File;
-  unsigned Line;
-  unsigned Col;
+  uint64_t Line;
+  uint64_t Col;
   instcov::UUID UUID;
 };
 
@@ -56,15 +57,17 @@ class DbgInfoMgr {
   const DbgInfoMgr &operator = (const DbgInfoMgr &right);
   
  public:
-  void registerStmt(clang::Stmt *s, clang::Stmt *p);
-  instcov::UUID getUUID(clang::Stmt *s) const;
+  void registerStmt(const clang::Stmt *s, const clang::Stmt *p, const
+                    clang::SourceManager &SM);
+  instcov::UUID getUUID(const clang::Stmt *s) const;
 
  private:
-  void dump(void) const;
+  void dumpOne(const clang::Stmt *s);
+  void dump(void);
 
  private:
-  std::map<clang::Stmt *, DbgInfoEntry> DbgInfo;
-  std::vector<clang::Stmt *> StoreOrder;
+  std::map<const clang::Stmt *, DbgInfoEntry> DbgInfo;
+  std::vector<const clang::Stmt *> StoreOrder;
   llvm::raw_fd_ostream *File;
 };
 }

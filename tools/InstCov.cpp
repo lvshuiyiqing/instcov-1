@@ -48,7 +48,7 @@ The instrumentation may change the program behavior\n\
 if the conditions have side-effects"),
     cl::cat(InstCovCategory),
     cl::init(false));
-
+                                                                                                                        
 // Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser.
 class InstCovASTConsumer : public ASTConsumer {
@@ -67,12 +67,24 @@ private:
 
 class InstCovAction : public ASTFrontendAction {
  public:
+  std::string getOutputFileName(void) const {
+    std::string InFile = getCurrentFile();
+    std::size_t PeriodPos = InFile.find_last_of('.');
+    if (PeriodPos == std::string::npos) {
+      llvm::errs() << "incorrect file name type: " << InFile << "\n";
+      exit(1);
+    }
+    std::string Prefix = InFile.substr(0, PeriodPos);
+    std::string Suffix = InFile.substr(PeriodPos);
+    return Prefix + ".trans" + Suffix;
+  }
+  
   virtual void EndSourceFileAction() override {
     SourceManager &SM = TheRewriter.getSourceMgr();
-    // llvm::errs() << "** EndSourceFileAction for: "
-    //              << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
-
-    TheRewriter.getEditBuffer(SM.getMainFileID()).write(llvm::outs());
+    std::error_code EC;
+    raw_fd_ostream OutFile(
+        getOutputFileName(), EC, llvm::sys::fs::F_None);
+    TheRewriter.getEditBuffer(SM.getMainFileID()).write(OutFile);
   }
 
   virtual std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(

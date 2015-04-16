@@ -134,7 +134,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   if (!InstDecisions) {
     return true;
   }
-  DIM.registerStmt(s, nullptr);
+  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID uuid = DIM.getUUID(s);
   // Only care about If statements.
   IfStmt *IfStatement = cast<IfStmt>(s);
@@ -159,7 +159,7 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
   if (!InstDecisions) {
     return true;
   }
-  DIM.registerStmt(s, nullptr);
+  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
@@ -172,7 +172,7 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   if (!InstDecisions) {
     return true;
   }
-  DIM.registerStmt(s, nullptr);
+  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
@@ -185,7 +185,7 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   if (!InstDecisions) {
     return true;
   }
-  DIM.registerStmt(s, nullptr);
+  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertTextAfter(s->getCond()->getLocStart(), "(");
   UUID uuid = DIM.getUUID(s);
   std::stringstream ss;
