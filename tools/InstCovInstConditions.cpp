@@ -122,7 +122,7 @@ void InstCovASTVisitor::MCDCVisitIfStmt(IfStmt *s) {
   if (s->getConditionVariable()) {
     Expr4Instr = s->getConditionVariable()->getInit();
   }
-  MCDCVisitExpr(Expr4Instr);
+  MCDCVisitExpr(Expr4Instr, s);
 }
 
 void InstCovASTVisitor::MCDCVisitForStmt(ForStmt *s) {
@@ -130,7 +130,7 @@ void InstCovASTVisitor::MCDCVisitForStmt(ForStmt *s) {
     return;
   }
   if (s->getCond()) {
-    MCDCVisitExpr(s->getCond());
+    MCDCVisitExpr(s->getCond(), s);
   }
 }
 
@@ -142,12 +142,12 @@ void InstCovASTVisitor::MCDCVisitWhileStmt(WhileStmt *s) {
   if (s->getConditionVariable()) {
     Expr4Instr = s->getConditionVariable()->getInit();
   }
-  MCDCVisitExpr(Expr4Instr);
+  MCDCVisitExpr(Expr4Instr, s);
 }
 
 void InstCovASTVisitor::MCDCVisitDoStmt(DoStmt *s) {
   if (!InstConditions) {
     return;
   }
-  MCDCVisitExpr(s->getCond());
+  MCDCVisitExpr(s->getCond(), s);
 }

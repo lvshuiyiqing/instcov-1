@@ -20,6 +20,10 @@ using namespace instcov;
 using namespace llvm;
 using namespace clang;
 
+namespace {
+const char INSTCOV_MAGIC[] = "INSTCOV";
+}
+
 DbgInfoMgr::DbgInfoMgr(StringRef MainFileName) {
   std::error_code EC;
   StringRef DbgFileName = MainFileName.str() + ".dbginfo";
@@ -32,6 +36,7 @@ DbgInfoMgr::DbgInfoMgr(StringRef MainFileName) {
 }
 
 DbgInfoMgr::~DbgInfoMgr(void) {
+  dump();
   delete File;
 }
 
@@ -57,3 +62,8 @@ UUID DbgInfoMgr::getUUID(Stmt *s) const {
   }
   return DbgInfo.find(s)->second.UUID;
 }
+
+void DbgInfoMgr::dump(void) const {
+  File->write(INSTCOV_MAGIC, sizeof(INSTCOV_MAGIC)-1);
+}
+
