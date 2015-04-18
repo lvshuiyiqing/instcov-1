@@ -52,14 +52,14 @@ void DbgInfoMgr::registerStmt(const Stmt *s, const Stmt *p, const SourceManager 
   }
   DbgInfo[s].P = p;
   DbgInfo[p].Children.push_back(s);
-  if (!DbgInfo[s].UUID.isValid()) {
-    DbgInfo[s].UUID = genUUID();
+  if (!DbgInfo[s].Uuid.isValid()) {
+    DbgInfo[s].Uuid = genUUID();
     DbgInfo[s].File = SM.getFilename(s->getLocStart());
     DbgInfo[s].Line = SM.getSpellingLineNumber(s->getLocStart());
     DbgInfo[s].Col = SM.getSpellingColumnNumber(s->getLocStart());
   }
-  if (p && !DbgInfo[p].UUID.isValid()) {
-    DbgInfo[p].UUID = genUUID();
+  if (p && !DbgInfo[p].Uuid.isValid()) {
+    DbgInfo[p].Uuid = genUUID();
     DbgInfo[s].File = SM.getFilename(p->getLocStart());
     DbgInfo[s].Line = SM.getSpellingLineNumber(p->getLocStart());
     DbgInfo[s].Col = SM.getSpellingColumnNumber(p->getLocStart());
@@ -71,7 +71,7 @@ UUID DbgInfoMgr::getUUID(const Stmt *s) const {
     llvm::errs() << "this statement has not been registered\n";
     exit(1);
   }
-  return DbgInfo.find(s)->second.UUID;
+  return DbgInfo.find(s)->second.Uuid;
 }
 
 void DbgInfoMgr::dump(void) {
@@ -84,8 +84,13 @@ void DbgInfoMgr::dump(void) {
 }
 
 void DbgInfoMgr::dumpOne(const Stmt *s) {
-  File->write((const char*)&(DbgInfo[s].UUID), sizeof(UUID));
-  File->write((const char*)&(DbgInfo[DbgInfo[s].P].UUID), sizeof(UUID));
+  File->write((const char*)&(DbgInfo[s].Uuid), sizeof(UUID));
+  if (DbgInfo[s].P) {
+    File->write((const char*)&(DbgInfo[DbgInfo[s].P].Uuid), sizeof(UUID));
+  } else {
+    UUID EmptyUuid;
+    File->write((const char*)&EmptyUuid, sizeof(UUID));
+  }
   *File << DbgInfo[s].File;
   File->write((const char*)&DbgInfo[s].Line, sizeof(DbgInfoEntry::Line));
   File->write((const char*)&DbgInfo[s].Col, sizeof(DbgInfoEntry::Col));

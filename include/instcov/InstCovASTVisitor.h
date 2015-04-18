@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef INSTCOVAST_VISITOR_H_
-#define INSTCOVAST_VISITOR_H_
+#ifndef INSTCOV_ASTVISITOR_H_
+#define INSTCOV_ASTVISITOR_H_
 
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -54,4 +54,4 @@ private:
 };
 }
 
-#endif  // INSTCOVAST_VISITOR_H_
+#endif  // INSTCOV_ASTVISITOR_H_

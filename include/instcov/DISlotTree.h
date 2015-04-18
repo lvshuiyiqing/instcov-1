@@ -1,0 +1,38 @@
+//===-- DISlotTree.h ----- debug info slot tree declaration -----*- C++ -*-===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// \brief This file contains the declarations of the tree for debug info
+/// slots (to be/already) read from the trace file
+///
+//===----------------------------------------------------------------------===//
+
+#ifndef INSTCOV_DISLOTTREE_H_
+#define INSTCOV_DISLOTTREE_H_
+
+#include <map>
+#include "DbgInfoDB.h"
+
+namespace instcov {
+class DISlotTree {
+ public:
+  DISlotTree(DbgInfoEntry_View *Root);
+  ~DISlotTree(void);
+
+  void fill(DbgInfoEntry_View *Node, uint64_t bid);
+  bool isFull(void) const { return NumEmptySlots == 0; }
+  
+ public:
+  std::map<DbgInfoEntry_View *, uint64_t> Records;
+  int64_t NumEmptySlots;
+  DbgInfoEntry_View *R;
+};
+}
+
+#endif  // INSTCOV_DISLOTTREE_H_

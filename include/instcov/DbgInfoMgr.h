@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef DBGINFOMGR_H_
-#define DBGINFOMGR_H_
+#ifndef INSTCOV_DBGINFOMGR_H_
+#define INSTCOV_DBGINFOMGR_H_
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
@@ -35,7 +35,7 @@ class DbgInfoEntry {
   DbgInfoEntry(const clang::Stmt *s, const clang::Stmt *p,
                llvm::StringRef file, unsigned line, unsigned col,
                instcov::UUID uuid)
-      : S(s), P(p), File(file), Line(line), Col(col), UUID(uuid) {}
+      : S(s), P(p), File(file), Line(line), Col(col), Uuid(uuid) {}
       
  public:
   const clang::Stmt *S;  // this stmt/expr
@@ -44,7 +44,7 @@ class DbgInfoEntry {
   llvm::StringRef File;
   uint64_t Line;
   uint64_t Col;
-  instcov::UUID UUID;
+  instcov::UUID Uuid;
 };
 
 class DbgInfoMgr {
@@ -72,4 +72,4 @@ class DbgInfoMgr {
 };
 }
 
-#endif  // DBGINFOMGR_H_
+#endif  // INSTCOV_DBGINFOMGR_H_

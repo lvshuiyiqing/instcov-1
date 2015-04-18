@@ -51,9 +51,8 @@ UUID genUUID(void) {
 #endif
   return result;
 }
-}
 
-bool operator < (instcov::UUID left, instcov::UUID right) {
+bool operator < (const instcov::UUID &left, const instcov::UUID &right) {
   if (left.high < right.high) {
     return true;
   }
@@ -61,6 +60,7 @@ bool operator < (instcov::UUID left, instcov::UUID right) {
     return false;
   }
   return left.low < right.low;
+}
 }
 
 #endif  // INSTCOV_UUID_H_
