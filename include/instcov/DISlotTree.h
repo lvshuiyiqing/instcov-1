@@ -17,7 +17,8 @@
 #define INSTCOV_DISLOTTREE_H_
 
 #include <map>
-#include "DbgInfoDB.h"
+#include "llvm/Support/raw_ostream.h"
+#include "instcov/DbgInfoDB.h"
 
 namespace instcov {
 class DISlotTree {
@@ -25,6 +26,7 @@ class DISlotTree {
   DISlotTree(DbgInfoEntry_View *Root);
   ~DISlotTree(void);
 
+  void dump(llvm::raw_ostream &OS) const;
   void fill(DbgInfoEntry_View *Node, uint64_t bid);
   bool isFull(void) const { return NumEmptySlots == 0; }
   

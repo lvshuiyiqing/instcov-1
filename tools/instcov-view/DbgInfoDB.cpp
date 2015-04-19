@@ -43,26 +43,23 @@ DbgInfoDB::~DbgInfoDB(void) {
   }
 }
 
-void DbgInfoDB::loadFile(llvm::StringRef FileName) {
-  std::ifstream InFile(FileName.data());
+void DbgInfoDB::loadFile(std::istream &InFile) {
   // read magic
   char Magic[sizeof(INSTCOV_MAGIC)-1];
   char Version[sizeof(INSTCOV_VERSION)-1];
   if (!InFile) {
-    llvm::errs() << "cannot open file: " << FileName << "\n";
+    llvm::errs() << "bad input stream\n";
     exit(1);
   }
   InFile.read(Magic, sizeof(INSTCOV_MAGIC)-1);
   if (InFile.fail() || memcmp(INSTCOV_MAGIC, Magic, sizeof(INSTCOV_MAGIC)-1)) {
-    llvm::errs() << "cannot recognize the magic bits in file: " << FileName
-                 << "\n";
+    llvm::errs() << "cannot recognize the magic bits in the input stream\n";
     exit(1);
   }
   InFile.read(Version, sizeof(INSTCOV_VERSION)-1);
   if (InFile.fail() ||
       memcmp(INSTCOV_VERSION, Version, sizeof (INSTCOV_VERSION)-1)) {
-    llvm::errs() << "cannot recognize the version bits in file: " << FileName
-                 << "\n";
+    llvm::errs() << "cannot recognize the version bits in the input stream\n";
     exit(1);
   }
 
@@ -89,8 +86,6 @@ void DbgInfoDB::loadFile(llvm::StringRef FileName) {
 
 void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid) {
   UUID ThisUuid = Entry.Uuid;
-  UUID uuid1, uuid2;
-  uuid1 < uuid2;
   if (Entries.count(ThisUuid) == 0) {
     Entries.insert(std::make_pair(ThisUuid, new DbgInfoEntry_View(Entry)));
   }

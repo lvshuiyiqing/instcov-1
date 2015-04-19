@@ -18,7 +18,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "uuid.h"
+#include "instcov/uuid.h"
 #include <vector>
 #include <map>
 

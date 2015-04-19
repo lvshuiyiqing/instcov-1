@@ -24,7 +24,7 @@ namespace {
 const char INSTCOV_DUMP_MAGIC[] = "INSTCOV_DUMP";
 const char INSTCOV_DUMP_VERSION[] = "1";
 
-void readOneRecord(std::ifstream &File, UUID &Uuid, uint64_t &bid) {
+void readOneRecord(std::istream &File, UUID &Uuid, uint64_t &bid) {
   File.read(reinterpret_cast<char *>(&Uuid), sizeof(Uuid));
   File.read(reinterpret_cast<char *>(&bid), sizeof(bid));
   if (File.bad()) {
@@ -34,10 +34,9 @@ void readOneRecord(std::ifstream &File, UUID &Uuid, uint64_t &bid) {
 }
 }
 
-void RecordMgr::processTrace(StringRef TraceFile) {
-  std::ifstream InFile(TraceFile.data());
+void RecordMgr::processTrace(std::istream &InFile) {
   if (!InFile) {
-    llvm::errs() << "failed to open trace file:" << TraceFile << "\n";
+    llvm::errs() << "bad input stream\n";
     exit(1);
   }
   // check the magic & version
