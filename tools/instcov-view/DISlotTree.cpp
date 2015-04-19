@@ -56,3 +56,26 @@ void DISlotTree::fill(DbgInfoEntry_View *Node, uint64_t bid) {
   --NumEmptySlots;
 }
 
+void DISlotTree::dump(std::ostream &OS) const {
+  printTreeDFS(OS, R, 0);
+}
+
+void DISlotTree::printTreeDFS(std::ostream &OS,
+                              const DbgInfoEntry_View *Node,
+                              uint64_t depth) const {
+  for (uint64_t i = 0; i < depth; ++i) {
+    OS << "  ";
+  }
+  OS << std::hex << Node->Uuid.high << Node->Uuid.low
+     << ":";
+  if (Records.count(Node)) {
+    OS << Records.find(Node)->second;
+  } else {
+    OS << "NA";
+  }
+  OS << "\n";
+  for (auto it = Node->Children.begin(), ie = Node->Children.end();
+       it != ie; ++it) {
+    printTreeDFS(OS, *it, depth+1);
+  }
+}

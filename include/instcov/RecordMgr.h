@@ -38,7 +38,7 @@ class RecordMgr {
   }
   void processTrace(std::istream &InFile);
 
-  void dump(llvm::raw_ostream &OS) const;
+  void dump(std::ostream &OS) const;
   
  private:
   DbgInfoDB DIDB;

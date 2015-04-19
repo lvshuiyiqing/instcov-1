@@ -74,3 +74,9 @@ void RecordMgr::processTrace(std::istream &InFile) {
   }
 }
 
+void RecordMgr::dump(std::ostream &OS) const {
+  for (auto it = RecordTrees.begin(), ie = RecordTrees.end();
+       it != ie; ++it) {
+    (*it)->dump(OS);
+  }
+}
