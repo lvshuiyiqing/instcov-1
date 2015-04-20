@@ -91,7 +91,9 @@ void DbgInfoMgr::dumpOne(const Stmt *s) {
     UUID EmptyUuid;
     File->write((const char*)&EmptyUuid, sizeof(UUID));
   }
-  *File << DbgInfo[s].File;
+  std::size_t FNSize = DbgInfo[s].File.size()+1;
+  File->write((const char *)&FNSize, sizeof(FNSize));
+  File->write(DbgInfo[s].File.c_str(), FNSize);
   File->write((const char*)&DbgInfo[s].Line, sizeof(DbgInfoEntry::Line));
   File->write((const char*)&DbgInfo[s].Col, sizeof(DbgInfoEntry::Col));
 }

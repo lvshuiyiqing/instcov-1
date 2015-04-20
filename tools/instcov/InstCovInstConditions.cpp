@@ -104,7 +104,7 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
     os << "instcov_dump(" << uuid.toArgString() << ", (";
     (*it)->printPretty(os, nullptr,
                        PrintingPolicy(TheASTContext.getLangOpts()));
-    os << ") ? 0 : 1), ";
+    os << ") ? 1 : 0), ";
     os.flush();
     TheRewriter.InsertTextAfter(e->getLocStart(), dumper);
   }

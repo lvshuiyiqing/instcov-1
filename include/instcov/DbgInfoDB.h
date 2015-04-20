@@ -31,13 +31,13 @@ class DbgInfoEntry_View {
 
  public:
   DbgInfoEntry_View *toRoot(void);
-  void dump(void);
+  void dump(void) const;
   
  public:
   UUID Uuid;
   std::vector<DbgInfoEntry_View *> Children;
   DbgInfoEntry_View *P;
-  llvm::StringRef File;
+  std::string File;
   uint64_t Line;
   uint64_t Col;
 };

@@ -21,6 +21,7 @@
 #include "instcov/uuid.h"
 #include <vector>
 #include <map>
+#include <string>
 
 namespace clang {
 class Stmt;
@@ -41,7 +42,7 @@ class DbgInfoEntry {
   const clang::Stmt *S;  // this stmt/expr
   const clang::Stmt *P;  // parent
   std::vector<const clang::Stmt *> Children;
-  llvm::StringRef File;
+  std::string File;
   uint64_t Line;
   uint64_t Col;
   instcov::UUID Uuid;

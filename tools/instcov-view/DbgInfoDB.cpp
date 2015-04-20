@@ -34,6 +34,14 @@ DbgInfoEntry_View *DbgInfoEntry_View::toRoot(void) {
   return Node;
 }
 
+void DbgInfoEntry_View::dump(void) const {
+  llvm::outs() << Uuid.toString() << ":"
+               << (P?(P->Uuid.toString()):("")) << ":"
+               << File << ":"
+               << Line << ":"
+               << Col << "\n";
+}
+
 DbgInfoDB::DbgInfoDB(void) {
 }
 
@@ -68,18 +76,20 @@ void DbgInfoDB::loadFile(const std::string &FileName) {
   }
 
   // read file content
-  while (InFile) {
+  while (!(InFile.peek(), InFile.eof())) {
     DbgInfoEntry_View NewEntry;
     UUID P_Uuid;
     std::string File;
-    InFile.read(reinterpret_cast<char *>(&(NewEntry.Uuid)), sizeof(UUID));
-    InFile.read(reinterpret_cast<char *>(&P_Uuid), sizeof(UUID));
-    InFile >> File;
-    NewEntry.File = File;
-    InFile.read(reinterpret_cast<char *>(&(NewEntry.Line)),
-                sizeof(NewEntry.Line));
-    InFile.read(reinterpret_cast<char *>(&(NewEntry.Col)),
-                sizeof(NewEntry.Col));
+    InFile.read((char *)&(NewEntry.Uuid), sizeof(UUID));
+    InFile.read((char *)&P_Uuid, sizeof(UUID));
+    std::size_t FNSize = 0;
+    InFile.read((char *)&FNSize, sizeof(FNSize));
+    char *FNBuf = new char[FNSize];
+    InFile.read(FNBuf, FNSize);
+    NewEntry.File = FNBuf;
+    delete[] FNBuf;
+    InFile.read((char *)&(NewEntry.Line), sizeof(NewEntry.Line));
+    InFile.read((char *)&(NewEntry.Col), sizeof(NewEntry.Col));
     if (InFile.bad() || InFile.fail()) {
       llvm::errs() << "incomplete debug info entry: " << FileName << "\n";
       exit(1);
@@ -95,6 +105,7 @@ void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid) {
   }
   if (P_Uuid.isValid()) {
     if (Entries.count(P_Uuid) == 0) {
+      Entries[P_Uuid] = new DbgInfoEntry_View();
       Entries[P_Uuid]->Uuid = P_Uuid;
     }
     Entries[P_Uuid]->Children.push_back(Entries[Entry.Uuid]);

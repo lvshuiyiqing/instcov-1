@@ -55,13 +55,13 @@ void RecordMgr::processTrace(const std::string &FileName) {
   }
   std::shared_ptr<DISlotTree> Tree;
   // read records
-  while (InFile) {
+  while ((InFile.peek(), !InFile.eof())) {
     UUID Uuid;
     uint64_t bid;
     readOneRecord(InFile, Uuid, bid);
     if (DIDB.Entries.count(Uuid) == 0) {
-      llvm::errs() << "cannot find UUID in debug info database: "
-                   << FileName << "\n";
+      llvm::errs() << "cannot find UUID in debug info database!!\n"
+                   << "did you run the program again after recompiling?\n";
       exit(1);
     }
     DbgInfoEntry_View *Node = DIDB.Entries[Uuid];

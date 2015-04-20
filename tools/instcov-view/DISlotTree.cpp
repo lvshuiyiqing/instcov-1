@@ -67,10 +67,10 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
                               const DbgInfoEntry_View *Node,
                               uint64_t depth) const {
   for (uint64_t i = 0; i < depth; ++i) {
-    OS << "  ";
+    OS << "--";
   }
   OS << std::hex << Node->Uuid.high << Node->Uuid.low
-     << ":";
+     << ":" << std::dec << Node->Line << ":" << Node->Col << ":";
   if (Records.count(Node)) {
     OS << Records.find(Node)->second;
   } else {
