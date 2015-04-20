@@ -41,7 +41,9 @@ instcov. The code will be injected with profiling code:
 
 
 
-## Using the scripts Alternatively, you can use the wrapper scripts shipped with
+## Using the scripts
+
+Alternatively, you can use the wrapper scripts shipped with
 this package. [[ You need to customize the directories in the scripts before using
 them. ]] The descriptions for the scripts are as follows:
 
