@@ -37,6 +37,12 @@ struct UUID {
     ss << std::hex << "0x" << high << "ull, 0x" << low << "ull";
     return ss.str();
   }
+
+  std::string toString(void) const {
+    std::stringstream ss;
+    ss << std::hex << high << low;
+    return ss.str();
+  }
  public:
   uint64_t high;
   uint64_t low;

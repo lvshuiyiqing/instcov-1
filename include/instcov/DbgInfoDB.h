@@ -31,6 +31,7 @@ class DbgInfoEntry_View {
 
  public:
   DbgInfoEntry_View *toRoot(void);
+  void dump(void);
   
  public:
   UUID Uuid;
