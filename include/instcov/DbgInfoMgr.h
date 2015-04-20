@@ -21,6 +21,7 @@
 #include "instcov/uuid.h"
 #include <vector>
 #include <map>
+#include <set>
 #include <string>
 
 namespace clang {
@@ -68,7 +69,8 @@ class DbgInfoMgr {
 
  private:
   std::map<const clang::Stmt *, DbgInfoEntry> DbgInfo;
-  std::vector<const clang::Stmt *> StoreOrder;
+  std::vector<const clang::Stmt *> QueueOrder;
+  std::set<const clang::Stmt *> Queued;
   llvm::raw_fd_ostream *File;
 };
 }

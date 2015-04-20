@@ -47,8 +47,9 @@ void DbgInfoMgr::registerStmt(const Stmt *s, const Stmt *p, const SourceManager 
     llvm::errs() << "this statement already has a parent, why another?\n";
     exit(1);
   }
-  if (DbgInfo.count(s) == 0) {
-    StoreOrder.push_back(s);
+  if (Queued.count(s) == 0) {
+    QueueOrder.push_back(s);
+    Queued.insert(s);
   }
   DbgInfo[s].P = p;
   DbgInfo[p].Children.push_back(s);
@@ -60,9 +61,9 @@ void DbgInfoMgr::registerStmt(const Stmt *s, const Stmt *p, const SourceManager 
   }
   if (p && !DbgInfo[p].Uuid.isValid()) {
     DbgInfo[p].Uuid = genUUID();
-    DbgInfo[s].File = SM.getFilename(p->getLocStart());
-    DbgInfo[s].Line = SM.getSpellingLineNumber(p->getLocStart());
-    DbgInfo[s].Col = SM.getSpellingColumnNumber(p->getLocStart());
+    DbgInfo[p].File = SM.getFilename(p->getLocStart());
+    DbgInfo[p].Line = SM.getSpellingLineNumber(p->getLocStart());
+    DbgInfo[p].Col = SM.getSpellingColumnNumber(p->getLocStart());
   }
 }
 
@@ -77,7 +78,7 @@ UUID DbgInfoMgr::getUUID(const Stmt *s) const {
 void DbgInfoMgr::dump(void) {
   File->write(INSTCOV_MAGIC, sizeof(INSTCOV_MAGIC)-1);
   File->write(INSTCOV_VERSION, sizeof(INSTCOV_VERSION)-1);
-  for (auto it = StoreOrder.begin(), ie = StoreOrder.end();
+  for (auto it = QueueOrder.begin(), ie = QueueOrder.end();
        it != ie; ++it) {
     dumpOne(*it);
   }
