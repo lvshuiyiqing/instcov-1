@@ -35,19 +35,9 @@ int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
   RecordMgr RM;
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
-    std::ifstream InFile(it->c_str());
-    if (!InFile) {
-      llvm::errs() << "cannot open file: " << *it << "\n";
-      exit(1);
-    }
-    RM.getDIBB().loadFile(InFile);
+    RM.getDIBB().loadFile(*it);
   }
-  std::ifstream TraceFile(TraceFileName.c_str());
-  if (!TraceFile) {
-    llvm::errs() << "cannot open file: " << TraceFileName << "\n";
-    exit(1);
-  }
-  RM.processTrace(TraceFile);
+  RM.processTrace(TraceFileName);
   std::ofstream OutFile(OutputFileName.c_str());
   if (!OutFile) {
     llvm::errs() << "cannot open output file: " << OutputFileName << "\n";

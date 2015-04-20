@@ -16,7 +16,7 @@
 #define INSTCOV_RECORDMGR_H_
 
 #include <vector>
-#include <iostream>
+#include <string>
 #include "instcov/DbgInfoDB.h"
 #include "instcov/DISlotTree.h"
 #include "llvm/Support/raw_ostream.h"
@@ -36,7 +36,7 @@ class RecordMgr {
   std::vector<std::shared_ptr<DISlotTree> > &getRecordTrees(void) {
     return RecordTrees;
   }
-  void processTrace(std::istream &InFile);
+  void processTrace(const std::string &FileName);
 
   void dump(std::ostream &OS) const;
   

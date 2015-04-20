@@ -18,7 +18,7 @@
 
 #include <vector>
 #include <map>
-#include <iostream>
+#include <string>
 #include "llvm/ADT/StringRef.h"
 #include "instcov/uuid.h"
 
@@ -51,7 +51,7 @@ class DbgInfoDB {
   const DbgInfoDB &operator = (const DbgInfoDB &right);
 
  public:
-  void loadFile(std::istream &InFile);
+  void loadFile(const std::string &FileName);
   bool selfCheck(void) const;
 
  private:

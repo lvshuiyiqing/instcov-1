@@ -43,23 +43,27 @@ DbgInfoDB::~DbgInfoDB(void) {
   }
 }
 
-void DbgInfoDB::loadFile(std::istream &InFile) {
+void DbgInfoDB::loadFile(const std::string &FileName) {
+  std::ifstream InFile(FileName.c_str());
+  if (!InFile) {
+    llvm::errs() << "cannot open file: " << FileName << "\n";
+    exit(1);
+  }
+  
   // read magic
   char Magic[sizeof(INSTCOV_MAGIC)-1];
   char Version[sizeof(INSTCOV_VERSION)-1];
-  if (!InFile) {
-    llvm::errs() << "bad input stream\n";
-    exit(1);
-  }
   InFile.read(Magic, sizeof(INSTCOV_MAGIC)-1);
   if (InFile.fail() || memcmp(INSTCOV_MAGIC, Magic, sizeof(INSTCOV_MAGIC)-1)) {
-    llvm::errs() << "cannot recognize the magic bits in the input stream\n";
+    llvm::errs() << "cannot recognize the magic bits in the input stream: "
+                 << FileName << "\n";
     exit(1);
   }
   InFile.read(Version, sizeof(INSTCOV_VERSION)-1);
   if (InFile.fail() ||
       memcmp(INSTCOV_VERSION, Version, sizeof (INSTCOV_VERSION)-1)) {
-    llvm::errs() << "cannot recognize the version bits in the input stream\n";
+    llvm::errs() << "cannot recognize the version bits in the input stream: "
+                 << FileName << "\n";
     exit(1);
   }
 
@@ -77,7 +81,7 @@ void DbgInfoDB::loadFile(std::istream &InFile) {
     InFile.read(reinterpret_cast<char *>(&(NewEntry.Col)),
                 sizeof(NewEntry.Col));
     if (InFile.bad() || InFile.fail()) {
-      llvm::errs() << "incomplete debug info entry\n";
+      llvm::errs() << "incomplete debug info entry: " << FileName << "\n";
       exit(1);
     }
     registerEntry(NewEntry, P_Uuid);

@@ -34,9 +34,10 @@ void readOneRecord(std::istream &File, UUID &Uuid, uint64_t &bid) {
 }
 }
 
-void RecordMgr::processTrace(std::istream &InFile) {
+void RecordMgr::processTrace(const std::string &FileName) {
+  std::ifstream InFile(FileName.c_str());
   if (!InFile) {
-    llvm::errs() << "bad input stream\n";
+    llvm::errs() << "cannot open file: " << FileName << "\n";
     exit(1);
   }
   // check the magic & version
@@ -44,12 +45,12 @@ void RecordMgr::processTrace(std::istream &InFile) {
   char Version[sizeof(INSTCOV_DUMP_VERSION)-1];
   InFile.read(Magic, sizeof(Magic));
   if (InFile.bad() || memcmp(INSTCOV_DUMP_MAGIC, Magic, sizeof(Magic))) {
-    llvm::errs() << "cannot recognize magic\n";
+    llvm::errs() << "cannot recognize magic: " << FileName << "\n";
     exit(1);
   }
   InFile.read(Version, sizeof(Version));
   if (InFile.bad() || memcmp(INSTCOV_DUMP_VERSION, Version, sizeof(Version))) {
-    llvm::errs() << "cannot recognize version\n";
+    llvm::errs() << "cannot recognize version: " << FileName << "\n";
     exit(1);
   }
   std::shared_ptr<DISlotTree> Tree;
@@ -59,7 +60,8 @@ void RecordMgr::processTrace(std::istream &InFile) {
     uint64_t bid;
     readOneRecord(InFile, Uuid, bid);
     if (DIDB.Entries.count(Uuid) == 0) {
-      llvm::errs() << "cannot find UUID in debug info database\n";
+      llvm::errs() << "cannot find UUID in debug info database: "
+                   << FileName << "\n";
       exit(1);
     }
     DbgInfoEntry_View *Node = DIDB.Entries[Uuid];
