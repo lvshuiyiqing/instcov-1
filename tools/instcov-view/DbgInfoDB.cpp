@@ -68,6 +68,14 @@ void DbgInfoDB::loadFile(const std::string &FileName) {
     exit(1);
   }
   InFile.read(Version, sizeof(INSTCOV_VERSION)-1);
+  uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding)
+      - (sizeof(INSTCOV_MAGIC)-1 + sizeof(INSTCOV_VERSION)-1)
+      % sizeof(Padding);
+  if (PaddingSize) {
+    InFile.read((char *)&Padding, PaddingSize);
+  }
   if (InFile.fail() ||
       memcmp(INSTCOV_VERSION, Version, sizeof (INSTCOV_VERSION)-1)) {
     llvm::errs() << "cannot recognize the version bits in the input stream: "
@@ -88,6 +96,12 @@ void DbgInfoDB::loadFile(const std::string &FileName) {
     InFile.read(FNBuf, FNSize);
     NewEntry.File = FNBuf;
     delete[] FNBuf;
+    uint64_t Padding = 0;
+    std::size_t PaddingSize =
+        sizeof(Padding) - (sizeof(FNSize) + FNSize) % sizeof(Padding);
+    if (PaddingSize) {
+      InFile.read((char *)&Padding, PaddingSize);
+    }
     InFile.read((char *)&(NewEntry.Line), sizeof(NewEntry.Line));
     InFile.read((char *)&(NewEntry.Col), sizeof(NewEntry.Col));
     if (InFile.bad() || InFile.fail()) {

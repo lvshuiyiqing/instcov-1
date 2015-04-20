@@ -29,8 +29,8 @@ const char INSTCOV_VERSION[] = "1";
 
 DbgInfoMgr::DbgInfoMgr(StringRef MainFileName) {
   std::error_code EC;
-  StringRef DbgFileName = MainFileName.str() + ".dbginfo";
-  File = new raw_fd_ostream(DbgFileName, EC, llvm::sys::fs::F_None);
+  std::string DbgFileName = MainFileName.str() + ".dbginfo";
+  File.reset(new raw_fd_ostream(DbgFileName, EC, llvm::sys::fs::F_None));
   if (EC) {
     llvm::errs() << "cannot open debug info file, exiting\n";
     exit(1);
@@ -39,45 +39,42 @@ DbgInfoMgr::DbgInfoMgr(StringRef MainFileName) {
 
 DbgInfoMgr::~DbgInfoMgr(void) {
   dump();
-  delete File;
 }
 
 void DbgInfoMgr::registerStmt(const Stmt *s, const Stmt *p, const SourceManager &SM) {
-  if (DbgInfo.count(s) && DbgInfo[s].P != nullptr) {
-    llvm::errs() << "this statement already has a parent, why another?\n";
+  if (UuidInfo.count(s)) {
+    llvm::errs() << "this statement is already registered, why another?\n";
     exit(1);
   }
-  if (Queued.count(s) == 0) {
-    QueueOrder.push_back(s);
-    Queued.insert(s);
-  }
-  DbgInfo[s].P = p;
-  DbgInfo[p].Children.push_back(s);
-  if (!DbgInfo[s].Uuid.isValid()) {
-    DbgInfo[s].Uuid = genUUID();
-    DbgInfo[s].File = SM.getFilename(s->getLocStart());
-    DbgInfo[s].Line = SM.getSpellingLineNumber(s->getLocStart());
-    DbgInfo[s].Col = SM.getSpellingColumnNumber(s->getLocStart());
-  }
-  if (p && !DbgInfo[p].Uuid.isValid()) {
-    DbgInfo[p].Uuid = genUUID();
-    DbgInfo[p].File = SM.getFilename(p->getLocStart());
-    DbgInfo[p].Line = SM.getSpellingLineNumber(p->getLocStart());
-    DbgInfo[p].Col = SM.getSpellingColumnNumber(p->getLocStart());
-  }
+  ParentInfo[s] = p;
+  UuidInfo[s] = genUUID();
+  PresumedLoc PLoc = SM.getPresumedLoc(s->getLocStart());
+  DbgInfo[s].File = PLoc.getFilename();
+  DbgInfo[s].Line = PLoc.getLine();
+  DbgInfo[s].Col = PLoc.getColumn();
+  QueueOrder.push_back(s);
 }
 
 UUID DbgInfoMgr::getUUID(const Stmt *s) const {
-  if (DbgInfo.count(s) == 0) {
+  auto it = UuidInfo.find(s);
+  if (it == UuidInfo.end()) {
     llvm::errs() << "this statement has not been registered\n";
     exit(1);
   }
-  return DbgInfo.find(s)->second.Uuid;
+  return it->second;
 }
 
 void DbgInfoMgr::dump(void) {
   File->write(INSTCOV_MAGIC, sizeof(INSTCOV_MAGIC)-1);
   File->write(INSTCOV_VERSION, sizeof(INSTCOV_VERSION)-1);
+  const uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding)
+      - (sizeof(INSTCOV_MAGIC)-1 + sizeof(INSTCOV_VERSION)-1)
+      % sizeof(Padding);
+  if (PaddingSize) {
+    File->write((const char *)&Padding, PaddingSize);
+  }
   for (auto it = QueueOrder.begin(), ie = QueueOrder.end();
        it != ie; ++it) {
     dumpOne(*it);
@@ -85,9 +82,9 @@ void DbgInfoMgr::dump(void) {
 }
 
 void DbgInfoMgr::dumpOne(const Stmt *s) {
-  File->write((const char*)&(DbgInfo[s].Uuid), sizeof(UUID));
-  if (DbgInfo[s].P) {
-    File->write((const char*)&(DbgInfo[DbgInfo[s].P].Uuid), sizeof(UUID));
+  File->write((const char*)&(UuidInfo[s]), sizeof(UUID));
+  if (const Stmt *P = ParentInfo[s]) {
+    File->write((const char*)&(UuidInfo[P]), sizeof(UUID));
   } else {
     UUID EmptyUuid;
     File->write((const char*)&EmptyUuid, sizeof(UUID));
@@ -95,6 +92,12 @@ void DbgInfoMgr::dumpOne(const Stmt *s) {
   std::size_t FNSize = DbgInfo[s].File.size()+1;
   File->write((const char *)&FNSize, sizeof(FNSize));
   File->write(DbgInfo[s].File.c_str(), FNSize);
+  const uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding) - (sizeof(FNSize) + FNSize) % sizeof(Padding);
+  if (PaddingSize) {
+    File->write((const char*)&Padding, PaddingSize);
+  }
   File->write((const char*)&DbgInfo[s].Line, sizeof(DbgInfoEntry::Line));
   File->write((const char*)&DbgInfo[s].Col, sizeof(DbgInfoEntry::Col));
 }

@@ -33,20 +33,14 @@ namespace instcov {
 class DbgInfoEntry {
  public:
   DbgInfoEntry(void)
-      : S(nullptr), P(nullptr), Line(0), Col(0) {}
-  DbgInfoEntry(const clang::Stmt *s, const clang::Stmt *p,
-               llvm::StringRef file, unsigned line, unsigned col,
-               instcov::UUID uuid)
-      : S(s), P(p), File(file), Line(line), Col(col), Uuid(uuid) {}
-      
+      : Line(0), Col(0) {}
+  DbgInfoEntry(const std::string &file, unsigned line, unsigned col)
+      : File(file), Line(line), Col(col) {}
+  
  public:
-  const clang::Stmt *S;  // this stmt/expr
-  const clang::Stmt *P;  // parent
-  std::vector<const clang::Stmt *> Children;
   std::string File;
   uint64_t Line;
   uint64_t Col;
-  instcov::UUID Uuid;
 };
 
 class DbgInfoMgr {
@@ -69,9 +63,10 @@ class DbgInfoMgr {
 
  private:
   std::map<const clang::Stmt *, DbgInfoEntry> DbgInfo;
+  std::map<const clang::Stmt *, instcov::UUID> UuidInfo;
+  std::map<const clang::Stmt *, const clang::Stmt *> ParentInfo;
   std::vector<const clang::Stmt *> QueueOrder;
-  std::set<const clang::Stmt *> Queued;
-  llvm::raw_fd_ostream *File;
+  std::auto_ptr<llvm::raw_fd_ostream> File;
 };
 }
 

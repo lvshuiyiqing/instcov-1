@@ -60,6 +60,14 @@ static class InstCovLogger {
   void LogMagic(void) {
     TraceFile.write(INSTCOV_DUMP_MAGIC, sizeof(INSTCOV_DUMP_MAGIC)-1);
     TraceFile.write(INSTCOV_DUMP_VERSION, sizeof(INSTCOV_DUMP_VERSION)-1);
+    const uint64_t Padding = 0;
+    std::size_t PaddingSize =
+        sizeof(Padding)
+        - (sizeof(INSTCOV_DUMP_MAGIC) - 1 + sizeof(INSTCOV_DUMP_VERSION) - 1)
+        % sizeof(Padding);
+    if (PaddingSize) {
+      TraceFile.write((char *)&Padding, PaddingSize);
+    }
   }
   
   void LogText(uint64_t id_high, uint64_t id_low, uint64_t bid) {
@@ -68,9 +76,9 @@ static class InstCovLogger {
   }
 
   void LogBinary(uint64_t id_high, uint64_t id_low, uint64_t bid) {
-    TraceFile.write((char*)&id_high, sizeof(id_high));
-    TraceFile.write((char*)&id_low, sizeof(id_low));
-    TraceFile.write((char*)&bid, sizeof(bid));
+    TraceFile.write((char *)&id_high, sizeof(id_high));
+    TraceFile.write((char *)&id_low, sizeof(id_low));
+    TraceFile.write((char *)&bid, sizeof(bid));
   }
   
   void Log(uint64_t id_high, uint64_t id_low, uint64_t bid) {
