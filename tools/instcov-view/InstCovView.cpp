@@ -37,6 +37,10 @@ int main(int argc, char *argv[]) {
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
     RM.getDIBB().loadFile(*it);
   }
+  if (RM.selfCheck()) {
+    llvm::errs() << "debug information contain circles!\n";
+    exit(1);
+  }
   RM.processTrace(TraceFileName);
   std::ofstream OutFile(OutputFileName.c_str());
   if (!OutFile) {
