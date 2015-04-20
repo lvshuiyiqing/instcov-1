@@ -103,6 +103,7 @@ void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid) {
   if (Entries.count(ThisUuid) == 0) {
     Entries.insert(std::make_pair(ThisUuid, new DbgInfoEntry_View(Entry)));
   } else {
+    Entries[ThisUuid]->P = Entry.P;
     Entries[ThisUuid]->File = Entry.File;
     Entries[ThisUuid]->Line = Entry.Line;
     Entries[ThisUuid]->Col = Entry.Col;
