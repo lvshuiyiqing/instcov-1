@@ -43,6 +43,9 @@ DISlotTree::DISlotTree(DbgInfoEntry_View *Root) {
   R = Root;
 }
 
+DISlotTree::~DISlotTree(void) {
+}
+
 void DISlotTree::fill(DbgInfoEntry_View *Node, uint64_t bid) {
   if (Records.count(Node) == 1) {
     llvm::errs() << "record already filled in the tree, why another?\n";
