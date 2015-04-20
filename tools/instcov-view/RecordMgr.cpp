@@ -53,6 +53,15 @@ void RecordMgr::processTrace(const std::string &FileName) {
     llvm::errs() << "cannot recognize version: " << FileName << "\n";
     exit(1);
   }
+
+  uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding)
+      - (sizeof(INSTCOV_DUMP_MAGIC) - 1 + sizeof(INSTCOV_DUMP_VERSION) -1)
+      % sizeof(Padding);
+  if (PaddingSize) {
+    InFile.read((char *)&Padding, PaddingSize);
+  }
   std::shared_ptr<DISlotTree> Tree;
   // read records
   while ((InFile.peek(), !InFile.eof())) {
