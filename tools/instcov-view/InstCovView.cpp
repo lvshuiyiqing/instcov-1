@@ -32,6 +32,7 @@ cl::opt<std::string> OutputFileName("o",
                                     cl::init("parsed_trace.pt"));
                                 
 int main(int argc, char *argv[]) {
+  cl::ParseCommandLineOptions(argc, argv);
   RecordMgr RM;
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
     std::ifstream InFile(it->c_str());
