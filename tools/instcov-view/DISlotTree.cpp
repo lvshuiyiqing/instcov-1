@@ -16,9 +16,12 @@
 #include <stack>
 #include "instcov/DISlotTree.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
 using namespace instcov;
+
+extern cl::opt<std::string> DumpFormat;
 
 namespace {
 int64_t findNumNodes(const DbgInfoEntry_View *Root) {
@@ -69,12 +72,34 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
   for (uint64_t i = 0; i < depth; ++i) {
     OS << "--";
   }
-  OS << std::hex << Node->Uuid.high << Node->Uuid.low
-     << ":" << std::dec << Node->Line << ":" << Node->Col << ":";
-  if (Records.count(Node)) {
-    OS << Records.find(Node)->second;
-  } else {
-    OS << "NA";
+  for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
+    switch (DumpFormat[i]) {
+      case 'u':
+        OS << std::hex << Node->Uuid.high << Node->Uuid.low << std::dec;
+        break;
+      case 's':
+        OS << Node->Sid;
+        break;
+      case 'l':
+        OS << Node->Line;
+        break;
+      case 'c':
+        OS << Node->Col;
+        break;
+      case 'f':
+        OS << Node->File;
+        break;
+      case 'b':
+        if (Records.count(Node)){
+          OS << Records.find(Node)->second;
+        } else {
+          OS << "NA";
+        }
+        break;
+      default:
+        OS << DumpFormat[i];
+        break;
+    }
   }
   OS << "\n";
   for (auto it = Node->Children.begin(), ie = Node->Children.end();
