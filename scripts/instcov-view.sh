@@ -1,3 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-/Users/zzq/llvm/3.6/build/bin/instcov-view $@
+rpath=`dirname $0`
+source ${rpath}/instcov_env
+
+${INSTCOV_BIN_PATH}/instcov-view $@
