@@ -11,3 +11,9 @@ target_link_libraries(instcov
   clangTooling
   clangBasic
   )
+
+if (NOT APPLE)
+  target_link_libraries(instcov
+    uuid
+    )
+endif()
