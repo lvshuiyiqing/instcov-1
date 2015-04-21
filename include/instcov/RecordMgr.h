@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 #include "instcov/DbgInfoDB.h"
 #include "instcov/DISlotTree.h"
 #include "llvm/Support/raw_ostream.h"
