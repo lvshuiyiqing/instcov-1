@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 VER=`cat VERSION`
-
+PLATFORM=`uname -s`
+MACHINE=`uname -m`
 rm -rf instcov-dist
 
 mkdir -p instcov-dist
@@ -16,4 +17,4 @@ cp -r ./tests instcov-dist
 cp -r ./scripts instcov-dist
 cp README.md instcov-dist
 
-tar -czf instcov-dist_${VER}.tar.gz instcov-dist
+tar -czf instcov-dist_${VER}_${PLATFORM}_${MACHINE}.tar.gz instcov-dist
