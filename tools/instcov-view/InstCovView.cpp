@@ -29,6 +29,8 @@ cl::list<std::string> FileNames(cl::Positional,
                                 cl::Required);
 cl::opt<std::string> OutputFileName("o",
                                     cl::value_desc("output file name"),
+                                    cl::desc("Specify the output file name, the \
+default is \"parsed_trace.pt\""),
                                     cl::init("parsed_trace.pt"));
                                 
 int main(int argc, char *argv[]) {
