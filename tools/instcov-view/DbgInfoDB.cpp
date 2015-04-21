@@ -115,7 +115,7 @@ void DbgInfoDB::loadFile(const std::string &FileName) {
 void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid) {
   UUID ThisUuid = Entry.Uuid;
   if (Entries.count(ThisUuid) == 0) {
-    Entries.insert(std::make_pair(ThisUuid, new DbgInfoEntry_View(ThisUuid)));
+    Entries[ThisUuid] = new DbgInfoEntry_View(ThisUuid, Entries.size()+1);
   }
   if (Entries[ThisUuid]->isSet) {
     llvm::errs() << "this entry already appeared once, why another?"
@@ -129,7 +129,7 @@ void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid) {
   Entries[ThisUuid]->isSet = true;
   if (P_Uuid.isValid()) {
     if (Entries.count(P_Uuid) == 0) {
-      Entries[P_Uuid] = new DbgInfoEntry_View(P_Uuid);
+      Entries[P_Uuid] = new DbgInfoEntry_View(P_Uuid, Entries.size()+1);
     }
     Entries[P_Uuid]->Children.push_back(Entries[Entry.Uuid]);
     Entries[ThisUuid]->P = Entries[P_Uuid];
