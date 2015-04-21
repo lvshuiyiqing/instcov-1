@@ -7,8 +7,14 @@ source code using clang::Rewriter.
 
 The current implementation works with Clang 3.6.
 
-## Implementation Choices Theoretically, there are three possible implementation
-strategies:
+## Prerequisites
+
+Since InstCov uses uuid, you need to install uuid-dev in linux-based
+environments.
+
+## Implementation choices
+
+Theoretically, there are three possible implementation strategies:
 
 * Source-to-source transformation, which means to insert new text into the
 original source code;
