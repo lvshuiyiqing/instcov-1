@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-INSTCOV_INCLUDE_DIR=/Users/zzq/llvm/3.6/instcov/runtime/include
-INSTCOV_LIBRARY_DIR=/Users/zzq/llvm/3.6/build/lib
+rpath=`dirname $0`
+source ${rpath}/instcov_env
 
-#LDFLAGS=$LDFLAGS 
-
-clang $@ -L${INSTCOV_LIBRARY_DIR} -linstcov_rt -lstdc++
-
+clang $@ -L${INSTCOV_LIBRARY_PATH} -linstcov_rt -lstdc++

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-INSTCOV_RT_PATH=/Users/zzq/llvm/3.6/instcov/runtime/include/
+rpath=`dirname $0`
+source ${rpath}/instcov_env
 
-/Users/zzq/llvm/3.6/build/bin/instcov \
-    $@ -- clang -I $INSTCOV_RT_PATH
+${INSTCOV_BIN_PATH}/instcov $@ --
