@@ -15,11 +15,7 @@
 #ifndef INSTCOV_RT_H_
 #define INSTCOV_RT_H_
 
-#ifdef __cplusplus
-#include <cstdint>
-#else  // __cplusplus
 #include <stdint.h>
-#endif  // __cplusplus
 
 #ifdef __cplusplus
 extern "C" {
