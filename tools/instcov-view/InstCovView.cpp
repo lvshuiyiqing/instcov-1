@@ -41,8 +41,8 @@ cl::opt<std::string> DumpFormat(
              "u: uuid, s: simplified id, l: line number, c: column number,\n"
              "f: file name, b: branch id.\n"
              "Other characters will be print verbosely."
-             "The default format is \"s:b\t(l:c:f)\""),
-    cl::init("s:b\t(l:c:f)"));
+             "The default format is \"s:b (l:c:f)\""),
+    cl::init("s:b (l:c:f)"));
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
