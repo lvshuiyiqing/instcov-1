@@ -48,7 +48,7 @@ struct UUID {
   uint64_t low;
 };
 
-UUID genUUID(void) {
+inline UUID genUUID(void) {
   UUID result;
 #ifdef _WIN32
   UuidCreate(reinterpret_cast<::UUID *>(&result));
@@ -58,7 +58,7 @@ UUID genUUID(void) {
   return result;
 }
 
-bool operator < (const instcov::UUID &left, const instcov::UUID &right) {
+inline bool operator < (const instcov::UUID &left, const instcov::UUID &right) {
   if (left.high < right.high) {
     return true;
   }
