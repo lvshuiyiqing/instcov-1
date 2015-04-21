@@ -27,10 +27,10 @@ namespace instcov {
 class DbgInfoEntry_View {
  public:
   DbgInfoEntry_View(void)
-      : P(0), Line(0), Col(0), isSet(false) {}
+      : Sid(0), P(0), Line(0), Col(0), isSet(false) {}
 
-  DbgInfoEntry_View(UUID uuid)
-      : Uuid(uuid), P(0), Line(0), Col(0), isSet(false) {}
+  DbgInfoEntry_View(UUID uuid, uint64_t sid)
+      : Uuid(uuid), Sid(sid), P(0), Line(0), Col(0), isSet(false) {}
   
  public:
   DbgInfoEntry_View *toRoot(void);
@@ -38,6 +38,7 @@ class DbgInfoEntry_View {
   
  public:
   UUID Uuid;
+  uint64_t Sid;
   std::vector<DbgInfoEntry_View *> Children;
   DbgInfoEntry_View *P;
   std::string File;
