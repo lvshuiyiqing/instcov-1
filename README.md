@@ -1,9 +1,18 @@
 # InstCov README
 
-## Introduction InstCov is a Clang-based instrumentation tool for branch
-coverage and MCDC coverage recording.
+## Introduction
 
-## Basic Usage To use the tool, you need to follow these steps:
+InstCov is a Clang-based instrumentation tool for branch coverage and MCDC
+coverage recording.
+
+## Prerequisites
+
+Since InstCov uses uuid_generate in Linux, please make sure you have
+`libuuid.so` installed, which is included in debian package `uuid-dev`.
+
+## Basic Usage
+
+To use the tool, you need to follow these steps:
 
 1. Preprocess your original source code using `-E` option in the compiler.
 Plus, please also use `-include instcov_rt.h` and proper `-I` option to make the
@@ -45,9 +54,9 @@ instcov. The code will be injected with profiling code:
 
 ## Using the scripts
 
-Alternatively, you can use the wrapper scripts shipped with
-this package. [[ You need to customize the directories in the scripts before using
-them. ]] The descriptions for the scripts are as follows:
+Alternatively, you can use the wrapper scripts shipped with this package. **You
+need to customize the directories in script `instcov_env` before using them.**
+The descriptions for the scripts are as follows:
 
 * `prep.sh`: the preprocessor wrapper, it preprocesses the given files,
 including the InstCov runtime header, and dumps `<file>.<extension>` to

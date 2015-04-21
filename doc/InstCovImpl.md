@@ -200,7 +200,7 @@ files, read the trace file, and link the trace entries.
 
 The trace entries are restructured into several tree structures. The root node
 of each tree is a decision. The leaf nodes are conditions. Other non-leaf nodes
-are sub-decisions ([[ sub-decisions are currently not supported]]).
+are sub-decisions ( **sub-decisions are currently not supported** ).
 
 When a new entry is read from the trace file, `instcov-view` goes upwards to find
 the root node, and set up a tree of empty slots. The tree is built according to
