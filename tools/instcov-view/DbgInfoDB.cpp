@@ -115,17 +115,21 @@ void DbgInfoDB::loadFile(const std::string &FileName) {
 void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid) {
   UUID ThisUuid = Entry.Uuid;
   if (Entries.count(ThisUuid) == 0) {
-    Entries.insert(std::make_pair(ThisUuid, new DbgInfoEntry_View(Entry)));
-  } else {
-    Entries[ThisUuid]->P = Entry.P;
-    Entries[ThisUuid]->File = Entry.File;
-    Entries[ThisUuid]->Line = Entry.Line;
-    Entries[ThisUuid]->Col = Entry.Col;
+    Entries.insert(std::make_pair(ThisUuid, new DbgInfoEntry_View(ThisUuid)));
   }
+  if (Entries[ThisUuid]->isSet) {
+    llvm::errs() << "this entry already appeared once, why another?"
+                 << ThisUuid.toString() << "\n";
+    exit(1);
+  }
+  Entries[ThisUuid]->P = Entry.P;
+  Entries[ThisUuid]->File = Entry.File;
+  Entries[ThisUuid]->Line = Entry.Line;
+  Entries[ThisUuid]->Col = Entry.Col;
+  Entries[ThisUuid]->isSet = true;
   if (P_Uuid.isValid()) {
     if (Entries.count(P_Uuid) == 0) {
-      Entries[P_Uuid] = new DbgInfoEntry_View();
-      Entries[P_Uuid]->Uuid = P_Uuid;
+      Entries[P_Uuid] = new DbgInfoEntry_View(P_Uuid);
     }
     Entries[P_Uuid]->Children.push_back(Entries[Entry.Uuid]);
     Entries[ThisUuid]->P = Entries[P_Uuid];
@@ -137,6 +141,14 @@ bool DbgInfoDB::selfCheck(void) const {
   for (auto it = Entries.begin(), ie = Entries.end(); it != ie; ++it) {
     std::set<DbgInfoEntry_View *> ThisVisited;
     DbgInfoEntry_View *Node = it->second;
+    if (!(Node->isSet)) {
+      llvm::errs() << "The location info for this node is missing" <<
+          Node->Uuid.toString() << "\n";
+      exit(1);
+    }
+    if (Visited.count(Node)) {
+      continue;
+    }
     while (Node) {
       if (ThisVisited.count(Node)) {
         return false;

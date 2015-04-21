@@ -27,8 +27,11 @@ namespace instcov {
 class DbgInfoEntry_View {
  public:
   DbgInfoEntry_View(void)
-      : P(0), Line(0), Col(0) {}
+      : P(0), Line(0), Col(0), isSet(false) {}
 
+  DbgInfoEntry_View(UUID uuid)
+      : Uuid(uuid), P(0), Line(0), Col(0), isSet(false) {}
+  
  public:
   DbgInfoEntry_View *toRoot(void);
   void dump(void) const;
@@ -40,6 +43,7 @@ class DbgInfoEntry_View {
   std::string File;
   uint64_t Line;
   uint64_t Col;
+  bool isSet;
 };
 
 class DbgInfoDB {
