@@ -37,15 +37,24 @@ cl::OptionCategory InstCovCategory("InstCov Category");
 
 cl::opt<bool> InstDecisions(
     "inst-decisions",
-    cl::desc("enable decision instrumentation for if/for/while/do"),
+    cl::desc("enable decision instrumentation for if/for/while/do\n"
+             "Default value: true"),
     cl::cat(InstCovCategory),
     cl::init(true));
 
 cl::opt<bool> InstConditions(
     "inst-conditions",
-    cl::desc("enable condition instrumentation for MC/DC.\n\
-The instrumentation may change the program behavior\n\
-if the conditions have side-effects"),
+    cl::desc("enable condition instrumentation for MC/DC.\n"
+             "The instrumentation may change the program behavior\n"
+             "if the conditions have side-effects"
+             "Default value: false"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
+
+cl::opt<bool> InstSwitch(
+    "inst-switch",
+    cl::desc("enable switch instrumentation.\n"
+             "Default value: false\n"),
     cl::cat(InstCovCategory),
     cl::init(false));
                                                                                                                         
