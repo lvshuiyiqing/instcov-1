@@ -140,7 +140,44 @@ The instrumented code will be (we use `0` and `1` for C-compatibility):
 
 ### `switch` statement
 
-`switch` statement recording is currently not supported in InstCov.
+The implementation for `switch` statement recording is a little bit awkward.
+The most difficult part is that the execution can escape to the next switch case
+if the current switch case has no break statements. Therefore, if we only inject
+a `dump()` function at the front of each switch case body, one execution may
+have multiple dumps.
+
+The solution for this is to set up a flag before the switch statement is
+executed. Before dumping a record, we need to check the flag in advance, and
+then flip the flag. Note that the flag name uses the UUID to avoid conflict.
+
+Suppose the original program piece is:
+
+	switch (var) {
+	case value1:
+	case value2:
+		body1;
+	default:
+		body2;
+	}
+
+The instrumented code would be:
+	
+	int flag = 1;
+	switch (var) {
+	case value1:
+	case value2:
+		if (flag == 1) {
+			dump();
+			flag = 0;
+		}
+		body1;
+	default:
+		if (flag == 1) {
+			dump();
+			flag = 0;
+		}
+		body2;
+	}
 
 ### MC/DC instrumentation
 

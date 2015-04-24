@@ -25,8 +25,15 @@ instcov. The code will be injected with profiling code:
 	[clang [compilation args]]`
 
 	For the default option, only branch coverage recording is enabled.  If you
-	want to enable MCDC coverage recording, please add `-inst-conditions`. (You
-	can check the help messages using `instcov --help`.)
+	want to enable MCDC coverage recording, please add
+	`-inst-conditions`.
+
+	Besides, switch statements are not instrumented by default, you can enable
+	this feature by using `-inst-switch`. Note that the branches for `switch`
+	statements are in reverse order of their appearence
+
+	If you have any questions about the arguments, you can check the help
+    messages using `instcov --help`.
 
 	After the running this command, a `.dbginfo` file will generated for each
 	file, containing the debug information for later analysis.
