@@ -3,4 +3,4 @@
 rpath=`dirname $0`
 source ${rpath}/instcov_env
 
-${INSTCOV_BIN_PATH}/instcov $@ --
+${INSTCOV_BIN_PATH}/instcov "$@" --

@@ -30,30 +30,13 @@
 #include "instcov/uuid.h"
 
 extern llvm::cl::opt<bool> InstDecisions;
-
+extern llvm::cl::opt<bool> InstSwitch;
 using namespace clang;
 using namespace instcov;
 
 namespace{
   std::string INSTCOV_FUNC_NAME = "instcov_dump";
-  bool AskYesOrNo(const std::string &Prompt) {
-    char c = 0;
-    while (true) {
-      llvm::errs() << Prompt << ". Yes or no (y/n)?";
-      c = getchar();
-      while (c == ' ' || c == '\t' || c == '\n') {
-        c = getchar();
-      }
-      if (c == 'y') {
-        return true;
-      }
-      if (c == 'n') {
-        return false;
-      }
-    }
-    return false;
-  }
-  
+
   SourceLocation findSemiAfterLocation(Rewriter &R, SourceLocation sl) {
     // llvm::errs() << "finding semicolon after location\n";
     SourceManager &SM = R.getSourceMgr();
@@ -102,15 +85,17 @@ namespace{
   void InstCompoundStmt(CompoundStmt *s, Rewriter &R,
                         UUID uuid, uint64_t bid) {
     std::stringstream ss;
-    ss << "\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", " << bid << ");";
-    R.InsertTextAfter(s->getLBracLoc().getLocWithOffset(1), ss.str());
+    ss << "\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
+       << bid << ");";
+    R.InsertText(s->getLBracLoc().getLocWithOffset(1), ss.str(), true, true);
   }
 
   void InstSingleStmt(Stmt *s, Rewriter &R, UUID uuid, uint64_t bid) {
     std::stringstream ss;
-    ss << "{\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", " << bid << ");\n";
-    R.InsertTextAfter(s->getLocStart(), ss.str());
-    R.InsertTextBefore(FindEndLoc(s, R), "\n}");
+    ss << "{\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
+       << bid << ");\n";
+    R.InsertText(s->getLocStart(), ss.str(), true, true);
+    R.InsertText(FindEndLoc(s, R), "\n}", false, true);
   }
 
   void InstInBlock(Stmt *s, Rewriter &R, UUID uuid, uint64_t bid) {
@@ -124,8 +109,9 @@ namespace{
   void InstAfterBody(SourceLocation endLoc, Rewriter &R,
                      UUID uuid, uint64_t bid) {
     std::stringstream ss;
-    ss << " \n " << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", " << bid << ");";
-    R.InsertTextBefore(endLoc, ss.str());
+    ss << " \n " << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
+       << bid << ");";
+    R.InsertText(endLoc, ss.str(), false, true);
   }
 }
 
@@ -146,7 +132,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   } else {
     SourceLocation ThenBodyEndLoc = FindEndLoc(Then, TheRewriter);
     InstAfterBody(ThenBodyEndLoc, TheRewriter, uuid, 0);
-    TheRewriter.InsertTextBefore(ThenBodyEndLoc, "else");
+    TheRewriter.InsertText(ThenBodyEndLoc, "else", false, true);
   }
 
   InstInBlock(Then, TheRewriter, uuid, 1);
@@ -186,13 +172,40 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
     return true;
   }
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  TheRewriter.InsertTextAfter(s->getCond()->getLocStart(), "(");
+  TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
   UUID uuid = DIM.getUUID(s);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
      << ", 1), 0)";
-  TheRewriter.InsertTextBefore(s->getRParenLoc(), ss.str());
+  TheRewriter.InsertText(s->getRParenLoc(), ss.str(), false, true);
+  return true;
+}
+
+bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
+  if (!InstSwitch) {
+    return true;
+  }
+  std::stringstream header_ss;
+  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  UUID Uuid = DIM.getUUID(s);
+  header_ss << "int instcov_f" << Uuid.toString() << " = 1;\n";
+  TheRewriter.InsertText(s->getLocStart(), header_ss.str(), true, true);
+  SwitchCase *SC = s->getSwitchCaseList();
+  uint64_t bid = 0;
+  while (SC) {
+    if (!isa<CaseStmt>(SC->getSubStmt())) {
+      std::stringstream ss;
+      ss.clear();
+      ss << "if (instcov_f" << Uuid.toString() << " == 1) {\n"
+         << "  instcov_dump(" << Uuid.toArgString() << ", " << bid++ << ");\n"
+         << "  instcov_f" << Uuid.toString() << " = 0;\n"
+         << "}\n";
+      TheRewriter.InsertText(SC->getSubStmt()->getLocStart(), ss.str(),
+                             true, true);
+    }
+    SC = SC->getNextSwitchCase();
+  }
   return true;
 }
 
