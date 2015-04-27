@@ -311,6 +311,8 @@ On Linux, you need to add `-DLLVM_BUILD_STATIC=True` and
 `-DLIBCLANG_BUILD_STATIC=True` into the `cmake` command.  Besides, the original
 BFD `ld` has a problem (may be a bug for static linking), you can install
 `binutils-gold` to fix it. It is an official linker replacement for `ld`.
+Additionally, please make sure you have `libz-dev` or `zlib1g-dev` installed
+(otherwise an `inflate` undefined error will occur during linking).
 
 ### Adjustmenting CMake variables
 
