@@ -307,12 +307,18 @@ into:
 
 On OS X, it cannot be done.
 
-On Linux, you need to add `-DLLVM_BUILD_STATIC=True` and
-`-DLIBCLANG_BUILD_STATIC=True` into the `cmake` command.  Besides, the original
+On Linux, you need to add `-DLLVM_BUILD_STATIC=OFF` and
+`-DLIBCLANG_BUILD_STATIC=OFF` into the `cmake` command.  Besides, the original
 BFD `ld` has a problem (may be a bug for static linking), you can install
 `binutils-gold` to fix it. It is an official linker replacement for `ld`.
 Additionally, please make sure you have `libz-dev` or `zlib1g-dev` installed
 (otherwise an `inflate` undefined error will occur during linking).
+
+### Cross-compiling for i386 machines on a 64-bit Ubuntu
+
+Since 64-bit Ubuntu does not come with a 32-bit version `libxml2` and
+`uuid-dev`, PLEASE compile the source on a native 32-bit Ubuntu. I did not found
+any solution for the missing 32-bit package.
 
 ### Adjustmenting CMake variables
 
