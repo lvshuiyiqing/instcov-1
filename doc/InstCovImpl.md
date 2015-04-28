@@ -251,7 +251,8 @@ on tackling building issues. Please read carefully.
 
 * `gcc-4.7` or higher or `clang` (in a word, a compiler that supports `c++11`)
 * `cmake` (I guess 3.0 or higher?)
-* `ninja`: a fast build tool similar to `make`
+* `ninja`: a fast build tool similar to `make`. See
+[here](http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html).
 * `uuid-dev` (for Linux): UUID library used by InstCov
 * `libxml2-dev` (for Linux)
 
