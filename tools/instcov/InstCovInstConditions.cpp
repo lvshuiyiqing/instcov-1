@@ -92,7 +92,7 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
 }
 
 void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
-  TheRewriter.InsertTextAfter(e->getLocStart(), "(");
+  TheRewriter.InsertText(e->getLocStart(), "(", true, true);
   std::vector<Expr *> CondExprs = ExtractMCDCLeaves(
       e, TheASTContext);
   for (auto it = CondExprs.begin(), ie = CondExprs.end();
@@ -106,12 +106,12 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
                        PrintingPolicy(TheASTContext.getLangOpts()));
     os << ") ? 1 : 0), ";
     os.flush();
-    TheRewriter.InsertTextAfter(e->getLocStart(), dumper);
+    TheRewriter.InsertText(e->getLocStart(), dumper, true, true);
   }
   SourceLocation endLoc = Lexer::getLocForEndOfToken(
       e->getLocEnd(), 0, TheRewriter.getSourceMgr(),
       TheRewriter.getLangOpts());
-  TheRewriter.InsertTextBefore(endLoc, ")");
+  TheRewriter.InsertText(endLoc, ")", false, true);
 }
 
 void InstCovASTVisitor::MCDCVisitIfStmt(IfStmt *s) {
