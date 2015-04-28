@@ -5,11 +5,6 @@
 InstCov is a Clang-based instrumentation tool for branch coverage and MCDC
 coverage recording.
 
-## Prerequisites
-
-Since InstCov uses uuid_generate in Linux, please make sure you have
-`libuuid.so` installed, which is included in debian package `uuid-dev`.
-
 ## Basic Usage
 
 To use the tool, you need to follow these steps:
