@@ -39,6 +39,7 @@ public:
   bool VisitForStmt(clang::ForStmt *s);
   bool VisitWhileStmt(clang::WhileStmt *s);
   bool VisitDoStmt(clang::DoStmt *s);
+  bool VisitSwitchStmt(clang::SwitchStmt *s);
 
   void MCDCVisitIfStmt(clang::IfStmt *s);
   void MCDCVisitForStmt(clang::ForStmt *s);

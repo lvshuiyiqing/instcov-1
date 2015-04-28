@@ -12,10 +12,10 @@ extension="${file##*.}"
 filename="${file%.*}"
 
 shift 1
-args=$@
+args="$@"
 
 ${rpath}/prep.sh $file
-${rpath}/instcov.sh -inst-conditions ${filename}.i.${extension}
+${rpath}/instcov.sh -inst-conditions -inst-switch ${filename}.i.${extension}
 ${rpath}/ccwraper.sh ${filename}.i.trans.${extension} -o ${filename}
 echo "executing ./${filename} $args"
 ./${filename} $args

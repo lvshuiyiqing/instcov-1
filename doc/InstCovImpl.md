@@ -7,11 +7,6 @@ source code using clang::Rewriter.
 
 The current implementation works with Clang 3.6.
 
-## Prerequisites
-
-Since InstCov uses uuid, you need to install uuid-dev in linux-based
-environments.
-
 ## Implementation choices
 
 Theoretically, there are three possible implementation strategies:
@@ -24,7 +19,7 @@ AST nodes;
 
 * CFG-level instrumentation, which means to insert new statements or basic
 blocks into the CFG. Note that in this solution, the CFG might have broken a
-conditional statment into multiple basic blocks with conditional
+conditional statement into multiple basic blocks with conditional
 jumps. Therefore it may be hard to align the CFG-level jumps with the
 source-level conditional statements.
 
@@ -39,7 +34,7 @@ In our implementation, the following clang classes/methods are very important:
 
 * `ClangTool`: this is used when creating a standalone tool based on libclang;
 
-* `RecursiveASTVisitor`: an infrastructore in libclang, which provides a
+* `RecursiveASTVisitor`: an infrastructure in libclang, which provides a
   mechanism to visit the AST tree recursively;
 
 * `Rewriter`: a class provided by libclang, which is used to insert text into
@@ -63,7 +58,7 @@ language.
 
 
 A notable thing is that, when using `getLocEnd()`, the returned `SourceLocation`
-might not always be the last location of a statemenet. If the statement
+might not always be the last location of a statement. If the statement
 terminates with right brace `}`, then the location will be fine. However if a
 statement terminates with semicolon `;`, then `getLocEnd()` will return the
 beginning of the token before `;`. This is not a desired behavior, so we need to
@@ -140,7 +135,44 @@ The instrumented code will be (we use `0` and `1` for C-compatibility):
 
 ### `switch` statement
 
-`switch` statement recording is currently not supported in InstCov.
+The implementation for `switch` statement recording is a little bit awkward.
+The most difficult part is that the execution can escape to the next switch case
+if the current switch case has no break statements. Therefore, if we only inject
+a `dump()` function at the front of each switch case body, one execution may
+have multiple dumps.
+
+The solution for this is to set up a flag before the switch statement is
+executed. Before dumping a record, we need to check the flag in advance, and
+then flip the flag. Note that the flag name uses the UUID to avoid conflict.
+
+Suppose the original program piece is:
+
+	switch (var) {
+	case value1:
+	case value2:
+		body1;
+	default:
+		body2;
+	}
+
+The instrumented code would be:
+	
+	int flag = 1;
+	switch (var) {
+	case value1:
+	case value2:
+		if (flag == 1) {
+			dump();
+			flag = 0;
+		}
+		body1;
+	default:
+		if (flag == 1) {
+			dump();
+			flag = 0;
+		}
+		body2;
+	}
 
 ### MC/DC instrumentation
 
@@ -208,3 +240,93 @@ the debug information. Each slot needs to be filled with a corresponding trace
 entry. After the slot tree is filled, the total information for a visit to the
 root decision is completed, and is dumped as tree format. Then `instcov-view`
 starts over, reads new entries, build and dumps new slot trees.
+
+## Developer FAQs
+
+Here are some useful tips for building InstCov with LLVM/Clang. It is a little
+bit tedious, but EVERY entry is very important and will save you a lot of time
+on tackling building issues. Please read carefully.
+
+### Prerequisites
+
+* `gcc-4.7` or higher or `clang` (in a word, a compiler that supports `c++11`)
+* `cmake` (I guess 3.0 or higher?)
+* `ninja`: a fast build tool similar to `make`. See
+[here](http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html).
+* `uuid-dev` (for Linux): UUID library used by InstCov
+* `libxml2-dev` (for Linux)
+
+### Setting up your build environment
+
+You need to unpack `llvm` and `clang`, and put `clang` into `llvm/tools`.
+Afterwards, you unpack or clone the source code of `instcov`, and put it into
+`llvm/tools/clang/tools/extra` (another way is to create a soft link using `ln
+-s`). After this, you need to add the following line to
+`llvm/tools/clang/tools/extra/CMakeLists.txt` (or create the file if not exist):
+
+	add_subdirectory(instcov)
+
+Now we need to invoke `cmake` to generate the Makefiles. For me, I prefer an
+out-of-source build. Suppose you are in the root source directory of `llvm`, and
+you want to build in a directory in `build`.
+
+	cd ../
+	mkdir build && cd build
+	cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ../llvm
+	ninja
+
+If you want to save build time, please add `-DLLVM_TARGETS_TO_BUILD="X86"`, so
+that LLVM will only build targets for x86 machines.
+
+### The `llvm` source on my Mac OS X doesn't compile
+
+On OS X, you need to download the `libcxx` and `libcxx-abi` (I'm not sure
+`libcxx-abi` is mandatory) from the LLVM project releases page, unpack them, and
+put them in directory `llvm/projects`.  This is a common issue encountered by
+developers on OS X, but it is rarely discussed on available mailing lists or
+developer communities.
+
+### Building on Ubuntu Linux
+
+You need at least gcc-4.7 to build the source code. If your Ubuntu source does
+not have it, you can add the following PPA to your APT sources:
+
+	deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu YOUR_UBUNTU_VERSION_HERE main 
+	deb-src http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu YOUR_UBUNTU_VERSION_HERE main 
+
+To specify your new compiler for `cmake`, you need to change the following
+command:
+
+	cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ../llvm
+
+into:
+
+	CC=gcc-4.7 CXX=g++-4.7 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ../llvm
+
+
+### Building static clang/llvm/instcov executables
+
+On OS X, it cannot be done.
+
+On Linux, you need to add `-DLLVM_BUILD_STATIC=OFF` and
+`-DLIBCLANG_BUILD_STATIC=OFF` into the `cmake` command.  Besides, the original
+BFD `ld` has a problem (may be a bug for static linking), you can install
+`binutils-gold` to fix it. It is an official linker replacement for `ld`.
+Additionally, please make sure you have `libz-dev` or `zlib1g-dev` installed
+(otherwise an `inflate` undefined error will occur during linking).
+
+### Cross-compiling for i386 machines on a 64-bit Ubuntu
+
+Since 64-bit Ubuntu does not come with a 32-bit version `libxml2` and
+`uuid-dev`, PLEASE compile the source on a native 32-bit Ubuntu. I did not found
+any solution for the missing 32-bit package.
+
+### Adjustmenting CMake variables
+
+Sometimes you need to change some CMake variables and build. There is no need to
+delete everything and run CMake with the new arguments again. You just need to
+run `ccmake ../llvm`, and it will opens up an interactive UI for changing CMake
+variables and reconfigure. After you made changes to some variables, press `c`
+and then `g`. Everything should be ready if your new configurations are correct.
+
+
