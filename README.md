@@ -25,7 +25,9 @@ instcov. The code will be injected with profiling code:
 
 	Besides, switch statements are not instrumented by default, you can enable
 	this feature by using `-inst-switch`. Note that the branches for `switch`
-	statements are in reverse order of their appearence
+	statements are in reverse order of their appearence. Besides, the branch id
+	of `switch` statements start from 2. This is used to distinguish from binary
+	decisions.
 
 	If you have any questions about the arguments, you can check the help
     messages using `instcov --help`.
