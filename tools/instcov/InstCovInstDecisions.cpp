@@ -192,7 +192,7 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
   header_ss << "int instcov_f" << Uuid.toString() << " = 1;\n";
   TheRewriter.InsertText(s->getLocStart(), header_ss.str(), true, true);
   SwitchCase *SC = s->getSwitchCaseList();
-  uint64_t bid = 0;
+  uint64_t bid = 2;
   while (SC) {
     if (!isa<CaseStmt>(SC->getSubStmt())) {
       std::stringstream ss;
