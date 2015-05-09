@@ -70,7 +70,7 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
                               const DbgInfoEntry_View *Node,
                               uint64_t depth) const {
   for (uint64_t i = 0; i < depth; ++i) {
-    OS << "--";
+    OS << "-";
   }
   for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
     switch (DumpFormat[i]) {
