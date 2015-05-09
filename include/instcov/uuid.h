@@ -15,6 +15,7 @@
 #ifndef INSTCOV_UUID_H_
 #define INSTCOV_UUID_H_
 
+#include <tuple>
 #include <sstream>
 #ifdef _WIN32
 #include <Rpc.h>
@@ -22,7 +23,7 @@
 #include <uuid/uuid.h>
 #endif
 
-namespace instcov{
+namespace instcov {
 struct UUID {
  public:
   UUID(void)
@@ -43,6 +44,23 @@ struct UUID {
     ss << std::hex << high << low;
     return ss.str();
   }
+
+  static UUID parseString(const std::string &str) {
+    UUID result;
+    std::stringstream high("0x");
+    std::stringstream low("0x");
+    if (str.size() > 8) {
+      std::size_t pos = str.size() - 8;
+      high << str.substr(0, pos);
+      low << str.substr(pos);
+    } else {
+      low << str;
+    }
+    high >> result.high;
+    low >> result.low;
+    return result;
+  }
+
  public:
   uint64_t high;
   uint64_t low;
@@ -59,13 +77,12 @@ inline UUID genUUID(void) {
 }
 
 inline bool operator < (const instcov::UUID &left, const instcov::UUID &right) {
-  if (left.high < right.high) {
-    return true;
-  }
-  if (left.high > right.high) {
-    return false;
-  }
-  return left.low < right.low;
+  return std::make_tuple(left, right) < std::make_tuple(left, right);
+}
+
+inline bool operator == (const instcov::UUID &left, const instcov::UUID &right)
+{
+  return std::make_tuple(left, right) == std::make_tuple(left, right);
 }
 }
 
