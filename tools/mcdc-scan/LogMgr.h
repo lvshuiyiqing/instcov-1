@@ -17,6 +17,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include <memory>
 #include <vector>
 #include "instcov/uuid.h"
@@ -25,7 +26,8 @@ namespace instcov {
 
 class LogEntry {
  public:
-  LogEntry(void);
+  LogEntry(void)
+      : FID(-1), RID(-1) {}
 
   std::map<UUID, uint64_t> Conditions;
   std::pair<UUID, uint64_t> Decision;
@@ -45,6 +47,18 @@ class LogMgr {
  public:
   void loadFile(const std::string &fileName);
 
+  const std::vector<std::string> &getFileNames() const {
+    return FileNames;
+  }
+  
+  const std::vector<LogEntry> &getLogEntries() const {
+    return LogEntries;
+  }
+  
+  const std::map<UUID, std::set<UUID> > &getChildren() const {
+    return Children;
+  }
+  
  private:
   std::vector<std::string> FileNames;
   std::vector<LogEntry> LogEntries;

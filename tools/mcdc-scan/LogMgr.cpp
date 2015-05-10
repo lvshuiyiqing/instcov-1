@@ -13,7 +13,8 @@
 //===----------------------------------------------------------------------===//
 
 #include <tuple>
-#inlcude <fstream>
+#include <stack>
+#include <fstream>
 #include <iostream>
 #include "LogMgr.h"
 
@@ -34,13 +35,13 @@ void eatOrQuit(std::istream &In, const std::string &str) {
 }
 
 std::tuple<unsigned, UUID, uint64_t> parseLine(std::istream &In, bool &success) {
-  unsinged depth = 0;
+  unsigned depth = 0;
   UUID Uuid;
   uint64_t Bid = 0;
   std::string line;
-  if (!std::getline(InFile, line)) {
+  if (!std::getline(In, line)) {
     success = false;  // last line
-    return;
+    return std::make_tuple(depth, Uuid, Bid);
   }
   std::stringstream ss;
   while (ss.peek() == '-') {
@@ -54,7 +55,7 @@ std::tuple<unsigned, UUID, uint64_t> parseLine(std::istream &In, bool &success) 
   }
   std::string strUUID;
   getline(ss, strUUID);
-  Uuid = parseString(strUUID);
+  Uuid = UUID::parseString(strUUID);
   eatOrQuit(ss, ":");
   ss >> Bid;
   return std::make_tuple(depth, Uuid, Bid);
@@ -78,7 +79,8 @@ void LogMgr::loadFile(const std::string &fileName) {
   std::stack<std::vector<std::pair<UUID, uint64_t> > > S;
   S.push(std::vector<std::pair<UUID, uint64_t> >());
   bool success = true;
-  while (auto PL = parseLine(InFile, success)) {
+  while (true) {
+    auto PL = parseLine(InFile, success);
     if (!success) {
       break;
     }
@@ -87,8 +89,8 @@ void LogMgr::loadFile(const std::string &fileName) {
     uint64_t Bid;
     std::tie(depth, Uuid, Bid) = PL;
     if (depth+1 == S.size()) {
-      PL.top().push_back(std::makr_pair(Uuid, Bid));
-      PL.push(std::vector<std::pair<UUID, uint64_t>());
+      S.top().push_back(std::make_pair(Uuid, Bid));
+      S.push(std::vector<std::pair<UUID, uint64_t> >());
       continue;
     }
     while (depth < S.size()) {
@@ -98,12 +100,14 @@ void LogMgr::loadFile(const std::string &fileName) {
         LogEntry Entry;
         Entry.FID = FileNames.size();
         Entry.RID = LogEntries.size();
-        Entry.Conditions.assign(S.top().begin(), S.top().end());
+        Entry.Conditions.clear();
+        Entry.Conditions.insert(S.top().begin(), S.top().end());
+        for (auto it = S.top().begin(), ie = S.top().end(); it != ie; ++it) {
+          Children[Entry.Decision.first].insert(it->first);
+        }
         S.pop();
-        Entry.Decision = S.top.back();
+        Entry.Decision = S.top().back();
         LogEntries.push_back(Entry);
-        Children[Entry.Decision.first].insert(
-            Entry.Conditions.begin(), Entry.Conditions.end());
       }
     }
   }
