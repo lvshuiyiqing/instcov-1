@@ -98,7 +98,7 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
   for (auto it = CondExprs.begin(), ie = CondExprs.end();
        it != ie; ++it) {
     DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
-    UUID uuid = DIM.getUUID(*it);
+    UUID_t uuid = DIM.getUUID(*it);
     std::string dumper;
     llvm::raw_string_ostream os(dumper);
     os << "instcov_dump(" << uuid.toArgString() << ", (";

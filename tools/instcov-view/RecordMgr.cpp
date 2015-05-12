@@ -24,7 +24,7 @@ namespace {
 const char INSTCOV_DUMP_MAGIC[] = "INSTCOV_DUMP";
 const char INSTCOV_DUMP_VERSION[] = "1";
 
-void readOneRecord(std::istream &File, UUID &Uuid, uint64_t &bid) {
+void readOneRecord(std::istream &File, UUID_t &Uuid, uint64_t &bid) {
   File.read(reinterpret_cast<char *>(&Uuid), sizeof(Uuid));
   File.read(reinterpret_cast<char *>(&bid), sizeof(bid));
   if (File.bad()) {
@@ -65,7 +65,7 @@ void RecordMgr::processTrace(const std::string &FileName) {
   std::shared_ptr<DISlotTree> Tree;
   // read records
   while ((InFile.peek(), !InFile.eof())) {
-    UUID Uuid;
+    UUID_t Uuid;
     uint64_t bid;
     readOneRecord(InFile, Uuid, bid);
     if (DIDB.Entries.count(Uuid) == 0) {

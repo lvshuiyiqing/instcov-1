@@ -29,8 +29,8 @@ class LogEntry {
   LogEntry(void)
       : FID(-1), RID(-1) {}
 
-  std::map<UUID, uint64_t> Conditions;
-  std::pair<UUID, uint64_t> Decision;
+  std::map<UUID_t, uint64_t> Conditions;
+  std::pair<UUID_t, uint64_t> Decision;
   unsigned FID;
   unsigned RID;
 };
@@ -55,14 +55,14 @@ class LogMgr {
     return LogEntries;
   }
   
-  const std::map<UUID, std::set<UUID> > &getChildren() const {
+  const std::map<UUID_t, std::set<UUID_t> > &getChildren() const {
     return Children;
   }
   
  private:
   std::vector<std::string> FileNames;
   std::vector<LogEntry> LogEntries;
-  std::map<UUID, std::set<UUID> > Children;
+  std::map<UUID_t, std::set<UUID_t> > Children;
 };
 }
 

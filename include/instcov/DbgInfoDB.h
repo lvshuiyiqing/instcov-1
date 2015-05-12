@@ -29,7 +29,7 @@ class DbgInfoEntry_View {
   DbgInfoEntry_View(void)
       : Sid(0), P(0), Line(0), Col(0), isSet(false) {}
 
-  DbgInfoEntry_View(UUID uuid, uint64_t sid)
+  DbgInfoEntry_View(UUID_t uuid, uint64_t sid)
       : Uuid(uuid), Sid(sid), P(0), Line(0), Col(0), isSet(false) {}
   
  public:
@@ -37,7 +37,7 @@ class DbgInfoEntry_View {
   void dump(void) const;
   
  public:
-  UUID Uuid;
+  UUID_t Uuid;
   uint64_t Sid;
   std::vector<DbgInfoEntry_View *> Children;
   DbgInfoEntry_View *P;
@@ -61,10 +61,10 @@ class DbgInfoDB {
   bool selfCheck(void) const;
 
  private:
-  void registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid);
+  void registerEntry(const DbgInfoEntry_View &Entry, UUID_t &P_Uuid);
   
  public:
-  std::map<UUID, DbgInfoEntry_View *> Entries;
+  std::map<UUID_t, DbgInfoEntry_View *> Entries;
 };
 }
 
