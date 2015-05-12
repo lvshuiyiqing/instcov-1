@@ -257,6 +257,23 @@ on tackling building issues. Please read carefully.
 * `libxml2-dev` (for Linux)
 * `MSVC 2012` or later (for Windows)
 
+### Easy set up
+
+We have provided a easy set up script. Use `set_up_cmake.sh` in Linux/OS X
+and `set_up_cmake.bat` in Windows. The usage is:
+
+    <path-to-set-up-cmake> <x86|x64> <static|dynamic> <llvm-root-dir>
+
+Argument `<x86|x64>` specifies compiling 32-bit or 64-bit executables.
+Argument `<static|dynamic>` specifies linking with static or dynamic runtime library
+(must be `dynamic` for OS X). Argument `<llvm-root-dir>` specifies the root directory
+of llvm.
+    
+For Windows, you can call the script with only the 1st argument. The environmental
+variables will be set, and the makefiles won't be generated. This is quite convenient
+since you have to set up the variables each time you open a new command line window
+before building.
+
 ### Setting up your build environment
 
 You need to unpack `llvm` and `clang`, and put `clang` into `llvm/tools`.
@@ -283,6 +300,12 @@ On Windows, you might need to run `<path-to-visual-studio>/VC/vcvarsall.bat` to
 set your environmental variables correct before running `cmake` and `ninja`.
 To perform a 32-bit build, call `vcvarsall.bat` with argument `x86`.
 To perform a 64-bit build, call `vcvarsall.bat` with argument `amd64`.
+By default, the platform toolset in VS 2012+ is set to `vc110` or so. The
+resulting executable won't be compatible to Windows XP. Please reference
+[here](http://blogs.msdn.com/b/vcblog/archive/2012/10/08/10357555.aspx).
+Alternatively, you can use the Visual Studio generator in `cmake`.
+In this case, you need to go into the project properties of `ALL_BUILDS`,
+and change the platform toolset into `vxxx_xp` in `Configuration Properties -> Generate`.
 
 ### The `llvm` source on my Mac OS X doesn't compile
 
@@ -323,10 +346,6 @@ Additionally, please make sure you have `libz-dev` or `zlib1g-dev` installed
 
 On Windows, you need to add `-DLLVM_USE_CRT_RELEASE=MT`. Don't use `-DLLVM_BUILD_STATIC=ON`
 and `-DLIBCLANG_BUILD_STATIC=ON`.
-By default, the platform toolset in VS 2012+ is set to `vc110` or so. The
-resulting executable won't be compatible to Windows XP. You need to use `-G Visual Studio 11 2012`
-instead of `-G Ninja` and add `-T vc110_xp` to cmake to enable the backward compatibility.
-(I haven't found a cleaner way yet.)
 
 ### Cross-compiling for i386 machines on a 64-bit Ubuntu
 
