@@ -55,7 +55,7 @@ class DbgInfoMgr {
  public:
   void registerStmt(const clang::Stmt *s, const clang::Stmt *p, const
                     clang::SourceManager &SM);
-  instcov::UUID getUUID(const clang::Stmt *s) const;
+  instcov::UUID_t getUUID(const clang::Stmt *s) const;
 
  private:
   void dumpOne(const clang::Stmt *s);
@@ -63,7 +63,7 @@ class DbgInfoMgr {
 
  private:
   std::map<const clang::Stmt *, DbgInfoEntry> DbgInfo;
-  std::map<const clang::Stmt *, instcov::UUID> UuidInfo;
+  std::map<const clang::Stmt *, instcov::UUID_t> UuidInfo;
   std::map<const clang::Stmt *, const clang::Stmt *> ParentInfo;
   std::vector<const clang::Stmt *> QueueOrder;
   std::auto_ptr<llvm::raw_fd_ostream> File;

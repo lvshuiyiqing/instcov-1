@@ -34,9 +34,9 @@ void eatOrQuit(std::istream &In, const std::string &str) {
   }
 }
 
-std::tuple<unsigned, UUID, uint64_t> parseLine(std::istream &In, bool &success) {
+std::tuple<unsigned, UUID_t, uint64_t> parseLine(std::istream &In, bool &success) {
   unsigned depth = 0;
-  UUID Uuid;
+  UUID_t Uuid;
   uint64_t Bid = 0;
   std::string line;
   if (!std::getline(In, line)) {
@@ -55,7 +55,7 @@ std::tuple<unsigned, UUID, uint64_t> parseLine(std::istream &In, bool &success) 
   }
   std::string strUUID;
   getline(ss, strUUID);
-  Uuid = UUID::parseString(strUUID);
+  Uuid = UUID_t::parseString(strUUID);
   eatOrQuit(ss, ":");
   ss >> Bid;
   return std::make_tuple(depth, Uuid, Bid);
@@ -76,8 +76,8 @@ void LogMgr::loadFile(const std::string &fileName) {
   }
 
   FileNames.push_back(fileName);
-  std::stack<std::vector<std::pair<UUID, uint64_t> > > S;
-  S.push(std::vector<std::pair<UUID, uint64_t> >());
+  std::stack<std::vector<std::pair<UUID_t, uint64_t> > > S;
+  S.push(std::vector<std::pair<UUID_t, uint64_t> >());
   bool success = true;
   while (true) {
     auto PL = parseLine(InFile, success);
@@ -85,12 +85,12 @@ void LogMgr::loadFile(const std::string &fileName) {
       break;
     }
     unsigned depth = 0;
-    UUID Uuid;
+    UUID_t Uuid;
     uint64_t Bid;
     std::tie(depth, Uuid, Bid) = PL;
     if (depth+1 == S.size()) {
       S.top().push_back(std::make_pair(Uuid, Bid));
-      S.push(std::vector<std::pair<UUID, uint64_t> >());
+      S.push(std::vector<std::pair<UUID_t, uint64_t> >());
       continue;
     }
     while (depth < S.size()) {

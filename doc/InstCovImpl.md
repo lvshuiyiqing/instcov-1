@@ -255,6 +255,7 @@ on tackling building issues. Please read carefully.
 [here](http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html).
 * `uuid-dev` (for Linux): UUID library used by InstCov
 * `libxml2-dev` (for Linux)
+* `MSVC 2012` or later (for Windows)
 
 ### Setting up your build environment
 
@@ -277,6 +278,11 @@ you want to build in a directory in `build`.
 
 If you want to save build time, please add `-DLLVM_TARGETS_TO_BUILD="X86"`, so
 that LLVM will only build targets for x86 machines.
+
+On Windows, you might need to run `<path-to-visual-studio>/VC/vcvarsall.bat` to
+set your environmental variables correct before running `cmake` and `ninja`.
+To perform a 32-bit build, call `vcvarsall.bat` with argument `x86`.
+To perform a 64-bit build, call `vcvarsall.bat` with argument `amd64`.
 
 ### The `llvm` source on my Mac OS X doesn't compile
 
@@ -308,12 +314,19 @@ into:
 
 On OS X, it cannot be done.
 
-On Linux, you need to add `-DLLVM_BUILD_STATIC=OFF` and
-`-DLIBCLANG_BUILD_STATIC=OFF` into the `cmake` command.  Besides, the original
+On Linux, you need to add `-DLLVM_BUILD_STATIC=ON` and
+`-DLIBCLANG_BUILD_STATIC=ON` into the `cmake` command.  Besides, the original
 BFD `ld` has a problem (may be a bug for static linking), you can install
 `binutils-gold` to fix it. It is an official linker replacement for `ld`.
 Additionally, please make sure you have `libz-dev` or `zlib1g-dev` installed
 (otherwise an `inflate` undefined error will occur during linking).
+
+On Windows, you need to add `-DLLVM_USE_CRT_RELEASE=MT`. Don't use `-DLLVM_BUILD_STATIC=ON`
+and `-DLIBCLANG_BUILD_STATIC=ON`.
+By default, the platform toolset in VS 2012+ is set to `vc110` or so. The
+resulting executable won't be compatible to Windows XP. You need to use `-G Visual Studio 11 2012`
+instead of `-G Ninja` and add `-T vc110_xp` to cmake to enable the backward compatibility.
+(I haven't found a cleaner way yet.)
 
 ### Cross-compiling for i386 machines on a 64-bit Ubuntu
 

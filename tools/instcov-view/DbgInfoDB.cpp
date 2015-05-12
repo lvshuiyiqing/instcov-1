@@ -86,10 +86,10 @@ void DbgInfoDB::loadFile(const std::string &FileName) {
   // read file content
   while (!(InFile.peek(), InFile.eof())) {
     DbgInfoEntry_View NewEntry;
-    UUID P_Uuid;
+    UUID_t P_Uuid;
     std::string File;
-    InFile.read((char *)&(NewEntry.Uuid), sizeof(UUID));
-    InFile.read((char *)&P_Uuid, sizeof(UUID));
+    InFile.read((char *)&(NewEntry.Uuid), sizeof(UUID_t));
+    InFile.read((char *)&P_Uuid, sizeof(UUID_t));
     std::size_t FNSize = 0;
     InFile.read((char *)&FNSize, sizeof(FNSize));
     char *FNBuf = new char[FNSize];
@@ -112,8 +112,8 @@ void DbgInfoDB::loadFile(const std::string &FileName) {
   }
 }
 
-void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID &P_Uuid) {
-  UUID ThisUuid = Entry.Uuid;
+void DbgInfoDB::registerEntry(const DbgInfoEntry_View &Entry, UUID_t &P_Uuid) {
+  UUID_t ThisUuid = Entry.Uuid;
   if (Entries.count(ThisUuid) == 0) {
     Entries[ThisUuid] = new DbgInfoEntry_View(ThisUuid, Entries.size()+1);
   }

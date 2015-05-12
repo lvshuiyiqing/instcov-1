@@ -12,8 +12,15 @@ target_link_libraries(instcov
   clangBasic
   )
 
-if (NOT APPLE)
+if (WIN32)
+  target_link_libraries(instcov
+    Rpcrt4
+    )
+endif()
+
+if (NOT APPLE AND NOT WIN32)
   target_link_libraries(instcov
     uuid
     )
 endif()
+
