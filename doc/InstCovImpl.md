@@ -262,17 +262,22 @@ on tackling building issues. Please read carefully.
 We have provided a easy set up script. Use `set_up_cmake.sh` in Linux/OS X
 and `set_up_cmake.bat` in Windows. The usage is:
 
-    <path-to-set-up-cmake> <x86|x64> <static|dynamic> <llvm-root-dir>
+    <path-to-set-up-cmake> <x86|x64> [<static|dynamic> <llvm-root-dir>] (for Windows)
+	<path-to-set-up-cmake> <static|dynamic> <llvm-root-dir> (for Linux/OS X)
 
-Argument `<x86|x64>` specifies compiling 32-bit or 64-bit executables.
-Argument `<static|dynamic>` specifies linking with static or dynamic runtime library
-(must be `dynamic` for OS X). Argument `<llvm-root-dir>` specifies the root directory
-of llvm.
-    
-For Windows, you can call the script with only the 1st argument. The environmental
-variables will be set, and the makefiles won't be generated. This is quite convenient
-since you have to set up the variables each time you open a new command line window
-before building.
+
+Argument `<x86|x64>` specifies compiling 32-bit or 64-bit executables.  Argument
+`<static|dynamic>` specifies linking with static or dynamic runtime library
+(must be `dynamic` for OS X). Argument `<llvm-root-dir>` specifies the root
+directory of llvm.
+
+For Windows, you can call the script with only the 1st argument. The
+environmental variables will be set, and the makefiles won't be generated. This
+is quite convenient since you have to set up the variables each time you open a
+new command line window before building.
+
+For Linux and OS X, it is usually hard to get the cross-compilation done. Thus
+we do not allow compile x86 executables on a x64 machine, or vice versa.
 
 ### Setting up your build environment
 
@@ -297,15 +302,15 @@ If you want to save build time, please add `-DLLVM_TARGETS_TO_BUILD="X86"`, so
 that LLVM will only build targets for x86 machines.
 
 On Windows, you might need to run `<path-to-visual-studio>/VC/vcvarsall.bat` to
-set your environmental variables correct before running `cmake` and `ninja`.
-To perform a 32-bit build, call `vcvarsall.bat` with argument `x86`.
-To perform a 64-bit build, call `vcvarsall.bat` with argument `amd64`.
-By default, the platform toolset in VS 2012+ is set to `vc110` or so. The
-resulting executable won't be compatible to Windows XP. Please reference
+set your environmental variables correct before running `cmake` and `ninja`.  To
+perform a 32-bit build, call `vcvarsall.bat` with argument `x86`.  To perform a
+64-bit build, call `vcvarsall.bat` with argument `amd64`.  By default, the
+platform toolset in VS 2012+ is set to `vc110` or so. The resulting executable
+won't be compatible to Windows XP. Please reference
 [here](http://blogs.msdn.com/b/vcblog/archive/2012/10/08/10357555.aspx).
-Alternatively, you can use the Visual Studio generator in `cmake`.
-In this case, you need to go into the project properties of `ALL_BUILDS`,
-and change the platform toolset into `vxxx_xp` in `Configuration Properties -> Generate`.
+Alternatively, you can use the Visual Studio generator in `cmake`.  In this
+case, you need to go into the project properties of `ALL_BUILDS`, and change the
+platform toolset into `vxxx_xp` in `Configuration Properties -> Generate`.
 
 ### The `llvm` source on my Mac OS X doesn't compile
 
@@ -344,8 +349,8 @@ BFD `ld` has a problem (may be a bug for static linking), you can install
 Additionally, please make sure you have `libz-dev` or `zlib1g-dev` installed
 (otherwise an `inflate` undefined error will occur during linking).
 
-On Windows, you need to add `-DLLVM_USE_CRT_RELEASE=MT`. Don't use `-DLLVM_BUILD_STATIC=ON`
-and `-DLIBCLANG_BUILD_STATIC=ON`.
+On Windows, you need to add `-DLLVM_USE_CRT_RELEASE=MT`. Don't use
+`-DLLVM_BUILD_STATIC=ON` and `-DLIBCLANG_BUILD_STATIC=ON`.
 
 ### Cross-compiling for i386 machines on a 64-bit Ubuntu
 
@@ -360,5 +365,3 @@ delete everything and run CMake with the new arguments again. You just need to
 run `ccmake ../llvm`, and it will opens up an interactive UI for changing CMake
 variables and reconfigure. After you made changes to some variables, press `c`
 and then `g`. Everything should be ready if your new configurations are correct.
-
-
