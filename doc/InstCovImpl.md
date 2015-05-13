@@ -365,3 +365,5 @@ delete everything and run CMake with the new arguments again. You just need to
 run `ccmake ../llvm`, and it will opens up an interactive UI for changing CMake
 variables and reconfigure. After you made changes to some variables, press `c`
 and then `g`. Everything should be ready if your new configurations are correct.
+
+Note that `ccmake` is not available on Windows.
