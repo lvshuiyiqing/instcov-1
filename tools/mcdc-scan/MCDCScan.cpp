@@ -30,6 +30,18 @@ int main(int argc, char *argv[]) {
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
     LM.loadFile(*it);
   }
+  for (auto it = LM.getLogEntries().begin(), ie = LM.getLogEntries().end();
+       it != ie; ++it) {
+    std::cout << "<" << it->FID << ", " << it->RID << "> ";
+    std::cout << it->Decision.second << ": ";
+    for (auto itc = it->Conditions.begin(), etc = it->Conditions.end();
+         itc != etc; ++itc) {
+      if (itc != it->Conditions.begin()) {
+        std::cout << ", ";
+      }
+      std::cout << itc->second;
+    }
+  }
   return 0;  
 }
 

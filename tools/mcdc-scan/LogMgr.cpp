@@ -39,11 +39,13 @@ std::tuple<unsigned, UUID_t, uint64_t> parseLine(std::istream &In, bool &success
   UUID_t Uuid;
   uint64_t Bid = 0;
   std::string line;
-  if (!std::getline(In, line)) {
+  if (!std::getline(In, line) || line.empty()) {
     success = false;  // last line
     return std::make_tuple(depth, Uuid, Bid);
   }
-  std::stringstream ss;
+  std::cout << "read line:" << std::endl;
+  std::cout << line << std::endl;
+  std::stringstream ss(line);
   while (ss.peek() == '-') {
     ++depth;
     ss.get();
@@ -54,9 +56,9 @@ std::tuple<unsigned, UUID_t, uint64_t> parseLine(std::istream &In, bool &success
     exit(1);
   }
   std::string strUUID;
-  getline(ss, strUUID);
+  getline(ss, strUUID, ':');
   Uuid = UUID_t::parseString(strUUID);
-  eatOrQuit(ss, ":");
+  //eatOrQuit(ss, ":");
   ss >> Bid;
   return std::make_tuple(depth, Uuid, Bid);
 }
