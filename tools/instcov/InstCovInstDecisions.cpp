@@ -29,7 +29,6 @@
 #include "instcov/InstCovASTVisitor.h"
 #include "instcov/uuid.h"
 
-extern llvm::cl::opt<bool> InstDecisions;
 extern llvm::cl::opt<bool> InstSwitch;
 using namespace clang;
 using namespace instcov;
@@ -117,9 +116,6 @@ namespace{
 
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   MCDCVisitIfStmt(s);
-  if (!InstDecisions) {
-    return true;
-  }
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
   // Only care about If statements.
@@ -142,9 +138,6 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
 
 bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
   MCDCVisitForStmt(s);
-  if (!InstDecisions) {
-    return true;
-  }
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
@@ -155,9 +148,6 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
 
 bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   MCDCVisitWhileStmt(s);
-  if (!InstDecisions) {
-    return true;
-  }
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
@@ -168,9 +158,6 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
 
 bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   MCDCVisitDoStmt(s);
-  if (!InstDecisions) {
-    return true;
-  }
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
   UUID_t uuid = DIM.getUUID(s);
