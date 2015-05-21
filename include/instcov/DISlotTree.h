@@ -28,7 +28,9 @@ class DISlotTree {
 
   void dump(std::ostream &OS) const;
   void fill(DbgInfoEntry_View *Node, uint64_t bid);
+  bool canAccept(DbgInfoEntry_View *Node) const;
   bool isFull(void) const { return NumEmptySlots == 0; }
+  bool isRootFilled(void) const { return Records.count(R) != 0; }
 
  private:
   void printTreeDFS(std::ostream &OS,

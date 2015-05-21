@@ -224,7 +224,7 @@ type recognition. All dumping is in binary format and is aligned by the size of
 
 ## Trace analysis
 
-Note that the trace file only contains a sequence of UUID--bid pairs.  We need
+Note that the trace file only contains a sequence of UUID-bid pairs.  We need
 to associate them with each other in MCDC coverage analysis.
 
 What `instcov-view` does is actually read the debug information from `.dbginfo`
@@ -234,12 +234,23 @@ The trace entries are restructured into several tree structures. The root node
 of each tree is a decision. The leaf nodes are conditions. Other non-leaf nodes
 are sub-decisions ( **sub-decisions are currently not supported** ).
 
-When a new entry is read from the trace file, `instcov-view` goes upwards to find
-the root node, and set up a tree of empty slots. The tree is built according to
-the debug information. Each slot needs to be filled with a corresponding trace
-entry. After the slot tree is filled, the total information for a visit to the
-root decision is completed, and is dumped as tree format. Then `instcov-view`
-starts over, reads new entries, build and dumps new slot trees.
+When a new entry is read from the trace file, `instcov-view` goes upwards to
+find the root node, and set up a tree of empty slots. The tree is built
+according to the debug information. Each slot needs to be filled with a
+corresponding trace entry. After the root node (decision) is filled, the total
+information for a visit to the root decision is completed, and is dumped as tree
+format. Then `instcov-view` starts over, reads new entries, build and dumps new
+slot trees.
+
+Sometimes a node outside the tree may be read, or the node may be already filled
+inside the current tree. This means that the new node is definitely in a deeper
+function call. To deal with this, we use a stack structure to store the
+incompleted trees, if the current tree cannot accept the new node, we construct
+a new tree with the root of the new node, and push it into the stack. If the
+decision of the top tree is read, then the top tree is complete. We store the
+top tree, and pop it from the stack. Note that this can be guaranteed correct
+since we always dump the conditions in a fixed order, and then dump the decision
+in the end.
 
 ## Developer FAQs
 

@@ -12,6 +12,8 @@ mkdir -p instcov-dist/bin
 markdown README.md > README.html
 markdown doc/InstCovImpl.md > doc/InstCovImpl.html
 
+cp ../build/bin/clang instcov-dist/bin
+cp ../build/bin/clang++ instcov-dist/bin
 cp ../build/bin/instcov instcov-dist/bin
 cp ../build/bin/instcov-view instcov-dist/bin
 cp ../build/lib/libinstcov_rt.a instcov-dist/lib
