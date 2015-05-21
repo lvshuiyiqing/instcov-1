@@ -11,5 +11,5 @@ fi
 for file in $@; do
     extension="${file##*.}"
     filename="${file%.*}"
-    clang -E -Xclang -rewrite-macros $file -o ${filename}.i.${extension}
+    ${INSTCOV_BIN_PATH}/clang -E -Xclang -rewrite-macros $file -o ${filename}.i.${extension}
 done
