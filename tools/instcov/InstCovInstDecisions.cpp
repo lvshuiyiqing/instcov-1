@@ -114,7 +114,18 @@ namespace{
   }
 }
 
+bool InstCovASTVisitor::IsInMain(Stmt *s) const {
+  SourceManager &SM = TheRewriter.getSourceMgr();
+  if (SM.getFileID(s->getLocStart()) == SM.getMainFileID()) {
+    return true;
+  }
+  return false;
+}
+
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
+  if (!IsInMain(s)) {
+    return true;
+  }
   MCDCVisitIfStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
@@ -137,6 +148,9 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
+  if (!IsInMain(s)) {
+    return true;
+  }
   MCDCVisitForStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
@@ -147,6 +161,9 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
+  if (!IsInMain(s)) {
+    return true;
+  }
   MCDCVisitWhileStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
@@ -157,6 +174,9 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
+  if (!IsInMain(s)) {
+    return true;
+  }
   MCDCVisitDoStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
@@ -170,6 +190,9 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
+  if (!IsInMain(s)) {
+    return true;
+  }
   if (!InstSwitch) {
     return true;
   }

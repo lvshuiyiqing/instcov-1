@@ -40,13 +40,14 @@ public:
   bool VisitWhileStmt(clang::WhileStmt *s);
   bool VisitDoStmt(clang::DoStmt *s);
   bool VisitSwitchStmt(clang::SwitchStmt *s);
-
+  
   void MCDCVisitIfStmt(clang::IfStmt *s);
   void MCDCVisitForStmt(clang::ForStmt *s);
   void MCDCVisitWhileStmt(clang::WhileStmt *s);
   void MCDCVisitDoStmt(clang::DoStmt *s);
 
 private:
+  bool IsInMain(clang::Stmt *s) const;
   void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p);
 
   clang::Rewriter &TheRewriter;
