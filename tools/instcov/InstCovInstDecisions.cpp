@@ -29,9 +29,18 @@
 #include "instcov/InstCovASTVisitor.h"
 #include "instcov/uuid.h"
 
-extern llvm::cl::opt<bool> InstSwitch;
+using namespace llvm;
 using namespace clang;
 using namespace instcov;
+
+extern llvm::cl::OptionCategory InstCovCategory;
+
+cl::opt<bool> InstSwitch(
+    "inst-switch",
+    cl::desc("enable switch instrumentation.\n"
+             "Default value: false\n"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
 
 namespace{
   std::string INSTCOV_FUNC_NAME = "instcov_dump";
@@ -41,8 +50,9 @@ namespace{
     SourceManager &SM = R.getSourceMgr();
     if (sl.isMacroID()) {
       // in a macro, return invalid
-      llvm::errs() << "ERR: the given location is inside a macro\n";
-      return SourceLocation();
+      SM.getDiagnostics().Report(sl, diag::err_mt_message)
+          << "ERR: the given location is inside a macro\n";
+      exit(1);
     }
     sl = Lexer::getLocForEndOfToken(sl, 0, SM, R.getLangOpts());
     std::pair<FileID, unsigned> locInfo = SM.getDecomposedLoc(sl);
@@ -51,8 +61,9 @@ namespace{
     bool invalidTemp = false;
     StringRef file = SM.getBufferData(locInfo.first, &invalidTemp);
     if (invalidTemp) {
-      llvm::errs() << "ERR: cannot find the original location\n";
-      return SourceLocation();
+      SM.getDiagnostics().Report(sl, diag::err_mt_message)
+          << "ERR: cannot find the original location\n";
+      exit(1);
     }
     
     const char *tokenBegin = file.data() + locInfo.second;
@@ -63,8 +74,9 @@ namespace{
     Token tok;
     lexer.LexFromRawLexer(tok);
     if (tok.isNot(tok::semi)) {
-      llvm::errs() << "ERR: the next location is not a semicolon\n";
-      return SourceLocation();
+      SM.getDiagnostics().Report(sl, diag::err_mt_message)
+          << "ERR: the next location is not a semicolon\n";
+      exit(1);
     }
     // llvm::errs() << "SUCCESS: semicolon found\n";
     return tok.getLocation();

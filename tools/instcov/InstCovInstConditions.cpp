@@ -31,9 +31,21 @@
 #include <stack>
 
 extern llvm::cl::opt<bool> InstConditions;
-
+using namespace llvm;
 using namespace clang;
 using namespace instcov;
+
+extern llvm::cl::OptionCategory InstCovCategory;
+
+cl::opt<bool> InstConditions(
+    "inst-conditions",
+    cl::desc("enable condition instrumentation for MC/DC.\n"
+             "The instrumentation may change the program behavior\n"
+             "if the conditions have side-effects"
+             "Default value: false"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
+
 
 namespace {
 enum EXPR_TYPE {
