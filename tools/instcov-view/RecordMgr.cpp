@@ -14,6 +14,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <stack>
 #include "llvm/Support/raw_ostream.h"
 #include "instcov/RecordMgr.h"
 
@@ -24,7 +25,7 @@ namespace {
 const char INSTCOV_DUMP_MAGIC[] = "INSTCOV_DUMP";
 const char INSTCOV_DUMP_VERSION[] = "1";
 
-void readOneRecord(std::istream &File, UUID &Uuid, uint64_t &bid) {
+void readOneRecord(std::istream &File, UUID_t &Uuid, uint64_t &bid) {
   File.read(reinterpret_cast<char *>(&Uuid), sizeof(Uuid));
   File.read(reinterpret_cast<char *>(&bid), sizeof(bid));
   if (File.bad()) {
@@ -62,10 +63,10 @@ void RecordMgr::processTrace(const std::string &FileName) {
   if (PaddingSize) {
     InFile.read((char *)&Padding, PaddingSize);
   }
-  std::shared_ptr<DISlotTree> Tree;
+  std::stack<std::shared_ptr<DISlotTree> > TreeStack;
   // read records
   while ((InFile.peek(), !InFile.eof())) {
-    UUID Uuid;
+    UUID_t Uuid;
     uint64_t bid;
     readOneRecord(InFile, Uuid, bid);
     if (DIDB.Entries.count(Uuid) == 0) {
@@ -74,13 +75,17 @@ void RecordMgr::processTrace(const std::string &FileName) {
       exit(1);
     }
     DbgInfoEntry_View *Node = DIDB.Entries[Uuid];
-    if (!Tree) {
-      Tree.reset(new DISlotTree(Node->toRoot()));
+    // llvm::errs() << "got UUID: " << Node->Uuid.toString() << "==>"
+    //              << Node->toRoot()->Uuid.toString() << "\n";
+    if (TreeStack.empty() || !TreeStack.top()->canAccept(Node)) {
+      // llvm::errs() << "creating a new tree\n";
+      TreeStack.push(std::shared_ptr<DISlotTree>(new DISlotTree(Node->toRoot())));
     }
-    Tree->fill(Node, bid);
-    if (Tree->isFull()) {
-      RecordTrees.push_back(Tree);
-      Tree.reset();
+    // llvm::errs() << "current root:"  << TreeStack.top()->R->Uuid.toString() << "\n";
+    TreeStack.top()->fill(Node, bid);
+    if (TreeStack.top()->isRootFilled()) {
+      RecordTrees.push_back(TreeStack.top());
+      TreeStack.pop();
     }
   }
 }

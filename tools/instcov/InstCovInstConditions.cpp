@@ -31,9 +31,20 @@
 #include <stack>
 
 extern llvm::cl::opt<bool> InstConditions;
-
+using namespace llvm;
 using namespace clang;
 using namespace instcov;
+
+extern llvm::cl::OptionCategory InstCovCategory;
+
+cl::opt<bool> InstConditions(
+    "inst-conditions",
+    cl::desc("enable condition instrumentation for MC/DC.\n"
+             "The instrumentation may change the program behavior\n"
+             "if the conditions have side-effects"
+             "Default value: false"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
 
 namespace {
 enum EXPR_TYPE {
@@ -98,7 +109,7 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
   for (auto it = CondExprs.begin(), ie = CondExprs.end();
        it != ie; ++it) {
     DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
-    UUID uuid = DIM.getUUID(*it);
+    UUID_t uuid = DIM.getUUID(*it);
     std::string dumper;
     llvm::raw_string_ostream os(dumper);
     os << "instcov_dump(" << uuid.toArgString() << ", (";

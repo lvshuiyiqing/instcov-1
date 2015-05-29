@@ -49,6 +49,10 @@ DISlotTree::DISlotTree(DbgInfoEntry_View *Root) {
 DISlotTree::~DISlotTree(void) {
 }
 
+bool DISlotTree::canAccept(DbgInfoEntry_View *Node) const {
+  return (Node->toRoot() == R) && Records.count(Node) == 0;
+}
+
 void DISlotTree::fill(DbgInfoEntry_View *Node, uint64_t bid) {
   if (Records.count(Node) == 1) {
     llvm::errs() << "record already filled in the tree, why another?\n";
@@ -56,6 +60,10 @@ void DISlotTree::fill(DbgInfoEntry_View *Node, uint64_t bid) {
   }
   if (Node->toRoot() != R) {
     llvm::errs() << "recorded a node outside the tree, exiting.\n";
+    llvm::errs() << "the node is: " << Node->Uuid.toString() << "\n";
+    llvm::errs() << "its root node is: " << Node->toRoot()->Uuid.toString()
+                 << "\n";
+    llvm::errs() << "the root should be: " << R->Uuid.toString() << "\n"; 
     exit(1);
   }
   Records[Node] = bid;
@@ -70,7 +78,7 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
                               const DbgInfoEntry_View *Node,
                               uint64_t depth) const {
   for (uint64_t i = 0; i < depth; ++i) {
-    OS << "--";
+    OS << "-";
   }
   for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
     switch (DumpFormat[i]) {
