@@ -33,24 +33,7 @@ using namespace clang;
 using namespace clang::tooling;
 using namespace instcov;
 
-cl::OptionCategory InstCovCategory("InstCov Category");
-
-cl::opt<bool> InstConditions(
-    "inst-conditions",
-    cl::desc("enable condition instrumentation for MC/DC.\n"
-             "The instrumentation may change the program behavior\n"
-             "if the conditions have side-effects"
-             "Default value: false"),
-    cl::cat(InstCovCategory),
-    cl::init(false));
-
-cl::opt<bool> InstSwitch(
-    "inst-switch",
-    cl::desc("enable switch instrumentation.\n"
-             "Default value: false\n"),
-    cl::cat(InstCovCategory),
-    cl::init(false));
-                                                                                                                        
+cl::OptionCategory InstCovCategory("InstCov Category");                                                                                                                        
 // Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser.
 class InstCovASTConsumer : public ASTConsumer {
