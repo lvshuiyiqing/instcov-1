@@ -100,7 +100,7 @@ static class InstCovLogger {
 
 void sighandler(int signo)
 {
-  std::cout << "instcov: caught signal " << signo << "exiting & dumping trace"
+  std::cout << "instcov: caught signal " << signo << ", exiting & dumping trace"
             << std::endl;
   exit(signo);
 }

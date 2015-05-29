@@ -15,5 +15,5 @@ shift 1
 args="$@"
 
 ${rpath}/prep.sh $file
-${rpath}/instcov.sh -inst-conditions -inst-switch ${filename}.i.${extension}
+${rpath}/instcov.sh -inst-conditions -inst-switch -mf $file ${filename}.i.${extension}
 ${rpath}/ccwraper.sh ${filename}.i.trans.${extension} -o ${filename}
