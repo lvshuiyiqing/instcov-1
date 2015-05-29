@@ -10,14 +10,14 @@ coverage recording.
 To use the tool, you need to follow these steps:
 
 1. Preprocess your original source code using clang with argument `-E` and
-`-Xclang -rewrite-macros`. The macros in the source code will be expanded, while
-keeping all `#include` directives not expanded.
+`-include instcov_rt.h` (with proper `-I` option so the compiler can find the
+runtime file). The macros in the source code will be expanded.
 
 
 2. Convert the resulting source code into an intermediate form using
 instcov. The code will be injected with profiling code:
 
-	`<path-to-instcov>/instcov [args] <your-source-file> --
+	`<path-to-instcov>/instcov [options] <your-source-file> --
 	[clang [compilation args]]`
 
 	For the default option, only decision recording is enabled.  If you want to
@@ -29,6 +29,15 @@ instcov. The code will be injected with profiling code:
 	of `switch` statements start from 2. This is used to distinguish from binary
 	decisions.
 
+	You need to explicitly specify option `-mf <file_name>`. InstCov will only
+	instrument those files matching `<file_name>`. Note that we have
+	preprocessed the source file using `-E` option in Step 1. The preprocessed
+	file will have `#line` preprocessor directives, indicating the original line
+	number and file of the expanded version. InstCov will use these `#line`
+	directives to guess the original file name of each program entity. If a
+	decision is not in `<file_name>`, InstCov will skip it. You can also specify
+	multiple files by specifying multiple `-mf <file_name>` options.
+
 	If you have any questions about the arguments, you can check the help
     messages using `instcov --help`.
 
@@ -39,10 +48,8 @@ instcov. The code will be injected with profiling code:
     directives will be kept unexpanded, and the included files will not be
     instrumented.
 
-3. Build the instrumented code by explicitly inlcuding `instcov_rt.h` (using
-option `-include instcov_rt.h` and proper `-I` option to make the compiler
-include the InstCov runtime header first). Plus you should link your program
-with `libinstcov_rt.a`. Then your program should be instrumented.
+3. Build the instrumented code. Plus you should link your program with
+`libinstcov_rt.a`. Then your program should be instrumented.
 
 4. After you run your program, the trace file will be written into
 `instcov.dump`. You can change the file name by setting environment variable
