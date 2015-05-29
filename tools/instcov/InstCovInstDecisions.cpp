@@ -26,6 +26,7 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/StringSet.h"
 #include "instcov/InstCovASTVisitor.h"
 #include "instcov/uuid.h"
 
@@ -41,6 +42,8 @@ cl::opt<bool> InstSwitch(
              "Default value: false\n"),
     cl::cat(InstCovCategory),
     cl::init(false));
+
+extern llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
 
 namespace{
   std::string INSTCOV_FUNC_NAME = "instcov_dump";
@@ -126,16 +129,15 @@ namespace{
   }
 }
 
-bool InstCovASTVisitor::IsInMain(Stmt *s) const {
+bool InstCovASTVisitor::ShouldInst(Stmt *s) const {
   SourceManager &SM = TheRewriter.getSourceMgr();
-  if (SM.getFileID(s->getLocStart()) == SM.getMainFileID()) {
-    return true;
-  }
-  return false;
+  StringRef PresumedFileName =
+      SM.getPresumedLoc(s->getLocStart()).getFilename();
+  return MatchFileNames.count(PresumedFileName);
 }
 
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
-  if (!IsInMain(s)) {
+  if (!ShouldInst(s)) {
     return true;
   }
   MCDCVisitIfStmt(s);
@@ -160,7 +162,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
-  if (!IsInMain(s)) {
+  if (!ShouldInst(s)) {
     return true;
   }
   MCDCVisitForStmt(s);
@@ -173,7 +175,7 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
-  if (!IsInMain(s)) {
+  if (!ShouldInst(s)) {
     return true;
   }
   MCDCVisitWhileStmt(s);
@@ -186,7 +188,7 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
-  if (!IsInMain(s)) {
+  if (!ShouldInst(s)) {
     return true;
   }
   MCDCVisitDoStmt(s);
@@ -202,7 +204,7 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
-  if (!IsInMain(s)) {
+  if (!ShouldInst(s)) {
     return true;
   }
   if (!InstSwitch) {
