@@ -224,7 +224,7 @@ type recognition. All dumping is in binary format and is aligned by the size of
 
 ## Trace analysis
 
-Note that the trace file only contains a sequence of UUID--bid pairs.  We need
+Note that the trace file only contains a sequence of UUID-bid pairs.  We need
 to associate them with each other in MCDC coverage analysis.
 
 What `instcov-view` does is actually read the debug information from `.dbginfo`
@@ -234,12 +234,23 @@ The trace entries are restructured into several tree structures. The root node
 of each tree is a decision. The leaf nodes are conditions. Other non-leaf nodes
 are sub-decisions ( **sub-decisions are currently not supported** ).
 
-When a new entry is read from the trace file, `instcov-view` goes upwards to find
-the root node, and set up a tree of empty slots. The tree is built according to
-the debug information. Each slot needs to be filled with a corresponding trace
-entry. After the slot tree is filled, the total information for a visit to the
-root decision is completed, and is dumped as tree format. Then `instcov-view`
-starts over, reads new entries, build and dumps new slot trees.
+When a new entry is read from the trace file, `instcov-view` goes upwards to
+find the root node, and set up a tree of empty slots. The tree is built
+according to the debug information. Each slot needs to be filled with a
+corresponding trace entry. After the root node (decision) is filled, the total
+information for a visit to the root decision is completed, and is dumped as tree
+format. Then `instcov-view` starts over, reads new entries, build and dumps new
+slot trees.
+
+Sometimes a node outside the tree may be read, or the node may be already filled
+inside the current tree. This means that the new node is definitely in a deeper
+function call. To deal with this, we use a stack structure to store the
+incompleted trees, if the current tree cannot accept the new node, we construct
+a new tree with the root of the new node, and push it into the stack. If the
+decision of the top tree is read, then the top tree is complete. We store the
+top tree, and pop it from the stack. Note that this can be guaranteed correct
+since we always dump the conditions in a fixed order, and then dump the decision
+in the end.
 
 ## Developer FAQs
 
@@ -255,6 +266,29 @@ on tackling building issues. Please read carefully.
 [here](http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html).
 * `uuid-dev` (for Linux): UUID library used by InstCov
 * `libxml2-dev` (for Linux)
+* `MSVC 2012` or later (for Windows)
+
+### Easy set up
+
+We have provided a easy set up script. Use `set_up_cmake.sh` in Linux/OS X
+and `set_up_cmake.bat` in Windows. The usage is:
+
+    <path-to-set-up-cmake> <x86|x64> [<static|dynamic> <llvm-root-dir>] (for Windows)
+	<path-to-set-up-cmake> <static|dynamic> <llvm-root-dir> (for Linux/OS X)
+
+
+Argument `<x86|x64>` specifies compiling 32-bit or 64-bit executables.  Argument
+`<static|dynamic>` specifies linking with static or dynamic runtime library
+(must be `dynamic` for OS X). Argument `<llvm-root-dir>` specifies the root
+directory of llvm.
+
+For Windows, you can call the script with only the 1st argument. The
+environmental variables will be set, and the makefiles won't be generated. This
+is quite convenient since you have to set up the variables each time you open a
+new command line window before building.
+
+For Linux and OS X, it is usually hard to get the cross-compilation done. Thus
+we do not allow compile x86 executables on a x64 machine, or vice versa.
 
 ### Setting up your build environment
 
@@ -277,6 +311,17 @@ you want to build in a directory in `build`.
 
 If you want to save build time, please add `-DLLVM_TARGETS_TO_BUILD="X86"`, so
 that LLVM will only build targets for x86 machines.
+
+On Windows, you might need to run `<path-to-visual-studio>/VC/vcvarsall.bat` to
+set your environmental variables correct before running `cmake` and `ninja`.  To
+perform a 32-bit build, call `vcvarsall.bat` with argument `x86`.  To perform a
+64-bit build, call `vcvarsall.bat` with argument `amd64`.  By default, the
+platform toolset in VS 2012+ is set to `vc110` or so. The resulting executable
+won't be compatible to Windows XP. Please reference
+[here](http://blogs.msdn.com/b/vcblog/archive/2012/10/08/10357555.aspx).
+Alternatively, you can use the Visual Studio generator in `cmake`.  In this
+case, you need to go into the project properties of `ALL_BUILDS`, and change the
+platform toolset into `vxxx_xp` in `Configuration Properties -> Generate`.
 
 ### The `llvm` source on my Mac OS X doesn't compile
 
@@ -308,12 +353,15 @@ into:
 
 On OS X, it cannot be done.
 
-On Linux, you need to add `-DLLVM_BUILD_STATIC=OFF` and
-`-DLIBCLANG_BUILD_STATIC=OFF` into the `cmake` command.  Besides, the original
+On Linux, you need to add `-DLLVM_BUILD_STATIC=ON` and
+`-DLIBCLANG_BUILD_STATIC=ON` into the `cmake` command.  Besides, the original
 BFD `ld` has a problem (may be a bug for static linking), you can install
 `binutils-gold` to fix it. It is an official linker replacement for `ld`.
 Additionally, please make sure you have `libz-dev` or `zlib1g-dev` installed
 (otherwise an `inflate` undefined error will occur during linking).
+
+On Windows, you need to add `-DLLVM_USE_CRT_RELEASE=MT`. Don't use
+`-DLLVM_BUILD_STATIC=ON` and `-DLIBCLANG_BUILD_STATIC=ON`.
 
 ### Cross-compiling for i386 machines on a 64-bit Ubuntu
 
@@ -329,4 +377,4 @@ run `ccmake ../llvm`, and it will opens up an interactive UI for changing CMake
 variables and reconfigure. After you made changes to some variables, press `c`
 and then `g`. Everything should be ready if your new configurations are correct.
 
-
+Note that `ccmake` is not available on Windows.

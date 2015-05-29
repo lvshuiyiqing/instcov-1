@@ -11,5 +11,5 @@ fi
 for file in $@; do
     extension="${file##*.}"
     filename="${file%.*}"
-    clang -E $file -o ${filename}.i.${extension} -I $INSTCOV_RT_PATH -include instcov_rt.h
+    ${INSTCOV_BIN_PATH}/clang -E $file -o ${filename}.i.${extension} -I $INSTCOV_RT_PATH -include instcov_rt.h
 done

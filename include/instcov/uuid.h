@@ -15,17 +15,23 @@
 #ifndef INSTCOV_UUID_H_
 #define INSTCOV_UUID_H_
 
+#include <tuple>
 #include <sstream>
+#include <cstdint>
 #ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
 #include <Rpc.h>
+#undef NOMINMAX
+#endif
 #else
 #include <uuid/uuid.h>
 #endif
 
-namespace instcov{
-struct UUID {
+namespace instcov {
+struct UUID_t {
  public:
-  UUID(void)
+  UUID_t(void)
       : high(0), low(0) {}
 
   bool isValid(void) const {
@@ -43,13 +49,30 @@ struct UUID {
     ss << std::hex << high << low;
     return ss.str();
   }
+
+  static UUID_t parseString(const std::string &str) {
+    UUID_t result;
+    std::stringstream high("0x");
+    std::stringstream low("0x");
+    if (str.size() > 8) {
+      std::size_t pos = str.size() - 8;
+      high << str.substr(0, pos);
+      low << str.substr(pos);
+    } else {
+      low << str;
+    }
+    high >> result.high;
+    low >> result.low;
+    return result;
+  }
+
  public:
   uint64_t high;
   uint64_t low;
 };
 
-inline UUID genUUID(void) {
-  UUID result;
+inline UUID_t genUUID(void) {
+  UUID_t result;
 #ifdef _WIN32
   UuidCreate(reinterpret_cast<::UUID *>(&result));
 #else
@@ -58,14 +81,13 @@ inline UUID genUUID(void) {
   return result;
 }
 
-inline bool operator < (const instcov::UUID &left, const instcov::UUID &right) {
-  if (left.high < right.high) {
-    return true;
-  }
-  if (left.high > right.high) {
-    return false;
-  }
-  return left.low < right.low;
+inline bool operator < (const instcov::UUID_t &left, const instcov::UUID_t &right) {
+  return std::make_tuple(left.high, left.low) < std::make_tuple(right.high, right.low);
+}
+
+inline bool operator == (const instcov::UUID_t &left, const instcov::UUID_t &right)
+{
+  return std::make_tuple(left.high, left.low) == std::make_tuple(right.high, right.low);
 }
 }
 

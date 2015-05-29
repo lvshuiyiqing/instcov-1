@@ -55,7 +55,7 @@ void DbgInfoMgr::registerStmt(const Stmt *s, const Stmt *p, const SourceManager 
   QueueOrder.push_back(s);
 }
 
-UUID DbgInfoMgr::getUUID(const Stmt *s) const {
+UUID_t DbgInfoMgr::getUUID(const Stmt *s) const {
   auto it = UuidInfo.find(s);
   if (it == UuidInfo.end()) {
     llvm::errs() << "this statement has not been registered\n";
@@ -82,12 +82,12 @@ void DbgInfoMgr::dump(void) {
 }
 
 void DbgInfoMgr::dumpOne(const Stmt *s) {
-  File->write((const char*)&(UuidInfo[s]), sizeof(UUID));
+  File->write((const char*)&(UuidInfo[s]), sizeof(UUID_t));
   if (const Stmt *P = ParentInfo[s]) {
-    File->write((const char*)&(UuidInfo[P]), sizeof(UUID));
+    File->write((const char*)&(UuidInfo[P]), sizeof(UUID_t));
   } else {
-    UUID EmptyUuid;
-    File->write((const char*)&EmptyUuid, sizeof(UUID));
+    UUID_t EmptyUuid;
+    File->write((const char*)&EmptyUuid, sizeof(UUID_t));
   }
   std::size_t FNSize = DbgInfo[s].File.size()+1;
   File->write((const char *)&FNSize, sizeof(FNSize));
@@ -98,6 +98,6 @@ void DbgInfoMgr::dumpOne(const Stmt *s) {
   if (PaddingSize) {
     File->write((const char*)&Padding, PaddingSize);
   }
-  File->write((const char*)&DbgInfo[s].Line, sizeof(DbgInfoEntry::Line));
-  File->write((const char*)&DbgInfo[s].Col, sizeof(DbgInfoEntry::Col));
+  File->write((const char*)&DbgInfo[s].Line, sizeof(DbgInfo[s].Line));
+  File->write((const char*)&DbgInfo[s].Col, sizeof(DbgInfo[s].Col));
 }

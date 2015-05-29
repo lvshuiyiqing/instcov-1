@@ -26,6 +26,7 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/StringSet.h"
 #include "instcov/InstCovASTVisitor.h"
 
 using namespace llvm;
@@ -35,29 +36,16 @@ using namespace instcov;
 
 cl::OptionCategory InstCovCategory("InstCov Category");
 
-cl::opt<bool> InstDecisions(
-    "inst-decisions",
-    cl::desc("enable decision instrumentation for if/for/while/do\n"
-             "Default value: true"),
-    cl::cat(InstCovCategory),
-    cl::init(true));
+cl::list<std::string> OptMatchFileNames(
+    "mf",
+    cl::value_desc("file name to match"),
+    cl::desc("Specifying the file names to match,\n"
+             "only the code in matching files will be instrumented.\n"),
+    cl::cat(InstCovCategory));
 
-cl::opt<bool> InstConditions(
-    "inst-conditions",
-    cl::desc("enable condition instrumentation for MC/DC.\n"
-             "The instrumentation may change the program behavior\n"
-             "if the conditions have side-effects"
-             "Default value: false"),
-    cl::cat(InstCovCategory),
-    cl::init(false));
+llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
 
-cl::opt<bool> InstSwitch(
-    "inst-switch",
-    cl::desc("enable switch instrumentation.\n"
-             "Default value: false\n"),
-    cl::cat(InstCovCategory),
-    cl::init(false));
-                                                                                                                        
+
 // Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser.
 class InstCovASTConsumer : public ASTConsumer {
@@ -109,6 +97,16 @@ class InstCovAction : public ASTFrontendAction {
 
 int main(int argc, const char **argv) {
   CommonOptionsParser OptionsParser(argc, argv, InstCovCategory);
+  if (OptMatchFileNames.empty()) {
+    llvm::errs() << "warning: no files to match,"
+                 << " instcov will not do any instrumentation\n";
+  }
+
+  for (auto it = OptMatchFileNames.begin(), ie = OptMatchFileNames.end();
+       it != ie; ++it) {
+    MatchFileNames.insert(*it);
+  }
+  
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
 

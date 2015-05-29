@@ -17,6 +17,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <signal.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "instcov_rt.h"
 
 namespace {
@@ -94,6 +97,39 @@ static class InstCovLogger {
   bool BinaryMode;
 } staInstCovLogger;
 
+
+void sighandler(int signo)
+{
+  std::cout << "instcov: caught signal " << signo << ", exiting & dumping trace"
+            << std::endl;
+  exit(signo);
+}
+
+static class SigHandler {
+ public:
+  SigHandler(void) {
+    char *env_no_sighandler = getenv("INSTCOV_NO_SIGHANDLER");
+    if (env_no_sighandler &&
+        (strcmp(env_no_sighandler, "YES") ||
+         strcmp(env_no_sighandler, "TRUE"))) {
+      return;
+    }
+    int sigs[] = {
+      SIGILL, SIGFPE, SIGABRT, SIGBUS,
+      SIGSEGV, SIGHUP, SIGINT, SIGQUIT,
+      SIGTERM
+    };
+    struct sigaction new_action;
+    new_action.sa_handler = sighandler;
+    sigemptyset(&new_action.sa_mask);
+    new_action.sa_flags = SA_RESETHAND;
+    for(std::size_t i = 0; i < sizeof(sigs)/sizeof(sigs[0]); ++i) {
+      if (sigaction(sigs[i], &new_action, NULL) == -1) {
+        perror("Failed: couldnot set signal handler");
+      }
+    }
+  }
+} staSigHandler;
 }
 
 void instcov_dump(uint64_t id_high, uint64_t id_low, uint64_t bid) {

@@ -17,6 +17,3 @@ args="$@"
 ${rpath}/prep.sh $file
 ${rpath}/instcov.sh -inst-conditions -inst-switch -mf $file ${filename}.i.${extension}
 ${rpath}/ccwraper.sh ${filename}.i.trans.${extension} -o ${filename}
-echo "executing ./${filename} $args"
-./${filename} $args
-${rpath}/instcov-view.sh dump.instcov ${filename}.i.${extension}.dbginfo -o ${filename}.pt

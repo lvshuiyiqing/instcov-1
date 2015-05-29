@@ -26,13 +26,24 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/StringSet.h"
 #include "instcov/InstCovASTVisitor.h"
 #include "instcov/uuid.h"
 
-extern llvm::cl::opt<bool> InstDecisions;
-extern llvm::cl::opt<bool> InstSwitch;
+using namespace llvm;
 using namespace clang;
 using namespace instcov;
+
+extern llvm::cl::OptionCategory InstCovCategory;
+
+cl::opt<bool> InstSwitch(
+    "inst-switch",
+    cl::desc("enable switch instrumentation.\n"
+             "Default value: false\n"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
+
+extern llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
 
 namespace{
   std::string INSTCOV_FUNC_NAME = "instcov_dump";
@@ -42,8 +53,9 @@ namespace{
     SourceManager &SM = R.getSourceMgr();
     if (sl.isMacroID()) {
       // in a macro, return invalid
-      llvm::errs() << "ERR: the given location is inside a macro\n";
-      return SourceLocation();
+      SM.getDiagnostics().Report(sl, diag::err_mt_message)
+          << "ERR: the given location is inside a macro\n";
+      exit(1);
     }
     sl = Lexer::getLocForEndOfToken(sl, 0, SM, R.getLangOpts());
     std::pair<FileID, unsigned> locInfo = SM.getDecomposedLoc(sl);
@@ -52,8 +64,9 @@ namespace{
     bool invalidTemp = false;
     StringRef file = SM.getBufferData(locInfo.first, &invalidTemp);
     if (invalidTemp) {
-      llvm::errs() << "ERR: cannot find the original location\n";
-      return SourceLocation();
+      SM.getDiagnostics().Report(sl, diag::err_mt_message)
+          << "ERR: cannot find the original location\n";
+      exit(1);
     }
     
     const char *tokenBegin = file.data() + locInfo.second;
@@ -64,8 +77,9 @@ namespace{
     Token tok;
     lexer.LexFromRawLexer(tok);
     if (tok.isNot(tok::semi)) {
-      llvm::errs() << "ERR: the next location is not a semicolon\n";
-      return SourceLocation();
+      SM.getDiagnostics().Report(sl, diag::err_mt_message)
+          << "ERR: the next location is not a semicolon\n";
+      exit(1);
     }
     // llvm::errs() << "SUCCESS: semicolon found\n";
     return tok.getLocation();
@@ -83,14 +97,14 @@ namespace{
   }
   
   void InstCompoundStmt(CompoundStmt *s, Rewriter &R,
-                        UUID uuid, uint64_t bid) {
+                        UUID_t uuid, uint64_t bid) {
     std::stringstream ss;
     ss << "\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
        << bid << ");";
     R.InsertText(s->getLBracLoc().getLocWithOffset(1), ss.str(), true, true);
   }
 
-  void InstSingleStmt(Stmt *s, Rewriter &R, UUID uuid, uint64_t bid) {
+  void InstSingleStmt(Stmt *s, Rewriter &R, UUID_t uuid, uint64_t bid) {
     std::stringstream ss;
     ss << "{\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
        << bid << ");\n";
@@ -98,7 +112,7 @@ namespace{
     R.InsertText(FindEndLoc(s, R), "\n}", false, true);
   }
 
-  void InstInBlock(Stmt *s, Rewriter &R, UUID uuid, uint64_t bid) {
+  void InstInBlock(Stmt *s, Rewriter &R, UUID_t uuid, uint64_t bid) {
     if (isa<CompoundStmt>(s)) {
       InstCompoundStmt(cast<CompoundStmt>(s), R, uuid, bid);
     } else {
@@ -107,7 +121,7 @@ namespace{
   }
 
   void InstAfterBody(SourceLocation endLoc, Rewriter &R,
-                     UUID uuid, uint64_t bid) {
+                     UUID_t uuid, uint64_t bid) {
     std::stringstream ss;
     ss << " \n " << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
        << bid << ");";
@@ -115,13 +129,20 @@ namespace{
   }
 }
 
+bool InstCovASTVisitor::ShouldInst(Stmt *s) const {
+  SourceManager &SM = TheRewriter.getSourceMgr();
+  StringRef PresumedFileName =
+      SM.getPresumedLoc(s->getLocStart()).getFilename();
+  return MatchFileNames.count(PresumedFileName);
+}
+
 bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
-  MCDCVisitIfStmt(s);
-  if (!InstDecisions) {
+  if (!ShouldInst(s)) {
     return true;
   }
+  MCDCVisitIfStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID uuid = DIM.getUUID(s);
+  UUID_t uuid = DIM.getUUID(s);
   // Only care about If statements.
   IfStmt *IfStatement = cast<IfStmt>(s);
   Stmt *Then = IfStatement->getThen();
@@ -141,12 +162,12 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
-  MCDCVisitForStmt(s);
-  if (!InstDecisions) {
+  if (!ShouldInst(s)) {
     return true;
   }
+  MCDCVisitForStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID uuid = DIM.getUUID(s);
+  UUID_t uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
   InstInBlock(s->getBody(), TheRewriter, uuid, 1);
@@ -154,12 +175,12 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
-  MCDCVisitWhileStmt(s);
-  if (!InstDecisions) {
+  if (!ShouldInst(s)) {
     return true;
   }
+  MCDCVisitWhileStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID uuid = DIM.getUUID(s);
+  UUID_t uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
   InstInBlock(s->getBody(), TheRewriter, uuid, 1);
@@ -167,13 +188,13 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
-  MCDCVisitDoStmt(s);
-  if (!InstDecisions) {
+  if (!ShouldInst(s)) {
     return true;
   }
+  MCDCVisitDoStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
-  UUID uuid = DIM.getUUID(s);
+  UUID_t uuid = DIM.getUUID(s);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
@@ -183,16 +204,19 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
+  if (!ShouldInst(s)) {
+    return true;
+  }
   if (!InstSwitch) {
     return true;
   }
   std::stringstream header_ss;
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID Uuid = DIM.getUUID(s);
+  UUID_t Uuid = DIM.getUUID(s);
   header_ss << "int instcov_f" << Uuid.toString() << " = 1;\n";
   TheRewriter.InsertText(s->getLocStart(), header_ss.str(), true, true);
   SwitchCase *SC = s->getSwitchCaseList();
-  uint64_t bid = 0;
+  uint64_t bid = 2;
   while (SC) {
     if (!isa<CaseStmt>(SC->getSubStmt())) {
       std::stringstream ss;
