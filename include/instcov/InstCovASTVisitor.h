@@ -47,7 +47,7 @@ public:
   void MCDCVisitDoStmt(clang::DoStmt *s);
 
 private:
-  bool IsInMain(clang::Stmt *s) const;
+  bool ShouldInst(clang::Stmt *s) const;
   void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p);
 
   clang::Rewriter &TheRewriter;

@@ -46,7 +46,6 @@ cl::opt<bool> InstConditions(
     cl::cat(InstCovCategory),
     cl::init(false));
 
-
 namespace {
 enum EXPR_TYPE {
   EXPR_UNSUPPORTED,
