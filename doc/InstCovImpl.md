@@ -252,6 +252,38 @@ top tree, and pop it from the stack. Note that this can be guaranteed correct
 since we always dump the conditions in a fixed order, and then dump the decision
 in the end.
 
+## Which Files to Instrument?
+
+Sometimes we only want to instrument some of these files, however the
+preprocessor contains all the included files. We usually don't care about the
+included files. It is almost always a bad idea to write function definitions in
+the header (except VERY SIMPLE C++ class methods). Thus, we want to let the user
+to instrument those files they want. There are two possible implementations I
+have tried.
+
+### Expanding the macros only, and then instrument
+
+This seems very desirable choice, since Clang provides a smart preprocessing
+option that enables you to expand the macros only and not the included files.
+However, this may be problematic if there are some macro that defines to itself.
+
+For example, I have encountered such situation in `<stdio.h>` in Ubuntu
+distribution, which has the following line:
+
+	#define stdin stdin
+
+So, this idea is not good, since the macro will be expanded again, and the
+source location of `stdin` is still inside a macro.
+
+### Do a full preprocess, and then instrument
+
+Now we know that the file should be preprocessed only once, thus we need to work
+on a fully preprocessed file. Fortunately, a preprocessed files has `#line`
+directives indicating the original source location (file and line number) before
+expansion. LibClang uses these directives to guess the location in the original
+file, which is called the [[ presumed ]] location. We use the presumed file name
+to determine whether the file need to be instrumented.
+
 ## Developer FAQs
 
 Here are some useful tips for building InstCov with LLVM/Clang. It is a little
@@ -378,3 +410,8 @@ variables and reconfigure. After you made changes to some variables, press `c`
 and then `g`. Everything should be ready if your new configurations are correct.
 
 Note that `ccmake` is not available on Windows.
+
+### Using LLVM CommandLine Options
+
+LLVM has already provided a library to write your own command line
+options. Please reference [here](http://llvm.org/docs/CommandLine.html).
