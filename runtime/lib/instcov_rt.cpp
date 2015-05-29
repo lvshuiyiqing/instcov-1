@@ -123,7 +123,7 @@ static class SigHandler {
     new_action.sa_handler = sighandler;
     sigemptyset(&new_action.sa_mask);
     new_action.sa_flags = SA_RESETHAND;
-    for(int i = 0; i < sizeof(sigs)/sizeof(sigs[0]); ++i) {
+    for(std::size_t i = 0; i < sizeof(sigs)/sizeof(sigs[0]); ++i) {
       if (sigaction(sigs[i], &new_action, NULL) == -1) {
         perror("Failed: couldnot set signal handler");
       }
