@@ -17,7 +17,7 @@
 
 using namespace instcov;
 
-void MCDCAnalyzer::registerEntry(LogEntry *entry) {
+void MCDCAnalyzer::registerEntry(const LogEntry *entry) {
   std::vector<bool> bits, flipped_bits;
   bits.reserve(entry->Conditions.size()+1);
   flipped_bits.reserve(entry->Conditions.size()+1);

@@ -14,6 +14,7 @@
 
 #include "llvm/Support/CommandLine.h"
 #include "LogMgr.h"
+#include "MCDCAnalyzer.h"
 #include <iostream>
 #include <fstream>
 
@@ -43,6 +44,12 @@ int main(int argc, char *argv[]) {
     }
     std::cout << std::endl;
   }
+  MCDCAnalyzer analyzer;
+  for (auto it = LM.getLogEntries().begin(), ie = LM.getLogEntries().end();
+       it != ie; ++it) {
+    analyzer.registerEntry(&(*it));
+  }
+  analyzer.dump(std::cout);
   return 0;  
 }
 
