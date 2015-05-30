@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
       if (itc != it->Conditions.begin()) {
         std::cout << ", ";
       }
-      std::cout << itc->second;
+      std::cout << itc->second << std::endl;
     }
   }
   return 0;  
