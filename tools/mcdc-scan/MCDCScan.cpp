@@ -23,7 +23,7 @@ using namespace instcov;
 
 cl::list<std::string> FileNames(cl::Positional,
                                 cl::desc("<parsed trace files> ..."),
-                                cl::Required);
+                                cl::OneOrMore);
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
