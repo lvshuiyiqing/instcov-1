@@ -14,30 +14,43 @@
 
 #include <functional>
 #include "MCDCAnalyzer.h"
+#include "llvm/Support/CommandLine.h"
+
+using namespace llvm;
+cl::opt<bool> CountsOnly("counts-only",
+                         cl::desc("only counts"),
+                         cl::init(false));
 
 using namespace instcov;
 
 void MCDCAnalyzer::registerEntry(const LogEntry *entry) {
-  std::vector<bool> bits, flipped_bits;
+  std::vector<bool> bits;
+  std::vector<UUID_t> Uuids;
   bits.reserve(entry->Conditions.size()+1);
-  flipped_bits.reserve(entry->Conditions.size()+1);
+  Uuids.reserve(entry->Conditions.size()+1);
   for (auto it = entry->Conditions.begin(), ie = entry->Conditions.end();
        it != ie; ++it) {
     bits.push_back(it->second);
-    flipped_bits.push_back(it->second != 0);
+    Uuids.push_back(it->first);
   }
   bits.push_back(entry->Decision.second);
-  flipped_bits.push_back(entry->Decision.second != 0);
-  size_t hash_value = std::hash<std::vector<bool> >()(bits);
-  size_t flipped_hash_value = std::hash<std::vector<bool> >()(flipped_bits);
-  for (auto it = entry->Conditions.begin(), ie = entry->Conditions.end();
-       it != ie; ++it) {
-    if (it->second) {
-      Data[entry->Decision.first][it->first][hash_value]
+  for (size_t i = 0; i < Uuids.size(); ++i) {
+    if (bits[i]) {
+      size_t hash_value = std::hash<std::vector<bool> >()(bits);
+      Data[entry->Decision.first][Uuids[i]][hash_value]
           .TrueSide.push_back(entry);
     } else {
-      Data[entry->Decision.first][it->first][flipped_hash_value]
-          .FalseSide.push_back(entry);      
+      // flip corresponding bits
+      bits[i] = !bits[i];
+      bits.back() = !bits.back();
+      
+      size_t hash_value = std::hash<std::vector<bool> >()(bits);
+      Data[entry->Decision.first][Uuids[i]][hash_value]
+          .FalseSide.push_back(entry);
+
+      // flip back
+      bits[i] = !bits[i];
+      bits.back() = !bits.back();
     }
   }
 }
@@ -85,18 +98,22 @@ void MCDCAnalyzer::dump(std::ostream &os) const {
           os << "Hash (Uncovered): ";
         }
         os << ith->first << std::endl;
-        os << "True side: ";
-        for (auto ite = ith->second.TrueSide.begin(),
-                 iee = ith->second.TrueSide.end();
-             ite != iee; ++ite) {
-          os << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+        os << "True side: " << ith->second.TrueSide.size();
+        if (!CountsOnly) {
+          for (auto ite = ith->second.TrueSide.begin(),
+                   iee = ith->second.TrueSide.end();
+               ite != iee; ++ite) {
+            os << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+          }
         }
         os << std::endl;
-        os << "False side: ";
-        for (auto ite = ith->second.FalseSide.begin(),
-                 iee = ith->second.FalseSide.end();
-             ite != iee; ++ite) {
-          os << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+        os << "False side: " << ith->second.FalseSide.size();
+        if (!CountsOnly) {
+          for (auto ite = ith->second.FalseSide.begin(),
+                   iee = ith->second.FalseSide.end();
+               ite != iee; ++ite) {
+            os << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+          }
         }
         os << std::endl;
       }
