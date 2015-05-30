@@ -90,13 +90,9 @@ void LogMgr::loadFile(const std::string &fileName) {
     UUID_t Uuid;
     uint64_t Bid;
     std::tie(depth, Uuid, Bid) = PL;
-    if (depth+1 == S.size()) {
-      S.top().push_back(std::make_pair(Uuid, Bid));
-      S.push(std::vector<std::pair<UUID_t, uint64_t> >());
-      continue;
-    }
-    while (depth < S.size()) {
+    while (depth+1 < S.size()) {
       if (S.top().empty()){
+        std::cout << "top empty, popping, stack size=" << S.size() << std::endl;
         S.pop();
       } else {
         LogEntry Entry;
@@ -107,10 +103,17 @@ void LogMgr::loadFile(const std::string &fileName) {
         for (auto it = S.top().begin(), ie = S.top().end(); it != ie; ++it) {
           Children[Entry.Decision.first].insert(it->first);
         }
+        std::cout << "top not empty, popping, stack size=" << S.size() << std::endl;
         S.pop();
         Entry.Decision = S.top().back();
         LogEntries.push_back(Entry);
       }
+    }
+    if (depth+1 == S.size()) {
+      std::cout << "pushing, stack size=" << S.size() << std::endl;
+      S.top().push_back(std::make_pair(Uuid, Bid));
+      S.push(std::vector<std::pair<UUID_t, uint64_t> >());
+      continue;
     }
   }
 }
