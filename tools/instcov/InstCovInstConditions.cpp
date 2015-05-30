@@ -47,27 +47,30 @@ cl::opt<bool> InstConditions(
     cl::init(false));
 
 namespace {
-enum EXPR_TYPE {
-  EXPR_UNSUPPORTED,
-  EXPR_LEAF,
-  EXPR_NONLEAF,    
-};
+// enum EXPR_TYPE {
+//   EXPR_UNSUPPORTED,
+//   EXPR_LEAF,
+//   EXPR_NONLEAF,    
+// };
 
-EXPR_TYPE MCDCNodeType(const Expr *e) {
-  if (const BinaryOperator *bo = dyn_cast<BinaryOperator>(e)) {
-      if (bo->isLogicalOp()) {
-        return EXPR_NONLEAF;
-      }
-      return EXPR_LEAF;
-  }
-  if (const UnaryOperator *uo = dyn_cast<UnaryOperator>(e)) {
-      if (uo->getOpcode() == UO_LNot) {
-        return EXPR_NONLEAF;
-      }
-      return EXPR_LEAF;
-  }
-  return EXPR_LEAF;
-}
+// EXPR_TYPE MCDCNodeType(const Expr *e) {
+//   if (const BinaryOperator *bo = dyn_cast<BinaryOperator>(e)) {
+//       if (bo->isLogicalOp()) {
+//         return EXPR_NONLEAF;
+//       }
+//       return EXPR_LEAF;
+//   }
+//   if (const UnaryOperator *uo = dyn_cast<UnaryOperator>(e)) {
+//       if (uo->getOpcode() == UO_LNot) {
+//         return EXPR_NONLEAF;
+//       }
+//       return EXPR_LEAF;
+//   }
+//   if (isa<ParenExpr>(e)) {
+//     return EXPR_NONLEAF;
+//   }
+//   return EXPR_LEAF;
+// }
 
 std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
   std::vector<Expr *> Leaves;
@@ -76,15 +79,11 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
   while(!UncheckedNodes.empty()) {
     Expr *Node = UncheckedNodes.top();
     UncheckedNodes.pop();
-    if (MCDCNodeType(Node) == EXPR_UNSUPPORTED) {
-      llvm::errs() << "unsupported node: ";
-      Node->dumpPretty(C);
-      llvm::errs() << "\n";
-    }
-    if (MCDCNodeType(Node) == EXPR_LEAF) {
-      Leaves.push_back(Node);
-      continue;
-    }
+    // if (MCDCNodeType(Node) == EXPR_UNSUPPORTED) {
+    //   llvm::errs() << "unsupported node: ";
+    //   Node->dumpPretty(C);
+    //   llvm::errs() << "\n";
+    // }
     if (BinaryOperator *bo = dyn_cast<BinaryOperator>(Node)) {
       UncheckedNodes.push(bo->getRHS());
       UncheckedNodes.push(bo->getLHS());
@@ -94,9 +93,16 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
       UncheckedNodes.push(uo->getSubExpr());
       continue;
     }
-    llvm::errs() << "unhandled expression: ";
-    Node->dumpPretty(C);
-    llvm::errs() << "\n";
+    if (ParenExpr *pe = dyn_cast<ParenExpr>(Node)) {
+      UncheckedNodes.push(pe->getSubExpr());
+      continue;
+    }
+    // leaf nodes
+    Leaves.push_back(Node);
+    continue;
+    // llvm::errs() << "unhandled expression: ";
+    // Node->dumpPretty(C);
+    // llvm::errs() << "\n";
   }
   return Leaves;
 }

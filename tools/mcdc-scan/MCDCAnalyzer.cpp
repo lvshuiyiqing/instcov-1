@@ -84,7 +84,7 @@ void MCDCAnalyzer::getResult(
 void MCDCAnalyzer::dump(std::ostream &os) const {
   // decision level
   for (auto itd = Data.begin(), ied = Data.end(); itd != ied; ++itd) {
-    os << "Decision: " << itd->first.toString() << std::endl;
+    os << "Decision: " << itd->first.toString() << ":" << std::endl;
     // condition level
     for (auto itc = itd->second.begin(), iec = itd->second.end();
          itc != iec; ++itc) {
