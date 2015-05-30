@@ -26,8 +26,8 @@ namespace instcov {
 class MCDCAnalyzer {
  public:
   typedef struct {
-    std::vector<LogEntry *> TrueSide;
-    std::vector<LogEntry *> FalseSide;
+    std::vector<const LogEntry *> TrueSide;
+    std::vector<const LogEntry *> FalseSide;
   } CData_entry_t;
   typedef std::unordered_map<size_t, CData_entry_t> CData_t;
   typedef std::map<UUID_t, CData_t> DData_t;
@@ -35,7 +35,7 @@ class MCDCAnalyzer {
 
   void getResult(std::vector<std::pair<UUID_t, UUID_t> > &covered,
                  std::vector<std::pair<UUID_t, UUID_t> > &uncovered) const;
-  void registerEntry(LogEntry *entry);
+  void registerEntry(const LogEntry *entry);
 
   const Data_t &getData(void) const { return Data; }
 
