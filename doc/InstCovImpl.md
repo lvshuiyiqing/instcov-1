@@ -334,13 +334,13 @@ For the T1, we have vector `000`.  Decision `a` is false, so it is flipped into
 the visit on the false side of `b:011`.  We omit the following process. The
 resulting table is as follows (note that we omitted the visit ID):
 
-	`a:101`: {T2}, {T1} >> MC/DC pair
-	`a:110`: {}, {T3}
-	`a:111`: {T4}, {}
+	a:101: {T2}, {T1} >> MC/DC pair
+	a:110: {}, {T3}
+	a:111: {T4}, {}
 
-	`b:011`: {T3}, {T1} >> MC/DC pair
-	`b:110`: {}, {T2}
-	`b:111`: {T4}, {}
+	b:011: {T3}, {T1} >> MC/DC pair
+	b:110: {}, {T2}
+	b:111: {T4}, {}
 
 Now we recognized an MC/DC pair for `a`, which is `<T2,T1>`, and an MC/DC pair
 for `b`, which is `<T3,T1>`.
