@@ -25,6 +25,11 @@ cl::list<std::string> FileNames(cl::Positional,
                                 cl::desc("<parsed trace files> ..."),
                                 cl::OneOrMore);
 
+cl::opt<bool> Verbose(
+    "v",
+    cl::desc("dump more verbosely"),
+    cl::init(false));
+
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
   LogMgr LM;
@@ -49,7 +54,11 @@ int main(int argc, char *argv[]) {
        it != ie; ++it) {
     analyzer.registerEntry(&(*it));
   }
-  analyzer.dump(std::cout);
+  if (Verbose) {
+    analyzer.dump(std::cout);
+  } else {
+    analyzer.dumpReport(std::cout);
+  }
   return 0;  
 }
 

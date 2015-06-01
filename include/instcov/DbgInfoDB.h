@@ -19,6 +19,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <iostream>
 #include "llvm/ADT/StringRef.h"
 #include "instcov/uuid.h"
 
@@ -34,7 +35,7 @@ class DbgInfoEntry_View {
   
  public:
   DbgInfoEntry_View *toRoot(void);
-  void dump(void) const;
+  // void dump(void) const;
   
  public:
   UUID_t Uuid;
@@ -59,7 +60,8 @@ class DbgInfoDB {
  public:
   void loadFile(const std::string &FileName);
   bool selfCheck(void) const;
-
+  void dump(std::ostream &OS) const;
+  
  private:
   void registerEntry(const DbgInfoEntry_View &Entry, UUID_t &P_Uuid);
   

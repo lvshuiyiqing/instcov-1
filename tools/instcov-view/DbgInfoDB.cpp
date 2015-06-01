@@ -15,8 +15,10 @@
 
 #include <fstream>
 #include <set>
+#include <algorithm>
 #include "instcov/DbgInfoDB.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 
 namespace {
 const char INSTCOV_MAGIC[] = "INSTCOV";
@@ -26,6 +28,8 @@ const char INSTCOV_VERSION[] = "1";
 using namespace llvm;
 using namespace instcov;
 
+extern cl::opt<std::string> DumpFormat;
+
 DbgInfoEntry_View *DbgInfoEntry_View::toRoot(void) {
   DbgInfoEntry_View *Node = this;
   while (Node->P) {
@@ -34,13 +38,13 @@ DbgInfoEntry_View *DbgInfoEntry_View::toRoot(void) {
   return Node;
 }
 
-void DbgInfoEntry_View::dump(void) const {
-  llvm::outs() << Uuid.toString() << ":"
-               << (P?(P->Uuid.toString()):("")) << ":"
-               << File << ":"
-               << Line << ":"
-               << Col << "\n";
-}
+// void DbgInfoEntry_View::dump(void) const {
+//   llvm::outs() << Uuid.toString() << ":"
+//                << (P?(P->Uuid.toString()):("")) << ":"
+//                << File << ":"
+//                << Line << ":"
+//                << Col << "\n";
+// }
 
 DbgInfoDB::DbgInfoDB(void) {
 }
@@ -162,5 +166,63 @@ bool DbgInfoDB::selfCheck(void) const {
     }
   }
   return true;
+}
+
+namespace {
+struct EntryCmp {
+  bool operator () (const DbgInfoEntry_View *left,
+                    const DbgInfoEntry_View *right) {
+    return std::make_tuple(left->File, left->Line, left->Col) <
+      std::make_tuple(right->File, right->Line, right->Col);
+  }
+};
+
+void printDIEntryDFS(std::ostream &OS,
+                     DbgInfoEntry_View *Node,
+                     uint64_t depth) {
+  for (uint64_t i = 0; i < depth; ++i) {
+    OS << "-";
+  }
+  for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
+    switch (DumpFormat[i]) {
+      case 'u':
+        OS << std::hex << Node->Uuid.high << Node->Uuid.low << std::dec;
+        break;
+      case 's':
+        OS << Node->Sid;
+        break;
+      case 'l':
+        OS << Node->Line;
+        break;
+      case 'c':
+        OS << Node->Col;
+        break;
+      case 'f':
+        OS << Node->File;
+        break;
+      default:
+        OS << DumpFormat[i];
+        break;
+    }
+  }
+  OS << "\n";
+  for (auto it = Node->Children.begin(), ie = Node->Children.end();
+       it != ie; ++it) {
+    printDIEntryDFS(OS, *it, depth+1);
+  }
+}
+}
+
+void DbgInfoDB::dump(std::ostream &OS) const {
+  std::vector<DbgInfoEntry_View *> RootEntries;
+  for (auto it = Entries.begin(), ie = Entries.end(); it != ie; ++it) {
+    if (it->second->P == 0) {
+      RootEntries.push_back(it->second);
+    }
+  }
+  std::sort(RootEntries.begin(), RootEntries.end(), EntryCmp());
+  for (auto it = RootEntries.begin(), ie = RootEntries.end(); it != ie; ++it) {
+    printDIEntryDFS(OS, *it, 0);
+  }
 }
 
