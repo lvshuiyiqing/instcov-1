@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+mkdir -p traces
+tid=`cat TID`
+tid=$((tid+1))
+
+echo $tid > TID
+
+./test "$@" > /dev/null
+../../scripts/instcov-view.sh -t dump.instcov test.i.cpp.dbginfo -o traces/test.${tid}.pt
