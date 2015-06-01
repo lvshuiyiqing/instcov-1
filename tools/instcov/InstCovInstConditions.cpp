@@ -85,13 +85,17 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
     //   llvm::errs() << "\n";
     // }
     if (BinaryOperator *bo = dyn_cast<BinaryOperator>(Node)) {
-      UncheckedNodes.push(bo->getRHS());
-      UncheckedNodes.push(bo->getLHS());
-      continue;
+      if (bo->isLogicalOp()) {
+        UncheckedNodes.push(bo->getRHS());
+        UncheckedNodes.push(bo->getLHS());
+        continue;
+      }
     }
     if (UnaryOperator *uo = dyn_cast<UnaryOperator>(Node)) {
-      UncheckedNodes.push(uo->getSubExpr());
-      continue;
+      if (uo->getOpcode() == UO_LNot) {
+        UncheckedNodes.push(uo->getSubExpr());
+        continue;
+      }
     }
     if (ParenExpr *pe = dyn_cast<ParenExpr>(Node)) {
       UncheckedNodes.push(pe->getSubExpr());

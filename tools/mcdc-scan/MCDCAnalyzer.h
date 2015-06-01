@@ -33,14 +33,13 @@ class MCDCAnalyzer {
   typedef std::map<UUID_t, CData_t> DData_t;
   typedef std::map<UUID_t, DData_t> Data_t;
 
-  void getResult(std::vector<std::pair<UUID_t, UUID_t> > &covered,
-                 std::vector<std::pair<UUID_t, UUID_t> > &uncovered) const;
   void registerEntry(const LogEntry *entry);
 
   const Data_t &getData(void) const { return Data; }
 
-  void dump(std::ostream &os) const;
-  
+  void dump(std::ostream &OS) const;
+  void dumpReport(std::ostream &OS) const;
+
  private:
   Data_t Data;
 };

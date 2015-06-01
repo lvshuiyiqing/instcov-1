@@ -55,14 +55,14 @@ void MCDCAnalyzer::registerEntry(const LogEntry *entry) {
   }
 }
 
-void MCDCAnalyzer::getResult(
-    std::vector<std::pair<UUID_t, UUID_t> > &covered,
-    std::vector<std::pair<UUID_t, UUID_t> > &uncovered) const {
+void MCDCAnalyzer::dumpReport(std::ostream &OS) const {
   // decision level
   for (auto itd = Data.begin(), ied = Data.end(); itd != ied; ++itd) {
+    OS << "Decision: " << itd->first.toString() << ":" << std::endl;
     // condition level
     for (auto itc = itd->second.begin(), iec = itd->second.end();
          itc != iec; ++itc) {
+      OS << "Condition: " << itc->first.toString();
       bool IsCovered = false;
       // hash level
       for (auto ith = itc->second.begin(), ieh = itc->second.end();
@@ -73,49 +73,49 @@ void MCDCAnalyzer::getResult(
         }
       }
       if (IsCovered) {
-        covered.push_back(std::make_pair(itd->first, itc->first));
+        OS << " > Covered" << std::endl;
       } else {
-        uncovered.push_back(std::make_pair(itd->first, itc->first));
+        OS << " > Uncovered" << std::endl;
       }
     }
   }
 }
 
-void MCDCAnalyzer::dump(std::ostream &os) const {
+void MCDCAnalyzer::dump(std::ostream &OS) const {
   // decision level
   for (auto itd = Data.begin(), ied = Data.end(); itd != ied; ++itd) {
-    os << "Decision: " << itd->first.toString() << ":" << std::endl;
+    OS << "Decision: " << itd->first.toString() << ":" << std::endl;
     // condition level
     for (auto itc = itd->second.begin(), iec = itd->second.end();
          itc != iec; ++itc) {
-      os << "Condition: " << itc->first.toString() << std::endl;
+      OS << "Condition: " << itc->first.toString() << std::endl;
       // hash level
       for (auto ith = itc->second.begin(), ieh = itc->second.end();
            ith != ieh; ++ith) {
         if (!ith->second.TrueSide.empty() && !ith->second.FalseSide.empty()) {
-          os << "Hash (Covered): ";
+          OS << "Hash (Covered): ";
         } else {
-          os << "Hash (Uncovered): ";
+          OS << "Hash (Uncovered): ";
         }
-        os << ith->first << std::endl;
-        os << "True side: " << ith->second.TrueSide.size();
+        OS << ith->first << std::endl;
+        OS << "True side: " << ith->second.TrueSide.size();
         if (!CountsOnly) {
           for (auto ite = ith->second.TrueSide.begin(),
                    iee = ith->second.TrueSide.end();
                ite != iee; ++ite) {
-            os << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+            OS << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
           }
         }
-        os << std::endl;
-        os << "False side: " << ith->second.FalseSide.size();
+        OS << std::endl;
+        OS << "False side: " << ith->second.FalseSide.size();
         if (!CountsOnly) {
           for (auto ite = ith->second.FalseSide.begin(),
                    iee = ith->second.FalseSide.end();
                ite != iee; ++ite) {
-            os << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+            OS << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
           }
         }
-        os << std::endl;
+        OS << std::endl;
       }
     }
   }

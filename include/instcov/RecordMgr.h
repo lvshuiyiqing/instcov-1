@@ -40,7 +40,7 @@ class RecordMgr {
   void processTrace(const std::string &FileName);
 
   void dump(std::ostream &OS) const;
-  
+
  private:
   DbgInfoDB DIDB;
   std::vector<std::shared_ptr<DISlotTree> > RecordTrees;
