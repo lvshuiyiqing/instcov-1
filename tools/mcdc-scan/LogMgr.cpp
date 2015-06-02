@@ -43,8 +43,6 @@ std::tuple<unsigned, UUID_t, uint64_t> parseLine(std::istream &In, bool &success
     success = false;  // last line
     return std::make_tuple(depth, Uuid, Bid);
   }
-  std::cout << "read line:" << std::endl;
-  std::cout << line << std::endl;
   std::stringstream ss(line);
   while (ss.peek() == '-') {
     ++depth;
@@ -81,6 +79,7 @@ void LogMgr::loadFile(const std::string &fileName) {
   std::stack<std::vector<std::pair<UUID_t, uint64_t> > > S;
   S.push(std::vector<std::pair<UUID_t, uint64_t> >());
   bool success = true;
+  size_t RID = 0;
   while (true) {
     auto PL = parseLine(InFile, success);
     if (!success) {
@@ -90,27 +89,46 @@ void LogMgr::loadFile(const std::string &fileName) {
     UUID_t Uuid;
     uint64_t Bid;
     std::tie(depth, Uuid, Bid) = PL;
-    if (depth+1 == S.size()) {
-      S.top().push_back(std::make_pair(Uuid, Bid));
-      S.push(std::vector<std::pair<UUID_t, uint64_t> >());
-      continue;
-    }
-    while (depth < S.size()) {
+    while (depth+1 < S.size()) {
       if (S.top().empty()){
         S.pop();
       } else {
         LogEntry Entry;
         Entry.FID = FileNames.size();
-        Entry.RID = LogEntries.size();
+        Entry.RID = ++RID;
         Entry.Conditions.clear();
         Entry.Conditions.insert(S.top().begin(), S.top().end());
-        for (auto it = S.top().begin(), ie = S.top().end(); it != ie; ++it) {
-          Children[Entry.Decision.first].insert(it->first);
-        }
         S.pop();
         Entry.Decision = S.top().back();
+        for (auto it = Entry.Conditions.begin(), ie = Entry.Conditions.end();
+             it != ie; ++it) {
+          Children[Entry.Decision.first].insert(it->first);
+        }
         LogEntries.push_back(Entry);
       }
+    }
+    if (depth+1 == S.size()) {
+      S.top().push_back(std::make_pair(Uuid, Bid));
+      S.push(std::vector<std::pair<UUID_t, uint64_t> >());
+      continue;
+    }
+  }
+  while (1 < S.size()) {
+    if (S.top().empty()){
+      S.pop();
+    } else {
+      LogEntry Entry;
+      Entry.FID = FileNames.size();
+      Entry.RID = LogEntries.size();
+      Entry.Conditions.clear();
+      Entry.Conditions.insert(S.top().begin(), S.top().end());
+      S.pop();
+      Entry.Decision = S.top().back();
+      for (auto it = Entry.Conditions.begin(), ie = Entry.Conditions.end();
+           it != ie; ++it) {
+        Children[Entry.Decision.first].insert(it->first);
+      }
+      LogEntries.push_back(Entry);
     }
   }
 }

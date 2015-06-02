@@ -21,9 +21,8 @@
 using namespace llvm;
 using namespace instcov;
 
-cl::opt<std::string> TraceFileName(cl::Positional,
-                                   cl::desc("<trace file>"),
-                                   cl::Required);
+cl::opt<std::string> TraceFileName("t",
+                                   cl::desc("<trace file>"));
 cl::list<std::string> FileNames(cl::Positional,
                                 cl::desc("[<debug info files> ...]"),
                                 cl::Required);
@@ -32,7 +31,7 @@ cl::opt<std::string> OutputFileName(
     cl::value_desc("output file name"),
     cl::desc("Specify the output file name,\n"
              "the default is \"parsed_trace.pt\""),
-    cl::init("parsed_trace.pt"));
+    cl::init(""));
 cl::opt<std::string> DumpFormat(
     "f",
     cl::value_desc("dump format"),
@@ -42,10 +41,23 @@ cl::opt<std::string> DumpFormat(
              "f: file name, b: branch id.\n"
              "Other characters will be print verbosely."
              "The default format is \"u:b (l:c:f)\""),
-    cl::init("u:b (l:c:f)"));
+    cl::init(""));
+
+cl::opt<bool> DIOnly(
+    "di-only",
+    cl::desc("process the debug infomation file only.\n"
+             "The trace file will not be processed.\n"
+             "The default dump format will be \"u (l:c:f)\""));
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
+  if (DumpFormat == "") {
+    if (DIOnly) {
+      DumpFormat = "u (l:c:f)";
+    } else {
+      DumpFormat = "u:b (l:c:f)";
+    }
+  }
   RecordMgr RM;
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
     RM.getDIBB().loadFile(*it);
@@ -54,13 +66,25 @@ int main(int argc, char *argv[]) {
     llvm::errs() << "debug information contain circles!\n";
     exit(1);
   }
-  RM.processTrace(TraceFileName);
+  if (OutputFileName.empty()) {
+    llvm::errs() << "output file name is empty, please use -o argument\n";
+    exit(1);
+  }
   std::ofstream OutFile(OutputFileName.c_str());
   if (!OutFile) {
     llvm::errs() << "cannot open output file: " << OutputFileName << "\n";
     exit(1);
   }
-  RM.dump(OutFile);
+  if (DIOnly) {
+    RM.getDIBB().dump(OutFile);
+  } else {
+    if (TraceFileName == "") {
+      llvm::errs() << "trace file name is empty, please use -t argument\n";
+      exit (1);
+    }
+    RM.processTrace(TraceFileName);
+    RM.dump(OutFile);
+  }
   return 0;
 }
 

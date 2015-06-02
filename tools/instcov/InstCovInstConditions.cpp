@@ -47,27 +47,6 @@ cl::opt<bool> InstConditions(
     cl::init(false));
 
 namespace {
-enum EXPR_TYPE {
-  EXPR_UNSUPPORTED,
-  EXPR_LEAF,
-  EXPR_NONLEAF,    
-};
-
-EXPR_TYPE MCDCNodeType(const Expr *e) {
-  if (const BinaryOperator *bo = dyn_cast<BinaryOperator>(e)) {
-      if (bo->isLogicalOp()) {
-        return EXPR_NONLEAF;
-      }
-      return EXPR_LEAF;
-  }
-  if (const UnaryOperator *uo = dyn_cast<UnaryOperator>(e)) {
-      if (uo->getOpcode() == UO_LNot) {
-        return EXPR_NONLEAF;
-      }
-      return EXPR_LEAF;
-  }
-  return EXPR_LEAF;
-}
 
 std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
   std::vector<Expr *> Leaves;
@@ -76,27 +55,26 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
   while(!UncheckedNodes.empty()) {
     Expr *Node = UncheckedNodes.top();
     UncheckedNodes.pop();
-    if (MCDCNodeType(Node) == EXPR_UNSUPPORTED) {
-      llvm::errs() << "unsupported node: ";
-      Node->dumpPretty(C);
-      llvm::errs() << "\n";
-    }
-    if (MCDCNodeType(Node) == EXPR_LEAF) {
-      Leaves.push_back(Node);
-      continue;
-    }
     if (BinaryOperator *bo = dyn_cast<BinaryOperator>(Node)) {
-      UncheckedNodes.push(bo->getRHS());
-      UncheckedNodes.push(bo->getLHS());
-      continue;
+      if (bo->isLogicalOp()) {
+        UncheckedNodes.push(bo->getRHS());
+        UncheckedNodes.push(bo->getLHS());
+        continue;
+      }
     }
     if (UnaryOperator *uo = dyn_cast<UnaryOperator>(Node)) {
-      UncheckedNodes.push(uo->getSubExpr());
+      if (uo->getOpcode() == UO_LNot) {
+        UncheckedNodes.push(uo->getSubExpr());
+        continue;
+      }
+    }
+    if (ParenExpr *pe = dyn_cast<ParenExpr>(Node)) {
+      UncheckedNodes.push(pe->getSubExpr());
       continue;
     }
-    llvm::errs() << "unhandled expression: ";
-    Node->dumpPretty(C);
-    llvm::errs() << "\n";
+    // leaf nodes
+    Leaves.push_back(Node);
+    continue;
   }
   return Leaves;
 }
