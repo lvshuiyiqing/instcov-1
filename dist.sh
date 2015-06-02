@@ -14,6 +14,7 @@ markdown doc/InstCovImpl.md > doc/InstCovImpl.html
 
 cp ../build/bin/instcov instcov-dist/bin
 cp ../build/bin/instcov-view instcov-dist/bin
+cp ../build/bin/mcdc-scan instcov-dist/bin
 cp ../build/lib/libinstcov_rt.a instcov-dist/lib
 cp -r ./runtime/include/ instcov-dist
 cp -r ./tests instcov-dist
