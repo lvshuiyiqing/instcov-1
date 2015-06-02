@@ -52,17 +52,19 @@ struct UUID_t {
 
   static UUID_t parseString(const std::string &str) {
     UUID_t result;
-    std::stringstream high("0x");
-    std::stringstream low("0x");
-    if (str.size() > 8) {
-      std::size_t pos = str.size() - 8;
-      high << str.substr(0, pos);
-      low << str.substr(pos);
+    std::stringstream highStr;
+    std::stringstream lowStr;
+    if (str.size() > 16) {
+      std::size_t pos = str.size() - 16;
+      highStr << "0x" << str.substr(0, pos);
+      lowStr << "0x" << str.substr(pos);
     } else {
-      low << str;
+      lowStr << str;
     }
-    high >> result.high;
-    low >> result.low;
+    std::stringstream high(highStr.str());
+    std::stringstream low(lowStr.str());
+    high >> std::hex >> result.high;
+    low >> std::hex >> result.low;
     return result;
   }
 

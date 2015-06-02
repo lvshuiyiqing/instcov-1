@@ -284,6 +284,72 @@ expansion. LibClang uses these directives to guess the location in the original
 file, which is called the [[ presumed ]] location. We use the presumed file name
 to determine whether the file need to be instrumented.
 
+## Analyzing MC/DC coverage
+
+After we obtained the execution records, the next problem is how to analyze the
+MC/DC coverage on it. Our goal is to do it right and fast.
+
+Firstly, each test case may visit a decision multiple times. We need to
+distinguish between different visits. We mark each visit by the test ID and
+visit ID.
+
+To quickly identify the MC/DC pairs. Here we use a hashing trick. We know that a
+MC/DC pair is two visits of a decision, having one of the conditions be
+evaluated differently, and all other conditions be evaluated the same, making
+the whole decision evaluated differently. Here we hash each visit into a integer
+value, making MC/DC pairs to be hashed into the same value.
+
+This is done as follows:
+
+1. For each condition of each decision, we initialize an empty hash table,
+   mapping integer values into pairs of containers (denote as the
+   [[ True side ]] and the [[ False Side ]]).
+2. For each visit, we build a Boolean vector, storing all the condition values,
+as well as the decision result.
+
+3. For each condition of each visit, if the condition is evaluated to True, then
+   the Boolean vector is kept the same, and the corresponding hash value is
+   computed using the vector. Then we put the visit into the True side
+   container.
+
+	If the condition is evaluated to False, then the value of this condition and
+    the decision is flipped, and the corresponding hash value is computed using
+    the vector. Then we put the visit into the False side container.
+
+4. If for some hash value, the True side container and the False side container
+   are both non-empty, then any one from the True side and any one from the
+   False side forms a MC/DC pair on the condition.
+
+Here is an example:
+
+Suppose decision `d` is `a||b`. We have test cases:
+
+	T1: 0 0 -> 0
+	T2: 1 0 -> 1
+	T3: 0 1 -> 1
+	T4: 1 1 -> 1
+
+For the T1, we have vector `000`.  Decision `a` is false, so it is flipped into
+`101`, we store the visit on the false side of `a:101`.  Similarily, we store
+the visit on the false side of `b:011`.  We omit the following process. The
+resulting table is as follows (note that we omitted the visit ID):
+
+	a:101: {T2}, {T1} >> MC/DC pair
+	a:110: {}, {T3}
+	a:111: {T4}, {}
+
+	b:011: {T3}, {T1} >> MC/DC pair
+	b:110: {}, {T2}
+	b:111: {T4}, {}
+
+Now we recognized an MC/DC pair for `a`, which is `<T2,T1>`, and an MC/DC pair
+for `b`, which is `<T3,T1>`.
+
+By using the hasing technique, we can avoid enumerating visit pairs and check
+whether they are MC/DC pairs. The complexity is reduced from `O(v*v*d)` to
+`O(v*d)`, where `v` is the number of visits, and `d` is the maximum number of
+conditions in a decision.
+
 ## Developer FAQs
 
 Here are some useful tips for building InstCov with LLVM/Clang. It is a little
