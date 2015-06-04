@@ -43,6 +43,13 @@ cl::opt<bool> InstSwitch(
     cl::cat(InstCovCategory),
     cl::init(false));
 
+cl::opt<bool> InstAssignment(
+    "inst-assignment",
+    cl::desc("enable assignment instrumentation.\n"
+             "Default value: false\n"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
+
 extern llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
 
 namespace{
@@ -230,6 +237,29 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
     }
     SC = SC->getNextSwitchCase();
   }
+  return true;
+}
+
+bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
+  if (!InstAssignment || !s->isAssignmentOp()) {
+    return true;
+  }
+  if (ExtractConditions(s->getRHS()).size() <= 1) {
+    return true;
+  }
+  MCDCVisitBinaryOperator(s);
+  SourceLocation LocStart = s->getRHS()->getLocStart();
+  SourceLocation LocEnd = Lexer::getLocForEndOfToken(
+      s->getRHS()->getLocEnd(), 0,
+      TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
+  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  TheRewriter.InsertText(LocStart, "(", true, true);
+  UUID_t uuid = DIM.getUUID(s);
+  std::stringstream ss;
+  ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
+     << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
+     << ", 1), 0)";
+  TheRewriter.InsertText(LocEnd, ss.str(), false, true);  
   return true;
 }
 
