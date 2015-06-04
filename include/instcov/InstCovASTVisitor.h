@@ -40,16 +40,19 @@ public:
   bool VisitWhileStmt(clang::WhileStmt *s);
   bool VisitDoStmt(clang::DoStmt *s);
   bool VisitSwitchStmt(clang::SwitchStmt *s);
+  bool VisitBinaryOperator(clang::BinaryOperator *s);
   
   void MCDCVisitIfStmt(clang::IfStmt *s);
   void MCDCVisitForStmt(clang::ForStmt *s);
   void MCDCVisitWhileStmt(clang::WhileStmt *s);
   void MCDCVisitDoStmt(clang::DoStmt *s);
+  void MCDCVisitBinaryOperator(clang::BinaryOperator *s);
 
 private:
   bool ShouldInst(clang::Stmt *s) const;
   void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p);
 
+  static std::vector<clang::Expr *> ExtractConditions(clang::Expr *e);
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
   DbgInfoMgr DIM;
