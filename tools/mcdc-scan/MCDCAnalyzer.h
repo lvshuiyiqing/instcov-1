@@ -38,7 +38,7 @@ class MCDCAnalyzer {
   const Data_t &getData(void) const { return Data; }
 
   void dump(std::ostream &OS) const;
-  void dumpReport(std::ostream &OS) const;
+  void dumpReport(std::ostream &OS, const LogMgr &LM) const;
 
  private:
   Data_t Data;

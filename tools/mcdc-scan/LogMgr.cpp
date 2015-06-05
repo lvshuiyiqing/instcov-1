@@ -15,6 +15,7 @@
 #include <tuple>
 #include <stack>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include "LogMgr.h"
 
@@ -33,15 +34,20 @@ void eatOrQuit(std::istream &In, const std::string &str) {
     }
   }
 }
+void goPass(std::istream &In, char c) {
+  while (In && In.get() != c) ;
+}
 
-std::tuple<unsigned, UUID_t, uint64_t> parseLine(std::istream &In, bool &success) {
+std::tuple<unsigned, UUID_t, uint64_t, LocInfo>
+parseLine(std::istream &In, bool &success) {
   unsigned depth = 0;
   UUID_t Uuid;
   uint64_t Bid = 0;
   std::string line;
+  LocInfo LI;
   if (!std::getline(In, line) || line.empty()) {
     success = false;  // last line
-    return std::make_tuple(depth, Uuid, Bid);
+    return std::make_tuple(depth, Uuid, Bid, LI);
   }
   std::stringstream ss(line);
   while (ss.peek() == '-') {
@@ -58,8 +64,23 @@ std::tuple<unsigned, UUID_t, uint64_t> parseLine(std::istream &In, bool &success
   Uuid = UUID_t::parseString(strUUID);
   //eatOrQuit(ss, ":");
   ss >> Bid;
-  return std::make_tuple(depth, Uuid, Bid);
+  goPass(ss, '(');
+  std::string StrLoc;
+  getline(ss, StrLoc);
+  StrLoc.resize(StrLoc.size()-1);
+  size_t loc1 = StrLoc.find(':');
+  size_t loc2 = StrLoc.find(':', loc1+1);
+  LI.Line = std::stoi(StrLoc.substr(0,loc1));
+  LI.Col = std::stoi(StrLoc.substr(loc1+1, loc2-loc1-1));
+  LI.FileName = StrLoc.substr(loc2+1);
+  return std::make_tuple(depth, Uuid, Bid, LI);
 }
+}
+
+std::string LocInfo::toString(void) const {
+  std::stringstream ss;
+  ss << Line << ":" << Col << ":" << FileName;
+  return ss.str();
 }
 
 LogMgr::LogMgr() {
@@ -88,7 +109,9 @@ void LogMgr::loadFile(const std::string &fileName) {
     unsigned depth = 0;
     UUID_t Uuid;
     uint64_t Bid;
-    std::tie(depth, Uuid, Bid) = PL;
+    LocInfo LI;
+    std::tie(depth, Uuid, Bid, LI) = PL;
+    LocInfos[Uuid] = LI;
     while (depth+1 < S.size()) {
       if (S.top().empty()){
         S.pop();
