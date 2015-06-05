@@ -9,6 +9,7 @@ int my_abs(int a) {
 int main(int args, char **argv) {
     int a;
     klee_make_symbolic(&a, sizeof(a), "a");
+    klee_assume(a!=INT_MIN);
     printf("%d\n", my_abs(a));
     return 0;
 }
