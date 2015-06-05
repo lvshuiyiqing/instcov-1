@@ -35,6 +35,18 @@ class LogEntry {
   unsigned RID;
 };
 
+class LocInfo {
+ public:
+  LocInfo(void)
+      : FileName(), Line(0), Col(0) {}
+
+  std::string toString(void) const;
+  
+  std::string FileName;
+  uint64_t Line;
+  uint64_t Col;
+};
+
 class LogMgr {
  public:
   LogMgr(void);
@@ -58,11 +70,16 @@ class LogMgr {
   const std::map<UUID_t, std::set<UUID_t> > &getChildren() const {
     return Children;
   }
+
+  const std::map<UUID_t, LocInfo> &getLocInfos() const {
+    return LocInfos;
+  }
   
  private:
   std::vector<std::string> FileNames;
   std::vector<LogEntry> LogEntries;
   std::map<UUID_t, std::set<UUID_t> > Children;
+  std::map<UUID_t, LocInfo> LocInfos;
 };
 }
 
