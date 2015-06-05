@@ -13,8 +13,9 @@ function convert_one {
     for ktest in $ktests; do
 	echo $ktest
 	test=`./convert_ktest.sh $ktest`
-	echo $test >> tests/$dir
+	echo "../../test_wrapper $dir $test" >> tests/$dir
     done
+    chmod a+x tests/$dir
 }
 
 for dir in $dirs; do

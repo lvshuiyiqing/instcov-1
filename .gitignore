@@ -2,3 +2,17 @@
 *.html
 tests/*
 instcov-dist*
+*.i.c
+*.i.trans.c
+*.di
+*.dbginfo
+abs
+calDate
+complex
+findMiddle
+isLeapYear
+isTriangle
+nextDate
+showHand
+spaceManage
+tcas
