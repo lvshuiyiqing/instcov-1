@@ -86,8 +86,10 @@ struct LocSorter {
  private:
   const LogMgr &LM;
 };
+}
 
-std::vector<MCDCAnalyzer::Data_t::const_iterator> getSortedDecisions(
+std::vector<MCDCAnalyzer::Data_t::const_iterator>
+MCDCAnalyzer::getSortedDecisions(
     const MCDCAnalyzer::Data_t &Data, const LogMgr &LM) {
   std::vector<MCDCAnalyzer::Data_t::const_iterator> vec;
   for (auto it = Data.begin(), ie = Data.end(); it != ie; ++it) {
@@ -97,7 +99,8 @@ std::vector<MCDCAnalyzer::Data_t::const_iterator> getSortedDecisions(
   return vec;
 }
 
-std::vector<MCDCAnalyzer::DData_t::const_iterator> getSortedConditions(
+std::vector<MCDCAnalyzer::DData_t::const_iterator>
+MCDCAnalyzer::getSortedConditions(
     const MCDCAnalyzer::DData_t &DData, const LogMgr &LM) {
   std::vector<MCDCAnalyzer::DData_t::const_iterator> vec;
   for (auto it = DData.begin(), ie = DData.end(); it != ie; ++it) {
@@ -105,7 +108,6 @@ std::vector<MCDCAnalyzer::DData_t::const_iterator> getSortedConditions(
   }
   std::sort(vec.begin(), vec.end(), LocSorter(LM));
   return vec;
-}
 }
 
 void MCDCAnalyzer::dumpReport(std::ostream &OS, const LogMgr &LM) const {
