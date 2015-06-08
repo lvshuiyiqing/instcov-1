@@ -7,4 +7,4 @@ fi
 file=`basename $1`
 cd $file
 llvm-gcc -g -c -emit-llvm $file.c
-klee -allow-external-sym-calls -disable-opt -max-solver-time=1 $file.o
+klee -allow-external-sym-calls -disable-opt -search=dfs $file.o

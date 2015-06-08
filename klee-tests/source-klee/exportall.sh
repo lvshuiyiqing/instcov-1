@@ -7,5 +7,5 @@ mkdir -p ktests
 
 for dir in $dirs; do
     dir=`basename $dir`
-    cp -Hr $dir/klee-last export/$dir
+    cp -Hr $dir/klee-last ktests/$dir
 done
