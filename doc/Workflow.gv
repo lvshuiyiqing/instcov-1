@@ -15,13 +15,13 @@ digraph G {
 	parsed_traces [ label="Parsed Traces" ];
 	mcdc_report [ label="MC/DC Coverage Report" ];
 	node [ shape=box ];
-	p_prep [ label="gcc -E" ];
-	p_instcov [ label="instcov" ];
-	p_compile [ label="gcc -c" ];
-	p_link [ label="ld" ];
+	p_prep [ label="gcc -E (preprocessing)" ];
+	p_instcov [ label="instcov (instrumentation)" ];
+	p_compile [ label="gcc -c (compilation)" ];
+	p_link [ label="ld (linking)" ];
 	p_exec [ label="Execution" ];
-	p_parse [ label="instcov_view (parse)" ];
-	p_analysis [ label="mcdc-scan" ];
+	p_parse [ label="instcov_view (parsing)" ];
+	p_analysis [ label="mcdc-scan (analysis)" ];
 
 	{rt_h, src} -> p_prep -> prep;
 	prep -> p_instcov -> {trans, dbginfo};
