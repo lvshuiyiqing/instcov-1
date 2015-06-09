@@ -22,6 +22,11 @@ cl::opt<bool> CountsOnly("counts-only",
                          cl::desc("only counts"),
                          cl::init(false));
 
+cl::opt<bool> Verbose(
+    "v",
+    cl::desc("dump more verbosely"),
+    cl::init(false));
+
 using namespace instcov;
 
 void MCDCAnalyzer::registerEntry(const LogEntry *entry) {
@@ -110,7 +115,7 @@ MCDCAnalyzer::getSortedConditions(
   return vec;
 }
 
-void MCDCAnalyzer::dumpReport(std::ostream &OS, const LogMgr &LM) const {
+void MCDCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   // decision level
   auto dorder = getSortedDecisions(Data, LM);
   for (auto itd = dorder.begin(), ied = dorder.end(); itd != ied; ++itd) {
@@ -136,20 +141,12 @@ void MCDCAnalyzer::dumpReport(std::ostream &OS, const LogMgr &LM) const {
       } else {
         OS << " > Uncovered" << std::endl;
       }
-    }
-  }
-}
 
-void MCDCAnalyzer::dumpVerbose(std::ostream &OS) const {
-  // decision level
-  for (auto itd = Data.begin(), ied = Data.end(); itd != ied; ++itd) {
-    OS << "Decision: " << itd->first.toString() << ":" << std::endl;
-    // condition level
-    for (auto itc = itd->second.begin(), iec = itd->second.end();
-         itc != iec; ++itc) {
-      OS << "Condition: " << itc->first.toString() << std::endl;
-      // hash level
-      for (auto ith = itc->second.begin(), ieh = itc->second.end();
+      if (!Verbose) {
+        continue;
+      }
+      // Verbose dump
+      for (auto ith = (*itc)->second.begin(), ieh = (*itc)->second.end();
            ith != ieh; ++ith) {
         if (!ith->second.TrueSide.empty() && !ith->second.FalseSide.empty()) {
           OS << "Hash (Covered): ";
