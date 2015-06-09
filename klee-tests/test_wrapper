@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+dir=`basename $1`
+
+mkdir -p traces
+if [ -f TID ]; then
+    tid=`cat TID`
+else
+    tid=
+fi
+
+tid=$((tid+1))
+
+echo $tid > TID
+
+./$dir ${*:2} > /dev/null
+../../../scripts/instcov-view.sh -t dump.instcov $dir.i.c.dbginfo -o traces/$dir.${tid}.pt

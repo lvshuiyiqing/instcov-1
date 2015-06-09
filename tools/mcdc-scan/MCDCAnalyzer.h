@@ -37,8 +37,15 @@ class MCDCAnalyzer {
 
   const Data_t &getData(void) const { return Data; }
 
-  void dump(std::ostream &OS) const;
-  void dumpReport(std::ostream &OS) const;
+  static std::vector<MCDCAnalyzer::Data_t::const_iterator>
+  getSortedDecisions(
+      const MCDCAnalyzer::Data_t &Data, const LogMgr &LM);
+
+  static std::vector<MCDCAnalyzer::DData_t::const_iterator>
+  getSortedConditions(
+      const MCDCAnalyzer::DData_t &DData, const LogMgr &LM);
+
+  void dump(std::ostream &OS, const LogMgr &LM) const;
 
  private:
   Data_t Data;

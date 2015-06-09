@@ -46,9 +46,7 @@ cl::opt<bool> InstConditions(
     cl::cat(InstCovCategory),
     cl::init(false));
 
-namespace {
-
-std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
+std::vector<Expr *> InstCovASTVisitor::ExtractConditions(Expr *e) {
   std::vector<Expr *> Leaves;
   std::stack<Expr *> UncheckedNodes;
   UncheckedNodes.push(e);
@@ -78,12 +76,10 @@ std::vector<Expr *> ExtractMCDCLeaves(Expr *e, ASTContext &C) {
   }
   return Leaves;
 }
-}
 
 void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
   TheRewriter.InsertText(e->getLocStart(), "(", true, true);
-  std::vector<Expr *> CondExprs = ExtractMCDCLeaves(
-      e, TheASTContext);
+  std::vector<Expr *> CondExprs = ExtractConditions(e);
   for (auto it = CondExprs.begin(), ie = CondExprs.end();
        it != ie; ++it) {
     DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
@@ -140,3 +136,11 @@ void InstCovASTVisitor::MCDCVisitDoStmt(DoStmt *s) {
   }
   MCDCVisitExpr(s->getCond(), s);
 }
+
+void InstCovASTVisitor::MCDCVisitBinaryOperator(BinaryOperator *s) {
+  if (!InstConditions) {
+    return;
+  }
+  MCDCVisitExpr(s->getRHS(), s);
+}
+
