@@ -140,7 +140,7 @@ void MCDCAnalyzer::dumpReport(std::ostream &OS, const LogMgr &LM) const {
   }
 }
 
-void MCDCAnalyzer::dump(std::ostream &OS) const {
+void MCDCAnalyzer::dumpVerbose(std::ostream &OS) const {
   // decision level
   for (auto itd = Data.begin(), ied = Data.end(); itd != ied; ++itd) {
     OS << "Decision: " << itd->first.toString() << ":" << std::endl;
@@ -157,7 +157,7 @@ void MCDCAnalyzer::dump(std::ostream &OS) const {
           OS << "Hash (Uncovered): ";
         }
         OS << ith->first << std::endl;
-        OS << "True side: " << ith->second.TrueSide.size();
+        OS << "True side: " << ith->second.TrueSide.size() << std::endl;
         if (!CountsOnly) {
           for (auto ite = ith->second.TrueSide.begin(),
                    iee = ith->second.TrueSide.end();
@@ -166,7 +166,7 @@ void MCDCAnalyzer::dump(std::ostream &OS) const {
           }
         }
         OS << std::endl;
-        OS << "False side: " << ith->second.FalseSide.size();
+        OS << "False side: " << ith->second.FalseSide.size() << std::endl;
         if (!CountsOnly) {
           for (auto ite = ith->second.FalseSide.begin(),
                    iee = ith->second.FalseSide.end();
