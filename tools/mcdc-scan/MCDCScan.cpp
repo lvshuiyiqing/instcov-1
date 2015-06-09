@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     analyzer.registerEntry(&(*it));
   }
   if (Verbose) {
-    analyzer.dump(std::cout);
+    analyzer.dumpVerbose(std::cout);
   } else {
     analyzer.dumpReport(std::cout, LM);
   }

@@ -45,7 +45,7 @@ class MCDCAnalyzer {
   getSortedConditions(
       const MCDCAnalyzer::DData_t &DData, const LogMgr &LM);
 
-  void dump(std::ostream &OS) const;
+  void dumpVerbose(std::ostream &OS) const;
   void dumpReport(std::ostream &OS, const LogMgr &LM) const;
 
  private:
