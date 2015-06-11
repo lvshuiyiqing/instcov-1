@@ -46,6 +46,14 @@ cl::opt<bool> InstConditions(
     cl::cat(InstCovCategory),
     cl::init(false));
 
+cl::opt<bool> NoShortCircuits(
+    "no-short-circuits",
+    cl::desc("the instrumentation will dump all conditions despite of "
+             "circuits.\n"
+             "By default, instcov will only dump evaluated conditions\n"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
+
 std::vector<Expr *> InstCovASTVisitor::ExtractConditions(Expr *e) {
   std::vector<Expr *> Leaves;
   std::stack<Expr *> UncheckedNodes;
@@ -78,25 +86,44 @@ std::vector<Expr *> InstCovASTVisitor::ExtractConditions(Expr *e) {
 }
 
 void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
-  TheRewriter.InsertText(e->getLocStart(), "(", true, true);
-  std::vector<Expr *> CondExprs = ExtractConditions(e);
-  for (auto it = CondExprs.begin(), ie = CondExprs.end();
-       it != ie; ++it) {
-    DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
-    UUID_t uuid = DIM.getUUID(*it);
-    std::string dumper;
-    llvm::raw_string_ostream os(dumper);
-    os << "instcov_dump(" << uuid.toArgString() << ", (";
-    (*it)->printPretty(os, nullptr,
-                       PrintingPolicy(TheASTContext.getLangOpts()));
-    os << ") ? 1 : 0), ";
-    os.flush();
-    TheRewriter.InsertText(e->getLocStart(), dumper, true, true);
+  if (NoShortCircuits) {
+    TheRewriter.InsertText(e->getLocStart(), "(", true, true);
+    std::vector<Expr *> CondExprs = ExtractConditions(e);
+    for (auto it = CondExprs.begin(), ie = CondExprs.end();
+         it != ie; ++it) {
+      DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIM.getUUID(*it);
+      std::string dumper;
+      llvm::raw_string_ostream os(dumper);
+      os << "instcov_dump(" << uuid.toArgString() << ", (";
+      (*it)->printPretty(os, nullptr,
+                         PrintingPolicy(TheASTContext.getLangOpts()));
+      os << ") ? 1 : 0), ";
+      os.flush();
+      TheRewriter.InsertText(e->getLocStart(), dumper, true, true);
+    }
+    SourceLocation endLoc = Lexer::getLocForEndOfToken(
+        e->getLocEnd(), 0, TheRewriter.getSourceMgr(),
+        TheRewriter.getLangOpts());
+    TheRewriter.InsertText(endLoc, ")", false, true);
+  } else {
+    std::vector<Expr *> CondExprs = ExtractConditions(e);
+    for (auto it = CondExprs.begin(), ie = CondExprs.end();
+         it != ie; ++it) {
+      DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIM.getUUID(*it);
+      TheRewriter.InsertText((*it)->getLocStart(), "((", true, true);
+      std::string dumper;
+      llvm::raw_string_ostream os(dumper);
+      os << ") ? (" << "instcov_dump(" << uuid.toArgString() << ",1),1) : ("
+         << "instcov_dump(" << uuid.toArgString() << ",0),0)) ";
+      os.flush();
+      SourceLocation endLoc = Lexer::getLocForEndOfToken(
+          (*it)->getLocEnd(), 0, TheRewriter.getSourceMgr(),
+          TheRewriter.getLangOpts());
+      TheRewriter.InsertText(endLoc, dumper, false, true);
+    }
   }
-  SourceLocation endLoc = Lexer::getLocForEndOfToken(
-      e->getLocEnd(), 0, TheRewriter.getSourceMgr(),
-      TheRewriter.getLangOpts());
-  TheRewriter.InsertText(endLoc, ")", false, true);
 }
 
 void InstCovASTVisitor::MCDCVisitIfStmt(IfStmt *s) {

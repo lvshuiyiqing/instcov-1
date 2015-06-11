@@ -15,40 +15,13 @@
 #ifndef MCDCAnalyzer_H_
 #define MCDCAnalyzer_H_
 
-#include <vector>
-#include <map>
-#include <iostream>
-#include <unordered_map>
-#include "instcov/uuid.h"
 #include "LogMgr.h"
 
 namespace instcov {
 class MCDCAnalyzer {
  public:
-  typedef struct {
-    std::vector<const LogEntry *> TrueSide;
-    std::vector<const LogEntry *> FalseSide;
-  } CData_entry_t;
-  typedef std::unordered_map<size_t, CData_entry_t> CData_t;
-  typedef std::map<UUID_t, CData_t> DData_t;
-  typedef std::map<UUID_t, DData_t> Data_t;
-
-  void registerEntry(const LogEntry *entry);
-
-  const Data_t &getData(void) const { return Data; }
-
-  static std::vector<MCDCAnalyzer::Data_t::const_iterator>
-  getSortedDecisions(
-      const MCDCAnalyzer::Data_t &Data, const LogMgr &LM);
-
-  static std::vector<MCDCAnalyzer::DData_t::const_iterator>
-  getSortedConditions(
-      const MCDCAnalyzer::DData_t &DData, const LogMgr &LM);
-
-  void dump(std::ostream &OS, const LogMgr &LM) const;
-
- private:
-  Data_t Data;
+  virtual void registerEntry(const LogEntry *entry) = 0;
+  virtual void dump(std::ostream &OS, const LogMgr &LM) const = 0;
 };
 }
 

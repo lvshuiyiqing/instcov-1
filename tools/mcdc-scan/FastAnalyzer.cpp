@@ -14,7 +14,7 @@
 
 #include <functional>
 #include <algorithm>
-#include "MCDCAnalyzer.h"
+#include "FastAnalyzer.h"
 #include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
@@ -29,7 +29,7 @@ cl::opt<bool> Verbose(
 
 using namespace instcov;
 
-void MCDCAnalyzer::registerEntry(const LogEntry *entry) {
+void FastAnalyzer::registerEntry(const LogEntry *entry) {
   std::vector<bool> bits;
   std::vector<UUID_t> Uuids;
   bits.reserve(entry->Conditions.size()+1);
@@ -93,10 +93,10 @@ struct LocSorter {
 };
 }
 
-std::vector<MCDCAnalyzer::Data_t::const_iterator>
-MCDCAnalyzer::getSortedDecisions(
-    const MCDCAnalyzer::Data_t &Data, const LogMgr &LM) {
-  std::vector<MCDCAnalyzer::Data_t::const_iterator> vec;
+std::vector<FastAnalyzer::Data_t::const_iterator>
+FastAnalyzer::getSortedDecisions(
+    const FastAnalyzer::Data_t &Data, const LogMgr &LM) {
+  std::vector<FastAnalyzer::Data_t::const_iterator> vec;
   for (auto it = Data.begin(), ie = Data.end(); it != ie; ++it) {
     vec.push_back(it);
   }
@@ -104,10 +104,10 @@ MCDCAnalyzer::getSortedDecisions(
   return vec;
 }
 
-std::vector<MCDCAnalyzer::DData_t::const_iterator>
-MCDCAnalyzer::getSortedConditions(
-    const MCDCAnalyzer::DData_t &DData, const LogMgr &LM) {
-  std::vector<MCDCAnalyzer::DData_t::const_iterator> vec;
+std::vector<FastAnalyzer::DData_t::const_iterator>
+FastAnalyzer::getSortedConditions(
+    const FastAnalyzer::DData_t &DData, const LogMgr &LM) {
+  std::vector<FastAnalyzer::DData_t::const_iterator> vec;
   for (auto it = DData.begin(), ie = DData.end(); it != ie; ++it) {
     vec.push_back(it);
   }
@@ -115,7 +115,7 @@ MCDCAnalyzer::getSortedConditions(
   return vec;
 }
 
-void MCDCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
+void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   // decision level
   auto dorder = getSortedDecisions(Data, LM);
   for (auto itd = dorder.begin(), ied = dorder.end(); itd != ied; ++itd) {

@@ -24,6 +24,8 @@
 
 namespace instcov {
 
+const uint64_t BID_NA = ~(~((uint64_t)0)>>1);
+
 class LogEntry {
  public:
   LogEntry(void)
