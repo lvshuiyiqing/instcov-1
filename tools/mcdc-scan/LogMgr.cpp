@@ -63,7 +63,16 @@ parseLine(std::istream &In, bool &success) {
   getline(ss, strUUID, ':');
   Uuid = UUID_t::parseString(strUUID);
   //eatOrQuit(ss, ":");
-  ss >> Bid;
+  if (ss.peek() == 'N') {
+    ss.get();
+    if (ss.get() != 'A') {
+      std::cerr << "bad log, expecting \"NA\" or integer" << std::endl;
+      exit(1);
+    }
+    Bid = BID_NA;
+  } else {
+    ss >> Bid;
+  }
   goPass(ss, '(');
   std::string StrLoc;
   getline(ss, StrLoc);

@@ -15,8 +15,10 @@
 #include "llvm/Support/CommandLine.h"
 #include "LogMgr.h"
 #include "MCDCAnalyzer.h"
+#include "FastAnalyzer.h"
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 using namespace llvm;
 using namespace instcov;
@@ -31,12 +33,12 @@ int main(int argc, char *argv[]) {
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
     LM.loadFile(*it);
   }
-  MCDCAnalyzer analyzer;
+  std::shared_ptr<MCDCAnalyzer> analyzer(new FastAnalyzer());
   for (auto it = LM.getLogEntries().begin(), ie = LM.getLogEntries().end();
        it != ie; ++it) {
-    analyzer.registerEntry(&(*it));
+    analyzer->registerEntry(&(*it));
   }
-  analyzer.dump(std::cout, LM);
+  analyzer->dump(std::cout, LM);
   return 0;
 }
 
