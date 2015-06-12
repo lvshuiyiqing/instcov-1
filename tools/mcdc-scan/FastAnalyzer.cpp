@@ -1,4 +1,4 @@
-//===-- MCDCAnalyzer.cpp ------- MC/DC analyzer definitions -----*- C++ -*-===//
+//===-- FastAnalyzer.cpp -- Fast MC/DC analyzer definitions -----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the class for trace log manager
+/// \brief This file contains the definitions of FastAnalyzer
 ///
 //===----------------------------------------------------------------------===//
 
@@ -59,6 +59,9 @@ void FastAnalyzer::registerEntry(const LogEntry *entry) {
       bits.back() = !bits.back();
     }
   }
+}
+
+void FastAnalyzer::finalize(void) {
 }
 
 namespace {

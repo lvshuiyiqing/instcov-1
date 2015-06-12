@@ -1,4 +1,4 @@
-//===-- FastAnalyzer.h ------- MC/DC analyzer class -------------*- C++ -*-===//
+//===-- FastAnalyzer.h -- Fast MC/DC analyzer class -------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the class for trace log manager
+/// \brief This file contains the class for fast MC/DC analyzer
 ///
 //===----------------------------------------------------------------------===//
 
@@ -34,7 +34,8 @@ class FastAnalyzer : public MCDCAnalyzer {
   typedef std::map<UUID_t, DData_t> Data_t;
 
   virtual void registerEntry(const LogEntry *entry);
-
+  virtual void finalize(void);
+  
   const Data_t &getData(void) const { return Data; }
 
   static std::vector<Data_t::const_iterator>

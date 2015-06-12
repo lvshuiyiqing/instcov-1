@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
        it != ie; ++it) {
     analyzer->registerEntry(&(*it));
   }
+  analyzer->finalize();
   analyzer->dump(std::cout, LM);
   return 0;
 }
