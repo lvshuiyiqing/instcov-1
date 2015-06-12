@@ -40,49 +40,55 @@ void goPass(std::istream &In, char c) {
 
 std::tuple<unsigned, UUID_t, uint64_t, LocInfo>
 parseLine(std::istream &In, bool &success) {
-  unsigned depth = 0;
-  UUID_t Uuid;
-  uint64_t Bid = 0;
-  std::string line;
-  LocInfo LI;
-  if (!std::getline(In, line) || line.empty()) {
-    success = false;  // last line
-    return std::make_tuple(depth, Uuid, Bid, LI);
-  }
-  std::stringstream ss(line);
-  while (ss.peek() == '-') {
-    ++depth;
-    ss.get();
-  }
-  ss.peek();
-  if (ss.eof() || !ss) {
-    std::cerr << "bad log\n";
-    exit(1);
-  }
-  std::string strUUID;
-  getline(ss, strUUID, ':');
-  Uuid = UUID_t::parseString(strUUID);
-  //eatOrQuit(ss, ":");
-  if (ss.peek() == 'N') {
-    ss.get();
-    if (ss.get() != 'A') {
-      std::cerr << "bad log, expecting \"NA\" or integer" << std::endl;
+  while (true) {
+    unsigned depth = 0;
+    UUID_t Uuid;
+    uint64_t Bid = 0;
+    std::string line;
+    LocInfo LI;
+    if (!std::getline(In, line) || line.empty()) {
+      success = false;  // last line
+      return std::make_tuple(depth, Uuid, Bid, LI);
+    }
+    std::stringstream ss(line);
+    while (ss.peek() == '-') {
+      ++depth;
+      ss.get();
+    }
+    ss.peek();
+    if (ss.eof() || !ss) {
+      std::cerr << "bad log\n";
       exit(1);
     }
-    Bid = BID_NA;
-  } else {
-    ss >> Bid;
+    std::string strUUID;
+    getline(ss, strUUID, ':');
+    Uuid = UUID_t::parseString(strUUID);
+    //eatOrQuit(ss, ":");
+    if (ss.peek() == 'N') {
+      ss.get();
+      if (ss.get() != 'A') {
+        std::cerr << "bad log, expecting \"NA\" or integer" << std::endl;
+        exit(1);
+      }
+      Bid = BID_NA;
+    } else {
+      ss >> Bid;
+      if (Bid >= 2) {
+        // skip switches
+        continue;
+      }
+    }
+    goPass(ss, '(');
+    std::string StrLoc;
+    getline(ss, StrLoc);
+    StrLoc.resize(StrLoc.size()-1);
+    size_t loc1 = StrLoc.find(':');
+    size_t loc2 = StrLoc.find(':', loc1+1);
+    LI.Line = std::stoi(StrLoc.substr(0,loc1));
+    LI.Col = std::stoi(StrLoc.substr(loc1+1, loc2-loc1-1));
+    LI.FileName = StrLoc.substr(loc2+1);
+    return std::make_tuple(depth, Uuid, Bid, LI);
   }
-  goPass(ss, '(');
-  std::string StrLoc;
-  getline(ss, StrLoc);
-  StrLoc.resize(StrLoc.size()-1);
-  size_t loc1 = StrLoc.find(':');
-  size_t loc2 = StrLoc.find(':', loc1+1);
-  LI.Line = std::stoi(StrLoc.substr(0,loc1));
-  LI.Col = std::stoi(StrLoc.substr(loc1+1, loc2-loc1-1));
-  LI.FileName = StrLoc.substr(loc2+1);
-  return std::make_tuple(depth, Uuid, Bid, LI);
 }
 }
 

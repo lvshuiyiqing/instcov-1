@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the class for trace log manager
+/// \brief This file contains the abstract class for MCDC analyzers
 ///
 //===----------------------------------------------------------------------===//
 
@@ -22,6 +22,7 @@ class MCDCAnalyzer {
  public:
   virtual void registerEntry(const LogEntry *entry) = 0;
   virtual void dump(std::ostream &OS, const LogMgr &LM) const = 0;
+  virtual void finalize(void) = 0;
 };
 }
 
