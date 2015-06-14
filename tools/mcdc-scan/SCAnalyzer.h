@@ -33,14 +33,26 @@ class SCAnalyzer : public MCDCAnalyzer {
   typedef std::unordered_map<Assignment_t, std::vector<const LogEntry*> >
   SortedEntries_t;
   typedef std::pair<Assignment_t, Assignment_t> MCDCPair_t;
-  typedef std::map<UUID_t, std::vector<MCDCPair_t> > Pairs4Conditions_t;
-  typedef std::map<UUID_t, Pairs4Conditions_t> Pairs4Decisions_t;
-private:
+  typedef std::map<UUID_t, std::vector<MCDCPair_t> > CondPairs_t;
+  typedef std::map<UUID_t, CondPairs_t> DecPairs_t;
+
+  static std::vector<CondPairs_t::const_iterator>
+  getSortedConditions(
+      const CondPairs_t &C, const LogMgr &LM);
+
+  static std::vector<DecPairs_t::const_iterator>
+  getSortedDecisions(
+      const DecPairs_t &D, const LogMgr &LM);
+
+  
+ private:
   static size_t findMatch(const Assignment_t &LHS,
                           const Assignment_t &RHS);
-  SortedEntries_t SortedEntries;
-  Pairs4Decisions_t DecisionInfo;
-  std::map<UUID_t, std::vector<UUID_t> > UuidOrder;
+  DecPairs_t Dec2Pairs;
+  std::unordered_map<Assignment_t, std::vector<const LogEntry *> >
+  Assgn2Entries;
+  std::map<UUID_t, std::vector<Assignment_t> > Dec2Assgns;
+  std::map<UUID_t, std::vector<UUID_t> > Dec2CondOrder;
 };
 
 }
