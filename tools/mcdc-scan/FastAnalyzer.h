@@ -33,7 +33,7 @@ class FastAnalyzer : public MCDCAnalyzer {
   typedef std::map<UUID_t, CData_t> DData_t;
   typedef std::map<UUID_t, DData_t> Data_t;
 
-  virtual void registerEntry(const LogEntry *entry);
+  virtual void registerEntry(const LogEntry *entry, const LogMgr &LM);
   virtual void finalize(void);
   
   const Data_t &getData(void) const { return Data; }

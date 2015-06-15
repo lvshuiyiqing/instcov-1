@@ -43,18 +43,19 @@ bool isMatch(char LHS, char RHS) {
 }
 }
 
-void SCAnalyzer::registerEntry(const LogEntry *entry) {
+void SCAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
   Assignment_t NewAssignment;
   std::vector<UUID_t> ThisCondOrder;
   NewAssignment.reserve(entry->Conditions.size()+1);
-  for (auto it = entry->Conditions.begin(), ie = entry->Conditions.end();
+  auto corder = getSortedIterators(entry->Conditions, LM);
+  for (auto it = corder.begin(), ie = corder.end();
        it != ie; ++it) {
-    NewAssignment.push_back(bid2char(it->second));
-    ThisCondOrder.push_back(it->first);
-    Dec2Pairs[entry->Decision.first][it->first]; // register in the results
+    NewAssignment.push_back(bid2char((*it)->second));
+    ThisCondOrder.push_back((*it)->first);
+    Dec2Pairs[entry->Decision.first][(*it)->first]; // register in the results
   }
   NewAssignment.push_back(bid2char(entry->Decision.second));
-  Dec2Assgns[entry->Decision.first].push_back(NewAssignment);
+  Dec2Assgns[entry->Decision.first].insert(NewAssignment);
   Assgn2Entries[NewAssignment].push_back(entry);
   Dec2CondOrder[entry->Decision.first] = ThisCondOrder;
 }
@@ -95,7 +96,7 @@ size_t SCAnalyzer::findMatch(const Assignment_t &LHS,
   }
   size_t ID = -1;
   for (size_t i = 0, e = LHS.size() - 1; i < e; ++i) {
-    if (isMatch(LHS[i], RHS[i])) {
+    if (!isMatch(LHS[i], RHS[i])) {
       if (ID != (size_t)-1) {
         return -1;
       }
@@ -105,37 +106,14 @@ size_t SCAnalyzer::findMatch(const Assignment_t &LHS,
   return ID;
 }
 
-std::vector<SCAnalyzer::DecPairs_t::const_iterator>
-SCAnalyzer::getSortedDecisions(
-    const SCAnalyzer::DecPairs_t &D, const LogMgr &LM) {
-  std::vector<DecPairs_t::const_iterator> vec;
-  for (auto it = D.begin(), ie = D.end(); it != ie; ++it) {
-    vec.push_back(it);
-  }
-  std::sort(vec.begin(), vec.end(), LocSorter(LM));
-  return vec;
-}
-
-std::vector<SCAnalyzer::CondPairs_t::const_iterator>
-SCAnalyzer::getSortedConditions(
-    const SCAnalyzer::CondPairs_t &C, const LogMgr &LM) {
-  std::vector<CondPairs_t::const_iterator> vec;
-  for (auto it = C.begin(), ie = C.end(); it != ie; ++it) {
-    vec.push_back(it);
-  }
-  std::sort(vec.begin(), vec.end(), LocSorter(LM));
-  return vec;
-}
-
 void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   // decision level
-  auto dorder = getSortedDecisions(Dec2Pairs, LM);
+  auto dorder = getSortedIterators(Dec2Pairs, LM);
   for (auto itd = dorder.begin(), ied = dorder.end(); itd != ied; ++itd) {
-    UUID_t Uuid_D = (*itd)->first;
     OS << "Decision: " << (*itd)->first.toString()
        << " (" << getLocString(LM, (*itd)->first) << ")" << ":" << std::endl;
     // condition level
-    auto corder = getSortedConditions((*itd)->second, LM);
+    auto corder = getSortedIterators((*itd)->second, LM);
     for (auto itc = corder.begin(), iec = corder.end(); itc != iec; ++itc) {
       OS << "Condition: " << (*itc)->first.toString()
          << " (" << getLocString(LM, (*itc)->first) << ")";
@@ -161,6 +139,7 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
             OS << "<" << (*ita)->FID << "," << (*ita)->RID << "> ";
           }
         }
+        std::cout << std::endl;
         OS << "False side: " << FalseSideEntries.size() << std::endl;
         if (!CountsOnly) {
           for (auto ita = FalseSideEntries.begin(), iea = FalseSideEntries.end();
@@ -168,6 +147,7 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
             OS << "<" << (*ita)->FID << "," << (*ita)->RID << "> ";
           }
         }
+        std::cout << std::endl;
       }
     }
   }

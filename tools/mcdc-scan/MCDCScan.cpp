@@ -31,9 +31,9 @@ cl::list<std::string> FileNames(
 cl::opt<std::string> Analyzer(
     "analyzer",
     cl::desc("select the analyzer. Options:\n"
-             "fast\n"
-             "sc\n"),
-    cl::init("fast"));
+             "fast (a fast analyzer but do not accept NA entries)\n"
+             "sc (default, a slower analyzer but can deal with NA entries)\n"),
+    cl::init("sc"));
 cl::opt<bool> CountsOnly("counts-only",
                          cl::desc("only counts"),
                          cl::init(false));
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   }
   for (auto it = LM.getLogEntries().begin(), ie = LM.getLogEntries().end();
        it != ie; ++it) {
-    analyzer->registerEntry(&(*it));
+    analyzer->registerEntry(&(*it), LM);
   }
   analyzer->finalize();
   analyzer->dump(std::cout, LM);
