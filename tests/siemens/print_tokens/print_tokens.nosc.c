@@ -37,9 +37,11 @@ char *argv[];
     exit(1);
   }
   stream_ptr=open_token_stream(argv[1]);
-
-  while(!is_eof_token((token_ptr=get_token(stream_ptr))))
+  token_ptr=get_token(stream_ptr);
+  while(!is_eof_token(token_ptr)) {
     print_token(token_ptr);
+    token_ptr=get_token(stream_ptr);
+  }
   print_token(token_ptr);
   exit(0);
 }
@@ -69,10 +71,13 @@ character_stream open_character_stream(FILENAME)
   stream_ptr->stream[START]='\0';
   if(FILENAME == NULL)
     stream_ptr->fp=stdin;
-  else if((stream_ptr->fp=fopen(FILENAME,"r"))==NULL)
-  {
-    fprintf(stdout, "The file %s doesn't exists\n",FILENAME);
-    exit(0);
+  else {
+    stream_ptr->fp=fopen(FILENAME,"r");
+    if(stream_ptr->fp==NULL)
+    {
+      fprintf(stdout, "The file %s doesn't exists\n",FILENAME);
+      exit(0);
+    }
   }
   return(stream_ptr);
 }
@@ -93,7 +98,8 @@ CHARACTER get_char(stream_ptr)
 {
   if(stream_ptr->stream[stream_ptr->stream_ind] == '\0')
   {
-    if(fgets(stream_ptr->stream+START,80-START,stream_ptr->fp) == NULL)/* Fix bug: add -START - hf*/
+    char *tmp = fgets(stream_ptr->stream+START,80-START,stream_ptr->fp);
+    if(tmp == NULL)/* Fix bug: add -START - hf*/
       stream_ptr->stream[START]=EOF;
     stream_ptr->stream_ind=START;
   }
@@ -131,7 +137,7 @@ BOOLEAN is_end_of_character_stream(stream_ptr)
    * ******************************************************************* */
 
 void unget_char(ch,stream_ptr)
-CHARACTER ch;
+    CHARACTER ch;
 character_stream stream_ptr;
 {
   if(stream_ptr->stream_ind == 0)
@@ -413,10 +419,10 @@ static void skip(stream_ptr)
     character_stream stream_ptr;
 {
   char c;
-  
-  while((c=get_char(stream_ptr))!='\n' && 
+  c=get_char(stream_ptr);
+  while(c!='\n' && 
         !is_end_of_character_stream(stream_ptr))
-    ; /* Skip the characters until EOF or EOL found. */
+    c=get_char(stream_ptr); /* Skip the characters until EOF or EOL found. */
   if(c==EOF) unget_char(c, stream_ptr); /* Put back to leave gracefully - hf */
   return;
 }
