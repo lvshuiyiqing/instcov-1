@@ -157,7 +157,7 @@ void LogMgr::loadFile(const std::string &fileName) {
     } else {
       LogEntry Entry;
       Entry.FID = FileNames.size();
-      Entry.RID = LogEntries.size();
+      Entry.RID = ++RID;
       Entry.Conditions.clear();
       Entry.Conditions.insert(S.top().begin(), S.top().end());
       S.pop();

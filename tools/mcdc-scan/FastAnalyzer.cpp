@@ -23,13 +23,17 @@ using namespace instcov;
 extern cl::opt<bool> CountsOnly;
 extern cl::opt<bool> Verbose;
 
-void FastAnalyzer::registerEntry(const LogEntry *entry) {
+void FastAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
   std::vector<bool> bits;
   std::vector<UUID_t> Uuids;
   bits.reserve(entry->Conditions.size()+1);
   Uuids.reserve(entry->Conditions.size()+1);
   for (auto it = entry->Conditions.begin(), ie = entry->Conditions.end();
        it != ie; ++it) {
+    if (it->second == BID_NA) {
+      std::cerr << "FastAnalyzer do not accept NA entries, skipping this one"
+                << "<" << entry->FID << "," << entry->RID << ">" << std::endl;
+    }
     bits.push_back(it->second);
     Uuids.push_back(it->first);
   }
@@ -58,35 +62,13 @@ void FastAnalyzer::registerEntry(const LogEntry *entry) {
 void FastAnalyzer::finalize(void) {
 }
 
-std::vector<FastAnalyzer::Data_t::const_iterator>
-FastAnalyzer::getSortedDecisions(
-    const FastAnalyzer::Data_t &Data, const LogMgr &LM) {
-  std::vector<FastAnalyzer::Data_t::const_iterator> vec;
-  for (auto it = Data.begin(), ie = Data.end(); it != ie; ++it) {
-    vec.push_back(it);
-  }
-  std::sort(vec.begin(), vec.end(), LocSorter(LM));
-  return vec;
-}
-
-std::vector<FastAnalyzer::DData_t::const_iterator>
-FastAnalyzer::getSortedConditions(
-    const FastAnalyzer::DData_t &DData, const LogMgr &LM) {
-  std::vector<FastAnalyzer::DData_t::const_iterator> vec;
-  for (auto it = DData.begin(), ie = DData.end(); it != ie; ++it) {
-    vec.push_back(it);
-  }
-  std::sort(vec.begin(), vec.end(), LocSorter(LM));
-  return vec;
-}
-
 void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   // decision level
-  auto dorder = getSortedDecisions(Data, LM);
+  auto dorder = getSortedIterators(Data, LM);
   for (auto itd = dorder.begin(), ied = dorder.end(); itd != ied; ++itd) {
     OS << "Decision: " << (*itd)->first.toString()
        << " (" << getLocString(LM, (*itd)->first) << ")" << ":" << std::endl;
-    auto corder =getSortedConditions((*itd)->second, LM);
+    auto corder =getSortedIterators((*itd)->second, LM);
     // condition level
     for (auto itc = corder.begin(), iec = corder.end();
          itc != iec; ++itc) {

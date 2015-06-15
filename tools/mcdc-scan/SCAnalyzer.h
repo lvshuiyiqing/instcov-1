@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <map>
+#include <unordered_set>
 #include <tuple>
 #include <iostream>
 #include <unordered_map>
@@ -25,7 +26,7 @@
 
 namespace instcov {
 class SCAnalyzer : public MCDCAnalyzer {
-  virtual void registerEntry(const LogEntry *entry);
+  virtual void registerEntry(const LogEntry *entry, const LogMgr &LM);
   virtual void dump(std::ostream &OS, const LogMgr &LM) const;
   virtual void finalize(void);
   
@@ -36,22 +37,13 @@ class SCAnalyzer : public MCDCAnalyzer {
   typedef std::map<UUID_t, std::vector<MCDCPair_t> > CondPairs_t;
   typedef std::map<UUID_t, CondPairs_t> DecPairs_t;
 
-  static std::vector<CondPairs_t::const_iterator>
-  getSortedConditions(
-      const CondPairs_t &C, const LogMgr &LM);
-
-  static std::vector<DecPairs_t::const_iterator>
-  getSortedDecisions(
-      const DecPairs_t &D, const LogMgr &LM);
-
-  
  private:
   static size_t findMatch(const Assignment_t &LHS,
                           const Assignment_t &RHS);
   DecPairs_t Dec2Pairs;
   std::unordered_map<Assignment_t, std::vector<const LogEntry *> >
   Assgn2Entries;
-  std::map<UUID_t, std::vector<Assignment_t> > Dec2Assgns;
+  std::map<UUID_t, std::unordered_set<Assignment_t> > Dec2Assgns;
   std::map<UUID_t, std::vector<UUID_t> > Dec2CondOrder;
 };
 
