@@ -107,6 +107,26 @@ You need to run several different test cases, and call `mcdc-scan` on their
 * `compile_single_file.sh`: same with `run_single_file.sh`, but will not execute
 the program and run `instcov-view`.
 
+## Short-circuit handling in MC/DC analysis
+
+By default, instcov supports short-circuit handling. This means that only the
+conditions that are evaluated during execution is dumped. For example, if the
+decision is `a||b`, and if `a=true`, `b=true` at this point, the value of `b`
+will not dumped, thus labeled as `N` (unevaluated).
+
+When finding `MC/DC` pairs, if either side of assignment of a condition is `N`,
+then the two assignment of the condition is identical. For example, assignments:
+
+	TN=>T
+	FF=>F
+
+will be considered an `MC/DC` pair on the first condition.
+
+If you assume there are no short-circuit in the program, and want to dump all
+conditions despite of short circuits, you can add `-no-short-circuits` to
+`instcov`. In this case, you can also run `mcdc-scan` faster by using
+`-analyzer=fast` argument.
+
 ## An example output
 
 We have successfully run InstCov on some small programs, as well as some larger
