@@ -35,12 +35,16 @@ public:
         DIM(R.getSourceMgr().getFileEntryForID(
             R.getSourceMgr().getMainFileID())->getName()) {}
 
-  bool VisitIfStmt(clang::IfStmt *s);
-  bool VisitForStmt(clang::ForStmt *s);
-  bool VisitWhileStmt(clang::WhileStmt *s);
-  bool VisitDoStmt(clang::DoStmt *s);
-  bool VisitSwitchStmt(clang::SwitchStmt *s);
-  bool VisitBinaryOperator(clang::BinaryOperator *s);
+  bool visitIfStmt(clang::IfStmt *s);
+  bool visitForStmt(clang::ForStmt *s);
+  bool visitWhileStmt(clang::WhileStmt *s);
+  bool visitDoStmt(clang::DoStmt *s);
+  bool visitSwitchStmt(clang::SwitchStmt *s);
+  bool visitBinaryOperator(clang::BinaryOperator *s);
+  //bool visitDeclStmt(clang::DeclStmt *s);
+
+  // insert decision & conditions for assignment operators and normal VarDecls
+  void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
   
   void MCDCVisitIfStmt(clang::IfStmt *s);
   void MCDCVisitForStmt(clang::ForStmt *s);
@@ -49,13 +53,18 @@ public:
   void MCDCVisitBinaryOperator(clang::BinaryOperator *s);
 
 private:
-  bool ShouldInst(clang::Stmt *s) const;
-  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p);
+  bool checkLocation(clang::Stmt *s) const;
+  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p = 0);
 
-  static std::vector<clang::Expr *> ExtractConditions(clang::Expr *e);
+  static bool isSimpleRHS(clang::Expr *e);
+  static clang::Expr *toRHSRoot(clang::Expr *e);
+
+  static std::vector<clang::Expr *> extractConditions(clang::Expr *e);
+
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
   DbgInfoMgr DIM;
+  std::set<const clang::DeclStmt *> VisitedDecls;
 };
 }
 
