@@ -22,18 +22,6 @@
 using namespace instcov;
 
 namespace {
-void eatOrQuit(std::istream &In, const std::string &str) {
-  for (auto it = str.begin(), ie = str.end(); it != ie; ++it) {
-    if (In.get() != *it) {
-      std::cerr << "error matching: " << str << std::endl;
-      exit(1);
-    }
-    if (!In) {
-      std::cerr << "error matching: " << str << std::endl;
-      exit(1);
-    }
-  }
-}
 void goPass(std::istream &In, char c) {
   while (In && In.get() != c) ;
 }

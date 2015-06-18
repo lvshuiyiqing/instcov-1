@@ -54,9 +54,10 @@ cl::opt<bool> NoShortCircuits(
     cl::cat(InstCovCategory),
     cl::init(false));
 
-std::vector<Expr *> InstCovASTVisitor::ExtractConditions(Expr *e) {
+std::vector<Expr *> InstCovASTVisitor::extractConditions(Expr *e) {
   std::vector<Expr *> Leaves;
   std::stack<Expr *> UncheckedNodes;
+  
   UncheckedNodes.push(e);
   while(!UncheckedNodes.empty()) {
     Expr *Node = UncheckedNodes.top();
@@ -86,9 +87,12 @@ std::vector<Expr *> InstCovASTVisitor::ExtractConditions(Expr *e) {
 }
 
 void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
+  if (!InstConditions) {
+    return;
+  }
   if (NoShortCircuits) {
     TheRewriter.InsertText(e->getLocStart(), "(", true, true);
-    std::vector<Expr *> CondExprs = ExtractConditions(e);
+    std::vector<Expr *> CondExprs = extractConditions(e);
     for (auto it = CondExprs.begin(), ie = CondExprs.end();
          it != ie; ++it) {
       DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
@@ -107,7 +111,7 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
         TheRewriter.getLangOpts());
     TheRewriter.InsertText(endLoc, ")", false, true);
   } else {
-    std::vector<Expr *> CondExprs = ExtractConditions(e);
+    std::vector<Expr *> CondExprs = extractConditions(e);
     for (auto it = CondExprs.begin(), ie = CondExprs.end();
          it != ie; ++it) {
       DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
@@ -129,6 +133,10 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
 void InstCovASTVisitor::MCDCVisitIfStmt(IfStmt *s) {
   if (!InstConditions) {
     return;
+  }
+  VarDecl *VD = s->getConditionVariable();
+  if (VD && VD->hasInit()) {
+    VD->dump();
   }
   Expr *Expr4Instr = s->getCond();
   if (s->getConditionVariable()) {
@@ -170,4 +178,3 @@ void InstCovASTVisitor::MCDCVisitBinaryOperator(BinaryOperator *s) {
   }
   MCDCVisitExpr(s->getRHS(), s);
 }
-

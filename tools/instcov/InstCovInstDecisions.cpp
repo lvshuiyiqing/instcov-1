@@ -102,100 +102,184 @@ namespace{
     }
     return findSemiAfterLocation(R, EndSL).getLocWithOffset(1);
   }
+
+  typedef std::vector<std::pair<UUID_t, uint64_t> > InstInfo;
   
-  void InstCompoundStmt(CompoundStmt *s, Rewriter &R,
-                        UUID_t uuid, uint64_t bid) {
+  void InstCompoundStmt(
+      CompoundStmt *s, Rewriter &R,
+      const InstInfo &instinfo) {
     std::stringstream ss;
-    ss << "\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
-       << bid << ");";
+    for (auto it = instinfo.begin(), ie = instinfo.end(); it != ie; ++it) {
+      ss << "\n  " << INSTCOV_FUNC_NAME << "(" << it->first.toArgString()
+         << ", " << it->second << ");";
+    }
     R.InsertText(s->getLBracLoc().getLocWithOffset(1), ss.str(), true, true);
   }
 
-  void InstSingleStmt(Stmt *s, Rewriter &R, UUID_t uuid, uint64_t bid) {
+  void InstSingleStmt(
+      Stmt *s, Rewriter &R,
+      const InstInfo &instinfo) {
     std::stringstream ss;
-    ss << "{\n" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
-       << bid << ");\n";
+    ss << "{\n";
+    for (auto it = instinfo.begin(), ie = instinfo.end(); it != ie; ++it) {
+      ss << "  " << INSTCOV_FUNC_NAME << "(" << it->first.toArgString() << ", "
+       << it->second << ");\n";
+    }
     R.InsertText(s->getLocStart(), ss.str(), true, true);
     R.InsertText(FindEndLoc(s, R), "\n}", false, true);
   }
 
-  void InstInBlock(Stmt *s, Rewriter &R, UUID_t uuid, uint64_t bid) {
+  void InstInBlock(
+      Stmt *s, Rewriter &R,
+      const InstInfo &instinfo) {
     if (isa<CompoundStmt>(s)) {
-      InstCompoundStmt(cast<CompoundStmt>(s), R, uuid, bid);
+      InstCompoundStmt(cast<CompoundStmt>(s), R, instinfo);
     } else {
-      InstSingleStmt(s, R, uuid, bid);
+      InstSingleStmt(s, R, instinfo);
     }
   }
 
   void InstAfterBody(SourceLocation endLoc, Rewriter &R,
-                     UUID_t uuid, uint64_t bid) {
+                     const InstInfo &instinfo,
+                     bool indent = false, bool braces = false) {
     std::stringstream ss;
-    ss << " \n " << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", "
-       << bid << ");";
+    ss << "\n";
+    if (braces) {
+      ss << "{\n";
+    }
+    for (auto it = instinfo.begin(), ie = instinfo.end(); it != ie; ++it) {
+      if (indent) {
+        ss << "  ";
+      }
+      ss << INSTCOV_FUNC_NAME << "(" << it->first.toArgString() << ", "
+         << it->second << ");\n";
+    }
+    if (braces) {
+      ss << "}";
+    }
     R.InsertText(endLoc, ss.str(), false, true);
   }
 }
 
-bool InstCovASTVisitor::ShouldInst(Stmt *s) const {
+bool InstCovASTVisitor::checkLocation(Stmt *s) const {
   SourceManager &SM = TheRewriter.getSourceMgr();
   StringRef PresumedFileName =
       SM.getPresumedLoc(s->getLocStart()).getFilename();
   return MatchFileNames.count(PresumedFileName);
 }
 
-bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
-  if (!ShouldInst(s)) {
+bool InstCovASTVisitor::visitIfStmt(IfStmt *s) {
+  s->dump();
+  if (!checkLocation(s)) {
     return true;
   }
-  MCDCVisitIfStmt(s);
+  VarDecl *VD = s->getConditionVariable();
+  Expr *VDInit = VD ? VD->getInit() : 0;
+  if (VD && !VDInit) {
+    llvm::errs() << "VarDecl in IfStmt does not have initializer, why?\n";
+    exit(1);
+  }
+  bool SimpleRHS = false;
+  if (VD) {
+    VisitedDecls.insert(s->getConditionVariableDeclStmt());
+    SimpleRHS = isSimpleRHS(VDInit);
+  }
+  if (!VD) {
+    MCDCVisitIfStmt(s);
+  } else if (!SimpleRHS){
+    Expr *RHSRoot = toRHSRoot(VDInit);
+    MCDCVisitExpr(RHSRoot, s);
+  }
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
   // Only care about If statements.
-  IfStmt *IfStatement = cast<IfStmt>(s);
-  Stmt *Then = IfStatement->getThen();
+  Stmt *Then = s->getThen();
+  Stmt *Else = s->getElse();
 
-  Stmt *Else = IfStatement->getElse();
-  if (Else) {
-    InstInBlock(Else, TheRewriter, uuid, 0);
-  } else {
-    SourceLocation ThenBodyEndLoc = FindEndLoc(Then, TheRewriter);
-    InstAfterBody(ThenBodyEndLoc, TheRewriter, uuid, 0);
-    TheRewriter.InsertText(ThenBodyEndLoc, "else", false, true);
+  if (VD && SimpleRHS) {
+    DIM.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
   }
 
-  InstInBlock(Then, TheRewriter, uuid, 1);
+  InstInfo ThenInfo, ElseInfo;
+  ThenInfo.push_back(std::make_pair(uuid, 0));
+  ElseInfo.push_back(std::make_pair(uuid, 1));
+  if (VD && SimpleRHS) {
+    UUID_t UuidVD = DIM.getUUID(VDInit);
+    ThenInfo.push_back(std::make_pair(UuidVD, 0));
+    ElseInfo.push_back(std::make_pair(UuidVD, 1));
+  }
+  
+  if (Else) {
+    InstInBlock(Else, TheRewriter, ElseInfo);
+  } else {
+    SourceLocation ThenBodyEndLoc = FindEndLoc(Then, TheRewriter);
+    InstAfterBody(ThenBodyEndLoc, TheRewriter,
+                  ElseInfo, true, true);
+    TheRewriter.InsertText(ThenBodyEndLoc, " else", false, true);
+  }
+
+  InstInBlock(Then, TheRewriter, ThenInfo);
 
   return true;
 }
 
-bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
-  if (!ShouldInst(s)) {
+bool InstCovASTVisitor::visitForStmt(ForStmt *s) {
+  if (!checkLocation(s)) {
     return true;
   }
   MCDCVisitForStmt(s);
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
-  InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
-  InstInBlock(s->getBody(), TheRewriter, uuid, 1);
+  InstAfterBody(BodyEndLoc, TheRewriter, InstInfo(1, std::make_pair(uuid, 0)));
+  InstInBlock(s->getBody(), TheRewriter, InstInfo(1, std::make_pair(uuid, 1)));
   return true;
 }
 
-bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
-  if (!ShouldInst(s)) {
+bool InstCovASTVisitor::visitWhileStmt(WhileStmt *s) {
+  if (!checkLocation(s)) {
     return true;
   }
-  MCDCVisitWhileStmt(s);
+  VarDecl *VD = s->getConditionVariable();
+  Expr *VDInit = VD ? VD->getInit() : 0;
+  if (VD && !VDInit) {
+    llvm::errs() << "VarDecl in IfStmt does not have initializer, why?\n";
+    exit(1);
+  }
+  bool SimpleRHS = false;
+  if (VD) {
+    SimpleRHS = isSimpleRHS(VD->getInit());
+    VisitedDecls.insert(s->getConditionVariableDeclStmt());
+  }
+  if (!VD) {
+    MCDCVisitWhileStmt(s);
+  } else if (!SimpleRHS) {
+    Expr *RHSRoot = toRHSRoot(VDInit);
+    MCDCVisitExpr(RHSRoot, s);
+  }
   DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIM.getUUID(s);
+  if (VD && SimpleRHS) {
+    DIM.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
+  }
+
+  InstInfo ThenInfo, ElseInfo;
+  ThenInfo.push_back(std::make_pair(uuid, 0));
+  ElseInfo.push_back(std::make_pair(uuid, 1));
+  if (VD && SimpleRHS) {
+    UUID_t UuidVD = DIM.getUUID(VDInit);
+    ThenInfo.push_back(std::make_pair(UuidVD, 0));
+    ElseInfo.push_back(std::make_pair(UuidVD, 1));
+  }
+
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
-  InstAfterBody(BodyEndLoc, TheRewriter, uuid, 0);
-  InstInBlock(s->getBody(), TheRewriter, uuid, 1);
+  InstAfterBody(BodyEndLoc, TheRewriter, ElseInfo);
+  InstInBlock(s->getBody(), TheRewriter, ThenInfo);
   return true;
 }
 
-bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
-  if (!ShouldInst(s)) {
+bool InstCovASTVisitor::visitDoStmt(DoStmt *s) {
+  if (!checkLocation(s)) {
     return true;
   }
   MCDCVisitDoStmt(s);
@@ -210,8 +294,8 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
-  if (!ShouldInst(s)) {
+bool InstCovASTVisitor::visitSwitchStmt(SwitchStmt *s) {
+  if (!checkLocation(s)) {
     return true;
   }
   if (!InstSwitch) {
@@ -240,26 +324,81 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
+bool InstCovASTVisitor::visitBinaryOperator(BinaryOperator *s) {
   if (!InstAssignment || !s->isAssignmentOp()) {
     return true;
   }
-  if (ExtractConditions(s->getRHS()).size() <= 1) {
-    return true;
+  handleRHS4Assgn_NormalVarDecl(s->getRHS());
+  return true;
+}
+
+bool InstCovASTVisitor::isSimpleRHS(Expr *e) {
+  while (true) {
+    if (BinaryOperator *bo = dyn_cast<BinaryOperator>(e)) {
+      if (bo->isLogicalOp()) {
+        return false;
+      }
+    }
+    if (UnaryOperator *uo = dyn_cast<UnaryOperator>(e)) {
+      if (uo->getOpcode() == UO_LNot) {
+        return false;
+      }
+    }
+    if (ParenExpr *pe = dyn_cast<ParenExpr>(e)) {
+      e = pe->getSubExpr();
+      continue;
+    }
+    if (CastExpr *ce = dyn_cast<CastExpr>(e)) {
+      e = ce->getSubExpr();
+      continue;
+    }
+    break;
   }
-  MCDCVisitBinaryOperator(s);
-  SourceLocation LocStart = s->getRHS()->getLocStart();
+  return true;
+}
+
+// bool InstCovASTVisitor::visitDeclStmt(DeclStmt *s) {
+//   if (VisitedDecls.count(s)) {
+//     llvm::errs() << "skipping decl in ifstmt\n";
+//     return true;
+//   }
+//   VisitedDecls.insert(s);
+//   if (!InstAssignment) {
+//     return true;
+//   }
+//   for (auto it = s->decl_begin(), ie = s->decl_end(); it != ie; ++it) {
+//     if (VarDecl *VD = dyn_cast<VarDecl>(*it)) {
+//       if (Expr *e = VD->getInit()) {
+//         handleRHS4Assgn_NormalVarDecl(e);
+//       }
+//     }
+//   }
+//   return true;
+// }
+
+Expr *InstCovASTVisitor::toRHSRoot(Expr *e) {
+  while (CastExpr *ce = dyn_cast<CastExpr>(e)) {
+    e = ce->getSubExpr();
+  }
+  return e;
+}
+
+void InstCovASTVisitor::handleRHS4Assgn_NormalVarDecl(clang::Expr *e) {
+  if (!isSimpleRHS(e)) {
+    return;
+  }
+  Expr *RHSRoot = toRHSRoot(e);
+  MCDCVisitExpr(e, e);
+  SourceLocation LocStart = RHSRoot->getLocStart();
   SourceLocation LocEnd = Lexer::getLocForEndOfToken(
-      s->getRHS()->getLocEnd(), 0,
+      RHSRoot->getLocEnd(), 0,
       TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
-  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  DIM.registerStmt(RHSRoot, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(LocStart, "(", true, true);
-  UUID_t uuid = DIM.getUUID(s);
+  UUID_t uuid = DIM.getUUID(RHSRoot);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
      << ", 1), 0)";
-  TheRewriter.InsertText(LocEnd, ss.str(), false, true);  
-  return true;
+  TheRewriter.InsertText(LocEnd, ss.str(), false, true);
 }
-
