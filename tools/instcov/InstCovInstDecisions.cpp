@@ -168,8 +168,7 @@ bool InstCovASTVisitor::checkLocation(Stmt *s) const {
   return MatchFileNames.count(PresumedFileName);
 }
 
-bool InstCovASTVisitor::visitIfStmt(IfStmt *s) {
-  s->dump();
+bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -223,7 +222,7 @@ bool InstCovASTVisitor::visitIfStmt(IfStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::visitForStmt(ForStmt *s) {
+bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -236,7 +235,7 @@ bool InstCovASTVisitor::visitForStmt(ForStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::visitWhileStmt(WhileStmt *s) {
+bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -278,7 +277,7 @@ bool InstCovASTVisitor::visitWhileStmt(WhileStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::visitDoStmt(DoStmt *s) {
+bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -294,7 +293,7 @@ bool InstCovASTVisitor::visitDoStmt(DoStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::visitSwitchStmt(SwitchStmt *s) {
+bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -324,7 +323,7 @@ bool InstCovASTVisitor::visitSwitchStmt(SwitchStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::visitBinaryOperator(BinaryOperator *s) {
+bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
   if (!InstAssignment || !s->isAssignmentOp()) {
     return true;
   }
@@ -357,24 +356,23 @@ bool InstCovASTVisitor::isSimpleRHS(Expr *e) {
   return true;
 }
 
-// bool InstCovASTVisitor::visitDeclStmt(DeclStmt *s) {
-//   if (VisitedDecls.count(s)) {
-//     llvm::errs() << "skipping decl in ifstmt\n";
-//     return true;
-//   }
-//   VisitedDecls.insert(s);
-//   if (!InstAssignment) {
-//     return true;
-//   }
-//   for (auto it = s->decl_begin(), ie = s->decl_end(); it != ie; ++it) {
-//     if (VarDecl *VD = dyn_cast<VarDecl>(*it)) {
-//       if (Expr *e = VD->getInit()) {
-//         handleRHS4Assgn_NormalVarDecl(e);
-//       }
-//     }
-//   }
-//   return true;
-// }
+bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
+  if (VisitedDecls.count(s)) {
+    return true;
+  }
+  VisitedDecls.insert(s);
+  if (!InstAssignment) {
+    return true;
+  }
+  for (auto it = s->decl_begin(), ie = s->decl_end(); it != ie; ++it) {
+    if (VarDecl *VD = dyn_cast<VarDecl>(*it)) {
+      if (Expr *e = VD->getInit()) {
+        handleRHS4Assgn_NormalVarDecl(e);
+      }
+    }
+  }
+  return true;
+}
 
 Expr *InstCovASTVisitor::toRHSRoot(Expr *e) {
   while (CastExpr *ce = dyn_cast<CastExpr>(e)) {
@@ -384,11 +382,11 @@ Expr *InstCovASTVisitor::toRHSRoot(Expr *e) {
 }
 
 void InstCovASTVisitor::handleRHS4Assgn_NormalVarDecl(clang::Expr *e) {
-  if (!isSimpleRHS(e)) {
+  if (isSimpleRHS(e)) {
     return;
   }
   Expr *RHSRoot = toRHSRoot(e);
-  MCDCVisitExpr(e, e);
+  MCDCVisitExpr(RHSRoot, RHSRoot);
   SourceLocation LocStart = RHSRoot->getLocStart();
   SourceLocation LocEnd = Lexer::getLocForEndOfToken(
       RHSRoot->getLocEnd(), 0,

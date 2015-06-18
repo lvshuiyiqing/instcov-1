@@ -35,13 +35,13 @@ public:
         DIM(R.getSourceMgr().getFileEntryForID(
             R.getSourceMgr().getMainFileID())->getName()) {}
 
-  bool visitIfStmt(clang::IfStmt *s);
-  bool visitForStmt(clang::ForStmt *s);
-  bool visitWhileStmt(clang::WhileStmt *s);
-  bool visitDoStmt(clang::DoStmt *s);
-  bool visitSwitchStmt(clang::SwitchStmt *s);
-  bool visitBinaryOperator(clang::BinaryOperator *s);
-  //bool visitDeclStmt(clang::DeclStmt *s);
+  bool VisitIfStmt(clang::IfStmt *s);
+  bool VisitForStmt(clang::ForStmt *s);
+  bool VisitWhileStmt(clang::WhileStmt *s);
+  bool VisitDoStmt(clang::DoStmt *s);
+  bool VisitSwitchStmt(clang::SwitchStmt *s);
+  bool VisitBinaryOperator(clang::BinaryOperator *s);
+  bool VisitDeclStmt(clang::DeclStmt *s);
 
   // insert decision & conditions for assignment operators and normal VarDecls
   void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
