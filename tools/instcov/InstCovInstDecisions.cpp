@@ -375,7 +375,7 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
 }
 
 Expr *InstCovASTVisitor::toRHSRoot(Expr *e) {
-  while (CastExpr *ce = dyn_cast<CastExpr>(e)) {
+  while (CastExpr *ce = dyn_cast<ImplicitCastExpr>(e)) {
     e = ce->getSubExpr();
   }
   return e;

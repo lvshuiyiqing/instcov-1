@@ -57,6 +57,7 @@ private:
   void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p = 0);
 
   static bool isSimpleRHS(clang::Expr *e);
+  // skip all top-level implicit casts and find the root expr
   static clang::Expr *toRHSRoot(clang::Expr *e);
 
   static std::vector<clang::Expr *> extractConditions(clang::Expr *e);
