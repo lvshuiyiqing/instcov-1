@@ -14,10 +14,7 @@ filename="${file%.*}"
 shift 1
 args="$@"
 
-${rpath}/prep.sh $file
-${rpath}/instcov.sh -inst-conditions -inst-switch -inst-assignment -mf $file ${filename}.i.${extension}
-${rpath}/instcov-view.sh -di-only ${filename}.i.${extension}.dbginfo -o ${filename}.di
-${rpath}/ccwraper.sh ${filename}.i.trans.${extension} -o ${filename}
+${rpath}/compile_single_file.sh ${file}
 echo "executing ./${filename} $args"
 ./${filename} $args
 ${rpath}/instcov-view.sh -t dump.instcov ${filename}.i.${extension}.dbginfo -o ${filename}.pt

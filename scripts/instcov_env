@@ -3,3 +3,6 @@
 export INSTCOV_RT_PATH=/Users/zzq/llvm/3.6/instcov/runtime/include/
 export INSTCOV_LIBRARY_PATH=/Users/zzq/llvm/3.6/build/lib
 export INSTCOV_BIN_PATH=/Users/zzq/llvm/3.6/build/bin
+
+# uncomment the next line to disable short circuiting
+export ENABLE_SHORT_CIRCUITING=1

@@ -200,12 +200,12 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   }
 
   InstInfo ThenInfo, ElseInfo;
-  ThenInfo.push_back(std::make_pair(uuid, 0));
-  ElseInfo.push_back(std::make_pair(uuid, 1));
+  ThenInfo.push_back(std::make_pair(uuid, 1));
+  ElseInfo.push_back(std::make_pair(uuid, 0));
   if (VD && SimpleRHS) {
     UUID_t UuidVD = DIM.getUUID(VDInit);
-    ThenInfo.push_back(std::make_pair(UuidVD, 0));
-    ElseInfo.push_back(std::make_pair(UuidVD, 1));
+    ThenInfo.push_back(std::make_pair(UuidVD, 1));
+    ElseInfo.push_back(std::make_pair(UuidVD, 0));
   }
   
   if (Else) {
@@ -263,12 +263,12 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   }
 
   InstInfo ThenInfo, ElseInfo;
-  ThenInfo.push_back(std::make_pair(uuid, 0));
-  ElseInfo.push_back(std::make_pair(uuid, 1));
+  ThenInfo.push_back(std::make_pair(uuid, 1));
+  ElseInfo.push_back(std::make_pair(uuid, 0));
   if (VD && SimpleRHS) {
     UUID_t UuidVD = DIM.getUUID(VDInit);
-    ThenInfo.push_back(std::make_pair(UuidVD, 0));
-    ElseInfo.push_back(std::make_pair(UuidVD, 1));
+    ThenInfo.push_back(std::make_pair(UuidVD, 1));
+    ElseInfo.push_back(std::make_pair(UuidVD, 0));
   }
 
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
