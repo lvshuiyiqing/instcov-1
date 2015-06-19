@@ -43,9 +43,10 @@ cl::opt<bool> InstSwitch(
     cl::cat(InstCovCategory),
     cl::init(false));
 
-cl::opt<bool> InstAssignment(
-    "inst-assignment",
-    cl::desc("enable assignment instrumentation.\n"
+cl::opt<bool> InstRHS(
+    "inst-RHS",
+    cl::desc("enable RHS value instrumentation,\n"
+             "including assignment operator, VarDecls and return statements\n"
              "Default value: false\n"),
     cl::cat(InstCovCategory),
     cl::init(false));
@@ -324,10 +325,26 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
-  if (!InstAssignment || !s->isAssignmentOp()) {
+  if (!InstRHS || !s->isAssignmentOp()) {
     return true;
   }
   handleRHS4Assgn_NormalVarDecl(s->getRHS());
+  return true;
+}
+
+bool InstCovASTVisitor::VisitReturnStmt(ReturnStmt *s) {
+  if (!InstRHS) {
+    return true;
+  }
+  if (Expr *e = s->getRetValue()) {
+    handleRHS4Assgn_NormalVarDecl(e);
+  }
+  return true;
+}
+
+bool InstCovASTVisitor::VisitAbstractConditionalOperator(
+    AbstractConditionalOperator *s) {
+  MCDCVisitExpr(s->getCond());
   return true;
 }
 
@@ -361,7 +378,7 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
     return true;
   }
   VisitedDecls.insert(s);
-  if (!InstAssignment) {
+  if (!InstRHS) {
     return true;
   }
   for (auto it = s->decl_begin(), ie = s->decl_end(); it != ie; ++it) {

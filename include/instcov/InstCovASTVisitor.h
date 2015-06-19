@@ -42,7 +42,10 @@ public:
   bool VisitSwitchStmt(clang::SwitchStmt *s);
   bool VisitBinaryOperator(clang::BinaryOperator *s);
   bool VisitDeclStmt(clang::DeclStmt *s);
-
+  bool VisitReturnStmt(clang::ReturnStmt *s);
+  // don't rewrite visit functions for sub-classes
+  bool VisitAbstractConditionalOperator(clang::AbstractConditionalOperator *s);
+  
   // insert decision & conditions for assignment operators and normal VarDecls
   void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
   
