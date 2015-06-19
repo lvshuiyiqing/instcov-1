@@ -23,12 +23,6 @@ instcov. The code will be injected with profiling code:
 	For the default option, only decision recording is enabled.  If you want to
 	enable coverage recording for conditions, please add `-inst-conditions`.
 
-	Besides, switch statements are not instrumented by default, you can enable
-	this feature by using `-inst-switch`. Note that the branches for `switch`
-	statements are in reverse order of their appearence. Besides, the branch id
-	of `switch` statements start from 2. This is used to distinguish from binary
-	decisions.
-
 	You need to explicitly specify option `-mf <file_name>`. InstCov will only
 	instrument those files matching `<file_name>`. Note that we have
 	preprocessed the source file using `-E` option in Step 1. The preprocessed
@@ -53,7 +47,8 @@ instcov. The code will be injected with profiling code:
 
 	The trace file will be written in binary mode by default. Also, the trace
 	file could be written in text mode. You need to set environment variable
-	`INSTCOV_TEXT_MODE` to `TRUE` or `YES` to enable text mode.
+	`INSTCOV_TEXT_MODE` to `TRUE` or `YES` to enable text mode (this feature is
+	to be deprecated).
 
 5. Run the analysis tool `instcov-view` to analyse the trace file:
 
@@ -107,7 +102,9 @@ You need to run several different test cases, and call `mcdc-scan` on their
 * `compile_single_file.sh`: same with `run_single_file.sh`, but will not execute
 the program and run `instcov-view`.
 
-## Short-circuit handling in MC/DC analysis
+## Optional features
+
+### Short-circuit handling in MC/DC analysis
 
 By default, instcov supports short-circuit handling. This means that only the
 conditions that are evaluated during execution is dumped. For example, if the
@@ -126,6 +123,29 @@ If you assume there are no short-circuit in the program, and want to dump all
 conditions despite of short circuits, you can add `-no-short-circuits` to
 `instcov`. In this case, you can also run `mcdc-scan` faster by using
 `-analyzer=fast` argument.
+
+If you are using the script files, modify the corresponding line in
+`instcov_env` to enable short-circuit handling.
+
+### Switch statements
+
+Switch statements are not instrumented by default, you can enable this
+feature by using `-inst-switch`. Note that the branches for `switch` statements
+are in reverse order of their appearence. Besides, the branch id of `switch`
+statements start from 2. This is used to distinguish from binary decisions.
+Besides, switch statements are not analyzed for MC/DC coverage.
+
+### Assignment operators and variable declarations
+
+The right hand side (RHS) of assignment operators and variable declarations may
+also contain logical evaluations. By default, `instcov` does not instrument
+these RHS expressions. You can enable this feature by adding `-inst-assignment`
+to `instcov` arguments.
+
+To determine whether an RHS expression should be instrumented, `instcov` skips
+the top-level implicit casts of the RHS expression, and check whether they are
+logical operators (`&&`, `||` or `!`). If yes, it will instrument the RHS
+expression as normal conditional expressions.
 
 ## An example output
 
@@ -150,41 +170,41 @@ programs such as `tcas` and `replace`. Here are several examples.
 	The analyzed trace (the format is `<condition/decision id>:<branch id>
     (<line>:<col>:<file>)`)
 
-		ea40348332aa1614639ae272a866ef9a:1 (2:3:toy.cpp)
-		-b04aa8164f8db301dc54944630491a82:1 (2:19:toy.cpp)
-		29473f3c9114636ed8b2d7af20cf99ab:0 (4:5:toy.cpp)
-		-6d4697303c7812648e89c72d8bd718b0:1 (4:9:toy.cpp)
-		-9463df6a988bac9cb4458cc4ed5c2a7:0 (4:18:toy.cpp)
-		8e4b7b7fbefc729ef35b08a7ecf47e9a:1 (6:5:toy.cpp)
-		-f046093806cf91ab4df0fc4df0d1ec83:0 (6:10:toy.cpp)
-		-b4112332708ad4f47b7955ab9cab09b:1 (6:21:toy.cpp)
-		ea40348332aa1614639ae272a866ef9a:1 (2:3:toy.cpp)
-		-b04aa8164f8db301dc54944630491a82:1 (2:19:toy.cpp)
-		29473f3c9114636ed8b2d7af20cf99ab:0 (4:5:toy.cpp)
-		-6d4697303c7812648e89c72d8bd718b0:1 (4:9:toy.cpp)
-		-9463df6a988bac9cb4458cc4ed5c2a7:0 (4:18:toy.cpp)
-		8e4b7b7fbefc729ef35b08a7ecf47e9a:1 (6:5:toy.cpp)
-		-f046093806cf91ab4df0fc4df0d1ec83:0 (6:10:toy.cpp)
-		-b4112332708ad4f47b7955ab9cab09b:1 (6:21:toy.cpp)
-		ea40348332aa1614639ae272a866ef9a:0 (2:3:toy.cpp)
-		-b04aa8164f8db301dc54944630491a82:0 (2:19:toy.cpp)
+		4f48a0500d234dbe67ece66145e0a5a5:1 (2:3:toy.cpp)
+		-f14f15d92dbb26bded2c9c07c40d139c:1 (2:19:toy.cpp)
+		4242610f8415fcb5154369de65391696:0 (4:5:toy.cpp)
+		-bd4119098e99a84943446ff8dc5e3b3:1 (4:9:toy.cpp)
+		-a14cf24b92dc89344aea47a5b80b3ac:0 (4:18:toy.cpp)
+		ab43e5669a9b0fc415efb4bd5040db87:1 (6:5:toy.cpp)
+		-cf4224c21dd104b826549c570ada61b9:0 (6:10:toy.cpp)
+		-354a7a6e75894fddf6eb1a35ad3bc6ad:1 (6:21:toy.cpp)
+		4f48a0500d234dbe67ece66145e0a5a5:1 (2:3:toy.cpp)
+		-f14f15d92dbb26bded2c9c07c40d139c:1 (2:19:toy.cpp)
+		4242610f8415fcb5154369de65391696:0 (4:5:toy.cpp)
+		-bd4119098e99a84943446ff8dc5e3b3:1 (4:9:toy.cpp)
+		-a14cf24b92dc89344aea47a5b80b3ac:0 (4:18:toy.cpp)
+		ab43e5669a9b0fc415efb4bd5040db87:1 (6:5:toy.cpp)
+		-cf4224c21dd104b826549c570ada61b9:0 (6:10:toy.cpp)
+		-354a7a6e75894fddf6eb1a35ad3bc6ad:1 (6:21:toy.cpp)
+		4f48a0500d234dbe67ece66145e0a5a5:0 (2:3:toy.cpp)
+		-f14f15d92dbb26bded2c9c07c40d139c:0 (2:19:toy.cpp)
 
 * `replace`
 
-		2149762f41ba07bffd5a8d69dffe3198:0 (527:4:replace.c)
-		-264159f50adf98f54a8ad15dde52d6bc:0 (527:8:replace.c)
-		6d4601d79ff4b5ad6a9c159286a11b83:1 (203:5:replace.c)
-		-a74a798721d0c0fb99f714d7a7905caa:0 (203:14:replace.c)
-		-604051f482598323148ed320b69c359c:1 (203:24:replace.c)
-		-694c8259d1f5bc67499f077b17a03d9c:1 (203:45:replace.c)
+		6b4182a3082a996da89c6a1a43ce06b4:0 (527:4:replace.c)
+		-9a49c4bf2e4dd8f53f6864e1d4a0dfa5:0 (527:8:replace.c)
+		444a9d84a5cba66e71bb270bac38caab:1 (203:5:replace.c)
+		-9944304342e995f821ba6cf6474ed6aa:0 (203:14:replace.c)
+		-bc43b3b1d627e5d98af8569ab79d3e97:1 (203:24:replace.c)
+		-6e48449aa3ae968b50d0f2555d100e81:1 (203:45:replace.c)
 		...
-		254730c9d5f8b0dde4d48052546780a2:1 (498:6:replace.c)
-		-90463eb5302b5afcd01a1968d7d935b5:1 (498:11:replace.c)
-		-a4471a8ddee8120618dc38945dcb5dad:0 (498:24:replace.c)
-		5e4e8cba5694aad1ebdc39ef6ff5a6a4:0 (491:2:replace.c)
-		-2a4832c3e93c98f47eb61a484d37b2b2:0 (491:10:replace.c)
-		149b69b4000f027d17da8a49588e991:0 (514:5:replace.c)
-		-61404f75b8e489c51c11b61140b1ab9:0 (514:12:replace.c)
+		794e8302520bcc7187d76936e808589f:1 (498:6:replace.c)
+		-e94be46a84b4f7d96ae803c1b61d04ab:1 (498:11:replace.c)
+		-504af80e8327d17c9a6ac59fc55487a1:NA (498:24:replace.c)
+		694621b9e3559da22464647d64e6358e:0 (491:2:replace.c)
+		-f14970167dc3c5e7203c8158adb9719b:0 (491:10:replace.c)
+		494d11c9ef431b854f7eb4616e368684:0 (514:5:replace.c)
+		-7a4e5778b8d8f8d1d2b87306cb494cb9:0 (514:12:replace.c)
 
 * `test-mcdc-scan` (with MC/DC analysis)
 
@@ -211,80 +231,139 @@ programs such as `tcas` and `replace`. Here are several examples.
 
 		1 1 0 1
 		1 0 0 0
+		0 0 0 0
 
 	Trace of Test #1:
 
-		144fe8151897460c21cc4feb5fe1f587:0 (4:3:test.cpp)
-		-834734717b3a18b1bfd6b5d9e7b3e4a6:0 (4:7:test.cpp)
-		32482c4245f18c8471985c6aa945628d:1 (11:3:test.cpp)
-		-944c6d1b92d71f91df32dd9038a4ba0:1 (11:7:test.cpp)
-		-aa4180b7fffe332888fd167cd701c488:1 (11:18:test.cpp)
-		3642860f4363bf063871969d5753be8e:1 (13:3:test.cpp)
-		-c847b12ee2dd586aef7cc4f249063b96:0 (13:7:test.cpp)
-		-e4448f34fd8efd5d12b06becbeccdf9c:1 (13:18:test.cpp)
+		eb49b93bf843fe80b9a870949759e8a3:0 (4:3:test.cpp)
+		-3f4973546d43dba06f05e9ce8ee86:0 (4:7:test.cpp)
+		30487f17a4ce25f63338753ae64631ad:1 (11:3:test.cpp)
+		-f44b183a0e57ce2718fb1f44cc29f8c:1 (11:7:test.cpp)
+		-764c730c4d8e8940154fabd0810c0ca3:1 (11:18:test.cpp)
+		ef4363374b31010cfa4357956d939f87:1 (13:3:test.cpp)
+		-c74135f61db2f02ac7d034dabe1527ab:0 (13:7:test.cpp)
+		-7a441cd51fc6d442879e1a2750c18faf:1 (13:18:test.cpp)
 
 	Trace of Test #2:
 
-		144fe8151897460c21cc4feb5fe1f587:0 (4:3:test.cpp)
-		-834734717b3a18b1bfd6b5d9e7b3e4a6:0 (4:7:test.cpp)
-		32482c4245f18c8471985c6aa945628d:1 (11:3:test.cpp)
-		-944c6d1b92d71f91df32dd9038a4ba0:1 (11:7:test.cpp)
-		-aa4180b7fffe332888fd167cd701c488:1 (11:18:test.cpp)
-		3642860f4363bf063871969d5753be8e:1 (13:3:test.cpp)
-		-c847b12ee2dd586aef7cc4f249063b96:0 (13:7:test.cpp)
-		-e4448f34fd8efd5d12b06becbeccdf9c:1 (13:18:test.cpp)
+		eb49b93bf843fe80b9a870949759e8a3:0 (4:3:test.cpp)
+		-3f4973546d43dba06f05e9ce8ee86:0 (4:7:test.cpp)
+		30487f17a4ce25f63338753ae64631ad:0 (11:3:test.cpp)
+		-f44b183a0e57ce2718fb1f44cc29f8c:1 (11:7:test.cpp)
+		-764c730c4d8e8940154fabd0810c0ca3:0 (11:18:test.cpp)
+		ef4363374b31010cfa4357956d939f87:0 (13:3:test.cpp)
+		-c74135f61db2f02ac7d034dabe1527ab:0 (13:7:test.cpp)
+		-7a441cd51fc6d442879e1a2750c18faf:0 (13:18:test.cpp)
+
+	Trace of Test #3:
+
+		eb49b93bf843fe80b9a870949759e8a3:0 (4:3:test.cpp)
+		-3f4973546d43dba06f05e9ce8ee86:0 (4:7:test.cpp)
+		30487f17a4ce25f63338753ae64631ad:0 (11:3:test.cpp)
+		-f44b183a0e57ce2718fb1f44cc29f8c:0 (11:7:test.cpp)
+		-764c730c4d8e8940154fabd0810c0ca3:NA (11:18:test.cpp)
+		ef4363374b31010cfa4357956d939f87:0 (13:3:test.cpp)
+		-c74135f61db2f02ac7d034dabe1527ab:0 (13:7:test.cpp)
+		-7a441cd51fc6d442879e1a2750c18faf:0 (13:18:test.cpp)
 
 	`mcdc-scan` report:
 
-		Decision: 144fe8151897460c21cc4feb5fe1f587:
-		Condition: 834734717b3a18b1bfd6b5d9e7b3e4a6 > Uncovered
-		Decision: 32482c4245f18c8471985c6aa945628d:
-		Condition: 944c6d1b92d71f91df32dd9038a4ba0 > Uncovered
-		Condition: aa4180b7fffe332888fd167cd701c488 > Covered
-		Decision: 3642860f4363bf063871969d5753be8e:
-		Condition: c847b12ee2dd586aef7cc4f249063b96 > Uncovered
-		Condition: e4448f34fd8efd5d12b06becbeccdf9c > Covered
+		Decision: eb49b93bf843fe80b9a870949759e8a3 (4:3:test.cpp):
+		Condition: 3f4973546d43dba06f05e9ce8ee86 (4:7:test.cpp) > Uncovered
+		Decision: 30487f17a4ce25f63338753ae64631ad (11:3:test.cpp):
+		Condition: f44b183a0e57ce2718fb1f44cc29f8c (11:7:test.cpp) > Covered
+		Condition: 764c730c4d8e8940154fabd0810c0ca3 (11:18:test.cpp) > Covered
+		Decision: ef4363374b31010cfa4357956d939f87 (13:3:test.cpp):
+		Condition: c74135f61db2f02ac7d034dabe1527ab (13:7:test.cpp) > Uncovered
+		Condition: 7a441cd51fc6d442879e1a2750c18faf (13:18:test.cpp) > Covered
 
 * `tcas`:
 
 	The trace of the first test case:
 
-		97425c937013d8a27fe98c654fb151ae:0 (148:5:tcas.c)
-		-98405f1e323cefcca65c75c5cdbe07a7:0 (148:8:tcas.c)
-		ce425623f8032f64df0003cf433e7b9:1 (124:5:tcas.c)
-		-2e4d0e2821937797d66fdc5087c564ab:1 (124:9:tcas.c)
-		-b34cddc8cc6b2d87ebfcc9a30688ebb:0 (124:22:tcas.c)
-		-ee450d35fe827d679b7789734c5e75b1:1 (124:39:tcas.c)
-		-a74389e1151bf33cd12aa7d8946fb86:0 (124:61:tcas.c)
-		8c4abb58a368bf0c9e8cafeabd3b028a:1 (73:5:tcas.c)
-		-a4460c0e92ac3c6c86acaa9bfc088e80:1 (73:9:tcas.c)
-		7a41dce3921f7d9f7459816374198680:1 (91:5:tcas.c)
-		-ed4f84e2b91d2bc8276a49139c528bbd:1 (91:9:tcas.c)
-		a449894374e6182bbcec626d4a3e3983:0 (128:2:tcas.c)
-		-c347bb820831ed794b145dcc90af6fbe:0 (128:6:tcas.c)
-		-a74a6fac400f80fa495b61f90ffa2ca5:0 (128:24:tcas.c)
-		f74848953be8f81bd365633f66e32ab1:0 (133:7:tcas.c)
-		-62423496ea275de842e81114d38c1a87:0 (133:11:tcas.c)
-		9e455b82080bdf38264b32566a729ea1:0 (135:7:tcas.c)
-		-6c4f913d259d52beec06e63223c52da2:0 (135:11:tcas.c)
+		bc4baf42567f86ea259990974295d0a9:0 (148:5:tcas.c)
+		-5a440310f0906ccf54edda4d62a29b8:0 (148:8:tcas.c)
+		f848c0c3c271e93ec1e01e4e74ace892:0 (118:15:tcas.c)
+		-d34850ea46c0f0c1eabcfd77b9d59b92:1 (118:15:tcas.c)
+		-fc4bfa555e8dce254419b7ce118d9383:1 (118:35:tcas.c)
+		-54bdadea1a93502e74fd12f1f8940b0:1 (118:68:tcas.c)
+		de4c79f98d883cdb471f627cb28e5cb4:0 (120:24:tcas.c)
+		-ec4fa6470799489148e77c207b45d0b4:1 (120:24:tcas.c)
+		-8647782fb8b7d786902ec1cf28764589:NA (120:54:tcas.c)
+		b14e94617bab43d899f17ec56fcd52b2:1 (124:5:tcas.c)
+		-8a43aae1cc90fa4b3e2551be2048ead:1 (124:9:tcas.c)
+		-6049817192bbb3cd35af271c00ff27a2:0 (124:22:tcas.c)
+		-f446e76bcda1d1a76eb6e29ac0f154b6:NA (124:39:tcas.c)
+		-be44d77bf39acf989106721829ce788c:0 (124:61:tcas.c)
+		904709a0eed68f5677a38e9a83f3759d:1 (73:5:tcas.c)
+		-ff4c78150b639b80a5f26b69b92eadb1:1 (73:9:tcas.c)
+		eb4e6475a3aa3db3df78fbf1ad2ece8d:1 (75:11:tcas.c)
+		-bf4f29dbd501537ae6a9a6e8e193b0b1:1 (75:13:tcas.c)
+		-77413eb2484eff0438a346c50021178c:1 (75:38:tcas.c)
+		-7f4485b45c726e007ec517c040e1369e:1 (75:64:tcas.c)
+		e240aa002384250cafe41b277109ea84:1 (91:5:tcas.c)
+		-6b4209f64df6529b992259799f1e048a:1 (91:9:tcas.c)
+		e04d72cd8bac34249d7599b5e4a1b3bf:0 (93:11:tcas.c)
+		-3a46b9216debf45d900d08eea4df7b8b:1 (93:11:tcas.c)
+		-7a4cc11f76540e647b07d22d43441680:1 (93:34:tcas.c)
+		-924d7273d65e88938321221e365fb8a1:1 (93:63:tcas.c)
+		4f48d4eca13348801c1d316626ca6487:1 (127:21:tcas.c)
+		-1745cc57ea8b837db98f93f2d45d3b83:1 (127:21:tcas.c)
+		-7a40a340d1e2a934a41009c885234689:NA (127:54:tcas.c)
+		9c4cefd1b019359ab9842d3d02c5ad93:0 (128:2:tcas.c)
+		-624aba746a0ab04ad0f12750c6787ab4:0 (128:6:tcas.c)
+		-ed42de7f417968ae92b0fbb13221a8a3:NA (128:24:tcas.c)
+		4a445045f2d62e38c835f1ad2c01ba9d:0 (133:7:tcas.c)
+		-18445642ff69d39748e3026430ce85b3:0 (133:11:tcas.c)
+		484f0f75d82547a310f8ecbbc8d8d6a6:0 (135:7:tcas.c)
+		-bb40a41bb925677abb032b2095785ab6:0 (135:11:tcas.c)
 
 	`mcdc-scan` report:
 
-		Decision: ce425623f8032f64df0003cf433e7b9:
-		Condition: a74389e1151bf33cd12aa7d8946fb86 > Uncovered
-		Condition: b34cddc8cc6b2d87ebfcc9a30688ebb > Uncovered
-		Condition: 2e4d0e2821937797d66fdc5087c564ab > Covered
-		Condition: ee450d35fe827d679b7789734c5e75b1 > Covered
-		Decision: 7a41dce3921f7d9f7459816374198680:
-		Condition: ed4f84e2b91d2bc8276a49139c528bbd > Covered
-		Decision: 8c4abb58a368bf0c9e8cafeabd3b028a:
-		Condition: a4460c0e92ac3c6c86acaa9bfc088e80 > Covered
-		Decision: 97425c937013d8a27fe98c654fb151ae:
-		Condition: 98405f1e323cefcca65c75c5cdbe07a7 > Covered
-		Decision: 9e455b82080bdf38264b32566a729ea1:
-		Condition: 6c4f913d259d52beec06e63223c52da2 > Covered
-		Decision: a449894374e6182bbcec626d4a3e3983:
-		Condition: a74a6fac400f80fa495b61f90ffa2ca5 > Uncovered
-		Condition: c347bb820831ed794b145dcc90af6fbe > Uncovered
-		Decision: f74848953be8f81bd365633f66e32ab1:
-		Condition: 62423496ea275de842e81114d38c1a87 > Covered
+		Decision: 904709a0eed68f5677a38e9a83f3759d (73:5:tcas.c):
+		Condition: ff4c78150b639b80a5f26b69b92eadb1 (73:9:tcas.c) > Covered
+		Decision: eb4e6475a3aa3db3df78fbf1ad2ece8d (75:11:tcas.c):
+		Condition: bf4f29dbd501537ae6a9a6e8e193b0b1 (75:13:tcas.c) > Covered
+		Condition: 77413eb2484eff0438a346c50021178c (75:38:tcas.c) > Uncovered
+		Condition: 7f4485b45c726e007ec517c040e1369e (75:64:tcas.c) > Covered
+		Decision: 7941ecd75c206533dd8a7797fc8e8c (79:11:tcas.c):
+		Condition: eb42137565bbd3ab31a166cbb50bc587 (79:11:tcas.c) > Covered
+		Condition: 104d4fb15dc0d6e5e176a443ce4a7897 (79:34:tcas.c) > Uncovered
+		Condition: 604f9bc1e2c2e328ca32854d9b3fbebf (79:63:tcas.c) > Covered
+		Decision: e240aa002384250cafe41b277109ea84 (91:5:tcas.c):
+		Condition: 6b4209f64df6529b992259799f1e048a (91:9:tcas.c) > Covered
+		Decision: e04d72cd8bac34249d7599b5e4a1b3bf (93:11:tcas.c):
+		Condition: 3a46b9216debf45d900d08eea4df7b8b (93:11:tcas.c) > Covered
+		Condition: 7a4cc11f76540e647b07d22d43441680 (93:34:tcas.c) > Uncovered
+		Condition: 924d7273d65e88938321221e365fb8a1 (93:63:tcas.c) > Covered
+		Decision: 87451e70188cd079c685cad648c728b0 (97:11:tcas.c):
+		Condition: 34628e9efe94d7b11400f48cc2b6cb9 (97:13:tcas.c) > Covered
+		Condition: 2843cdee52af282b1b4cd6d043d5aab7 (97:38:tcas.c) > Uncovered
+		Condition: ee48918e81f44ff27c1313782990cbb1 (97:62:tcas.c) > Covered
+		Decision: f848c0c3c271e93ec1e01e4e74ace892 (118:15:tcas.c):
+		Condition: d34850ea46c0f0c1eabcfd77b9d59b92 (118:15:tcas.c) > Covered
+		Condition: fc4bfa555e8dce254419b7ce118d9383 (118:35:tcas.c) > Covered
+		Condition: 54bdadea1a93502e74fd12f1f8940b0 (118:68:tcas.c) > Covered
+		Decision: de4c79f98d883cdb471f627cb28e5cb4 (120:24:tcas.c):
+		Condition: ec4fa6470799489148e77c207b45d0b4 (120:24:tcas.c) > Uncovered
+		Condition: 8647782fb8b7d786902ec1cf28764589 (120:54:tcas.c) > Uncovered
+		Decision: b14e94617bab43d899f17ec56fcd52b2 (124:5:tcas.c):
+		Condition: 8a43aae1cc90fa4b3e2551be2048ead (124:9:tcas.c) > Covered
+		Condition: 6049817192bbb3cd35af271c00ff27a2 (124:22:tcas.c) > Uncovered
+		Condition: f446e76bcda1d1a76eb6e29ac0f154b6 (124:39:tcas.c) > Covered
+		Condition: be44d77bf39acf989106721829ce788c (124:61:tcas.c) > Uncovered
+		Decision: 445a749630bc7cbdc99dde184a620aa (126:19:tcas.c):
+		Condition: 81407789ff3e7bb65578c662288fe595 (126:19:tcas.c) > Uncovered
+		Condition: b94cd8c61a2d81a4aae3b95bd27a8eab (126:50:tcas.c) > Uncovered
+		Decision: 4f48d4eca13348801c1d316626ca6487 (127:21:tcas.c):
+		Condition: 1745cc57ea8b837db98f93f2d45d3b83 (127:21:tcas.c) > Uncovered
+		Condition: 7a40a340d1e2a934a41009c885234689 (127:54:tcas.c) > Uncovered
+		Decision: 9c4cefd1b019359ab9842d3d02c5ad93 (128:2:tcas.c):
+		Condition: 624aba746a0ab04ad0f12750c6787ab4 (128:6:tcas.c) > Uncovered
+		Condition: ed42de7f417968ae92b0fbb13221a8a3 (128:24:tcas.c) > Uncovered
+		Decision: 4a445045f2d62e38c835f1ad2c01ba9d (133:7:tcas.c):
+		Condition: 18445642ff69d39748e3026430ce85b3 (133:11:tcas.c) > Covered
+		Decision: 484f0f75d82547a310f8ecbbc8d8d6a6 (135:7:tcas.c):
+		Condition: bb40a41bb925677abb032b2095785ab6 (135:11:tcas.c) > Covered
+		Decision: bc4baf42567f86ea259990974295d0a9 (148:5:tcas.c):
+		Condition: 5a440310f0906ccf54edda4d62a29b8 (148:8:tcas.c) > Covered

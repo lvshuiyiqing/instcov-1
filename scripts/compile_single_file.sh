@@ -15,6 +15,6 @@ shift 1
 args="$@"
 
 ${rpath}/prep.sh $file
-${rpath}/instcov.sh -inst-conditions -inst-switch -inst-assignment -mf $file ${filename}.i.${extension}
+${rpath}/instcov.sh -mf $file ${filename}.i.${extension}
 ${rpath}/instcov-view.sh -di-only ${filename}.i.${extension}.dbginfo -o ${filename}.di
 ${rpath}/ccwraper.sh ${filename}.i.trans.${extension} -o ${filename}
