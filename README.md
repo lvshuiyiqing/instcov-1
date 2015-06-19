@@ -137,10 +137,10 @@ Besides, switch statements are not analyzed for MC/DC coverage.
 
 ### Assignment operators and variable declarations
 
-The right hand side (RHS) of assignment operators and variable declarations may
-also contain logical evaluations. By default, `instcov` does not instrument
-these RHS expressions. You can enable this feature by adding `-inst-assignment`
-to `instcov` arguments.
+The right hand side (RHS) of assignment operators, return statements and
+variable declarations may also contain logical evaluations. By default,
+`instcov` does not instrument these RHS expressions. You can enable this feature
+by adding `-inst-RHS` to `instcov` arguments.
 
 To determine whether an RHS expression should be instrumented, `instcov` skips
 the top-level implicit casts of the RHS expression, and check whether they are
