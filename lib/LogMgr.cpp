@@ -17,7 +17,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include "LogMgr.h"
+#include "instcov/LogMgr.h"
 
 using namespace instcov;
 

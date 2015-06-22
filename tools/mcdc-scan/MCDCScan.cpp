@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Support/CommandLine.h"
-#include "LogMgr.h"
+#include "instcov/LogMgr.h"
 #include "MCDCAnalyzer.h"
 #include "FastAnalyzer.h"
 #include "SCAnalyzer.h"
