@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 #include "instcov/uuid.h"
+#include "instcov/DbgInfo.h"
 
 namespace instcov {
 
@@ -35,18 +36,6 @@ class LogEntry {
   std::pair<UUID_t, uint64_t> Decision;
   unsigned FID;
   unsigned RID;
-};
-
-class LocInfo {
- public:
-  LocInfo(void)
-      : FileName(), Line(0), Col(0) {}
-
-  std::string toString(void) const;
-  
-  std::string FileName;
-  uint64_t Line;
-  uint64_t Col;
 };
 
 class LogMgr {

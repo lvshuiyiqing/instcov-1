@@ -24,6 +24,8 @@ struct LocInfo {
       : Line(0), Col(0) {}
   LocInfo(const std::string &file, unsigned line, unsigned col)
       : File(file), Line(line), Col(col) {}
+
+  std::string toString(void) const;
   
   std::string File;
   uint64_t Line;
