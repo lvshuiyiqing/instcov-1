@@ -16,6 +16,5 @@ args="$@"
 
 ${rpath}/prep.sh $file &&
 ${rpath}/instcov.sh -mf $file ${filename}.i.${extension} &&
-${rpath}/instcov-view.sh -di-only ${filename}.i.${extension}.dbginfo -o
-${filename}.di &&
+${rpath}/instcov-view.sh -di-only ${filename}.i.${extension}.dbginfo -o ${filename}.di &&
 ${rpath}/ccwraper.sh ${filename}.i.trans.${extension} -o ${filename}
