@@ -27,7 +27,7 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/StringSet.h"
-#include "instcov/InstCovASTVisitor.h"
+#include "InstCovASTVisitor.h"
 
 using namespace llvm;
 using namespace clang;
@@ -110,7 +110,6 @@ int main(int argc, const char **argv) {
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
 
-  Tool.run(newFrontendActionFactory<InstCovAction>().get());
-  return 0;
+  return Tool.run(newFrontendActionFactory<InstCovAction>().get());
 }
 

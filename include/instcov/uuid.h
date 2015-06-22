@@ -34,7 +34,7 @@ struct UUID_t {
   UUID_t(void)
       : high(0), low(0) {}
 
-  bool isValid(void) const {
+  operator bool(void) const {
     return (high | low);
   }
 
@@ -89,7 +89,14 @@ inline bool operator < (const instcov::UUID_t &left, const instcov::UUID_t &righ
 
 inline bool operator == (const instcov::UUID_t &left, const instcov::UUID_t &right)
 {
-  return std::make_tuple(left.high, left.low) == std::make_tuple(right.high, right.low);
+  return std::make_tuple(left.high, left.low) ==
+      std::make_tuple(right.high, right.low);
+}
+
+inline bool operator != (const instcov::UUID_t &left, const instcov::UUID_t &right)
+{
+  return std::make_tuple(left.high, left.low) !=
+      std::make_tuple(right.high, right.low);
 }
 }
 

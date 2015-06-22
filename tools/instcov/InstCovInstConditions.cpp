@@ -26,7 +26,7 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "instcov/InstCovASTVisitor.h"
+#include "InstCovASTVisitor.h"
 #include <vector>
 #include <stack>
 
@@ -95,8 +95,8 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
     std::vector<Expr *> CondExprs = extractConditions(e);
     for (auto it = CondExprs.begin(), ie = CondExprs.end();
          it != ie; ++it) {
-      DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
-      UUID_t uuid = DIM.getUUID(*it);
+      DIB.registerStmt(*it, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIB.getUUID(*it);
       std::string dumper;
       llvm::raw_string_ostream os(dumper);
       os << "instcov_dump(" << uuid.toArgString() << ", (";
@@ -114,8 +114,8 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
     std::vector<Expr *> CondExprs = extractConditions(e);
     for (auto it = CondExprs.begin(), ie = CondExprs.end();
          it != ie; ++it) {
-      DIM.registerStmt(*it, p, TheRewriter.getSourceMgr());
-      UUID_t uuid = DIM.getUUID(*it);
+      DIB.registerStmt(*it, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIB.getUUID(*it);
       TheRewriter.InsertText((*it)->getLocStart(), "((", true, true);
       std::string dumper;
       llvm::raw_string_ostream os(dumper);
