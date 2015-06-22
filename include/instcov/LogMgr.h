@@ -34,8 +34,8 @@ class LogEntry {
 
   std::map<UUID_t, uint64_t> Conditions;
   std::pair<UUID_t, uint64_t> Decision;
-  unsigned FID;
-  unsigned RID;
+  std::size_t FID;
+  std::size_t RID;
 };
 
 class LogMgr {
