@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SCAnalyzer_H_
-#define SCAnalyzer_H_
+#ifndef INSTCOV_SCANALYZER_H_
+#define INSTCOV_SCANALYZER_H_
 
 #include <vector>
 #include <map>
@@ -49,4 +49,4 @@ class SCAnalyzer : public MCDCAnalyzer {
 
 }
 
-#endif  // SCAnalyzer_H_
+#endif  // INSTCOV_SCANALYZER_H_

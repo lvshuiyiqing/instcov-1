@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef FastAnalyzer_H_
-#define FastAnalyzer_H_
+#ifndef INSTCOV_FASTANALYZER_H_
+#define INSTCOV_FASTANALYZER_H_
 
 #include <vector>
 #include <map>
@@ -54,4 +54,4 @@ class FastAnalyzer : public MCDCAnalyzer {
 
 }
 
-#endif  // FastAnalyzer_H_
+#endif  // INSTCOV_FASTANALYZER_H_

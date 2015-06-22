@@ -1,4 +1,4 @@
 add_library(instcovBasic
-	DbgInfoMgr.cpp
-	LogMgr.cpp
-	)
+  DbgInfoMgr.cpp
+  LogMgr.cpp
+  )

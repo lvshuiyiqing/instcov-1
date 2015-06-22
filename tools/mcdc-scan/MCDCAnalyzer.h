@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef MCDCAnalyzer_H_
-#define MCDCAnalyzer_H_
+#ifndef INSTCOV_MCDCANALYZER_H_
+#define INSTCOV_MCDCANALYZER_H_
 
 #include "instcov/LogMgr.h"
 
@@ -69,4 +69,4 @@ class MCDCAnalyzer {
 };
 }
 
-#endif  // MCDCAnalyzer_H_
+#endif  // INSTCOV_MCDCANALYZER_H_
