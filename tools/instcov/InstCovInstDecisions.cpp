@@ -27,8 +27,7 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/StringSet.h"
-#include "instcov/InstCovASTVisitor.h"
-#include "instcov/uuid.h"
+#include "InstCovASTVisitor.h"
 
 using namespace llvm;
 using namespace clang;
@@ -162,6 +161,15 @@ namespace{
   }
 }
 
+InstCovASTVisitor::~InstCovASTVisitor(void) {
+  if (!DIB.selfCheck()) {
+    llvm::errs() << "The debug info has problems\n";
+    exit(1);
+  }
+  DIB.dump(TheRewriter.getSourceMgr().getFileEntryForID(
+      TheRewriter.getSourceMgr().getMainFileID())->getName());
+}
+
 bool InstCovASTVisitor::checkLocation(Stmt *s) const {
   SourceManager &SM = TheRewriter.getSourceMgr();
   StringRef PresumedFileName =
@@ -190,21 +198,21 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
     Expr *RHSRoot = toRHSRoot(VDInit);
     MCDCVisitExpr(RHSRoot, s);
   }
-  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t uuid = DIM.getUUID(s);
+  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t uuid = DIB.getUUID(s);
   // Only care about If statements.
   Stmt *Then = s->getThen();
   Stmt *Else = s->getElse();
 
   if (VD && SimpleRHS) {
-    DIM.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
+    DIB.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
   }
 
   InstInfo ThenInfo, ElseInfo;
   ThenInfo.push_back(std::make_pair(uuid, 1));
   ElseInfo.push_back(std::make_pair(uuid, 0));
   if (VD && SimpleRHS) {
-    UUID_t UuidVD = DIM.getUUID(VDInit);
+    UUID_t UuidVD = DIB.getUUID(VDInit);
     ThenInfo.push_back(std::make_pair(UuidVD, 1));
     ElseInfo.push_back(std::make_pair(UuidVD, 0));
   }
@@ -228,8 +236,8 @@ bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
     return true;
   }
   MCDCVisitForStmt(s);
-  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t uuid = DIM.getUUID(s);
+  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t uuid = DIB.getUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, InstInfo(1, std::make_pair(uuid, 0)));
   InstInBlock(s->getBody(), TheRewriter, InstInfo(1, std::make_pair(uuid, 1)));
@@ -257,17 +265,17 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
     Expr *RHSRoot = toRHSRoot(VDInit);
     MCDCVisitExpr(RHSRoot, s);
   }
-  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t uuid = DIM.getUUID(s);
+  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t uuid = DIB.getUUID(s);
   if (VD && SimpleRHS) {
-    DIM.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
+    DIB.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
   }
 
   InstInfo ThenInfo, ElseInfo;
   ThenInfo.push_back(std::make_pair(uuid, 1));
   ElseInfo.push_back(std::make_pair(uuid, 0));
   if (VD && SimpleRHS) {
-    UUID_t UuidVD = DIM.getUUID(VDInit);
+    UUID_t UuidVD = DIB.getUUID(VDInit);
     ThenInfo.push_back(std::make_pair(UuidVD, 1));
     ElseInfo.push_back(std::make_pair(UuidVD, 0));
   }
@@ -283,9 +291,9 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
     return true;
   }
   MCDCVisitDoStmt(s);
-  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
-  UUID_t uuid = DIM.getUUID(s);
+  UUID_t uuid = DIB.getUUID(s);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
@@ -302,8 +310,8 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
     return true;
   }
   std::stringstream header_ss;
-  DIM.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t Uuid = DIM.getUUID(s);
+  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t Uuid = DIB.getUUID(s);
   header_ss << "int instcov_f" << Uuid.toString() << " = 1;\n";
   TheRewriter.InsertText(s->getLocStart(), header_ss.str(), true, true);
   SwitchCase *SC = s->getSwitchCaseList();
@@ -408,9 +416,9 @@ void InstCovASTVisitor::handleRHS4Assgn_NormalVarDecl(clang::Expr *e) {
   SourceLocation LocEnd = Lexer::getLocForEndOfToken(
       RHSRoot->getLocEnd(), 0,
       TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
-  DIM.registerStmt(RHSRoot, nullptr, TheRewriter.getSourceMgr());
+  DIB.registerStmt(RHSRoot, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(LocStart, "(", true, true);
-  UUID_t uuid = DIM.getUUID(RHSRoot);
+  UUID_t uuid = DIB.getUUID(RHSRoot);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()

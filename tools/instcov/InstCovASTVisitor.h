@@ -25,16 +25,16 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "instcov/DbgInfoMgr.h"
+#include "DIBuilder4Inst.h"
 
 namespace instcov{
 class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
 public:
   InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
       : TheRewriter(R), TheASTContext(C),
-        DIM(R.getSourceMgr().getFileEntryForID(
-            R.getSourceMgr().getMainFileID())->getName()) {}
-
+        DIB() {}
+  ~InstCovASTVisitor(void);
+  
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
   bool VisitWhileStmt(clang::WhileStmt *s);
@@ -67,7 +67,7 @@ private:
 
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
-  DbgInfoMgr DIM;
+  DIBuilder4Inst DIB;
   std::set<const clang::DeclStmt *> VisitedDecls;
 };
 }

@@ -14,7 +14,7 @@
 
 #include <iostream>
 #include <fstream>
-#include "instcov/RecordMgr.h"
+#include "RecordMgr.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -60,10 +60,10 @@ int main(int argc, char *argv[]) {
   }
   RecordMgr RM;
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
-    RM.getDIBB().loadFile(*it);
+    RM.getDIB().loadFile(*it);
   }
-  if (!RM.getDIBB().selfCheck()) {
-    llvm::errs() << "debug information contain circles!\n";
+  if (!RM.getDIB().selfCheck()) {
+    llvm::errs() << "debug information has problems!\n";
     exit(1);
   }
   if (OutputFileName.empty()) {
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   if (DIOnly) {
-    RM.getDIBB().dump(OutFile);
+    RM.getDIB().dumpPretty(OutFile);
   } else {
     if (TraceFileName == "") {
       llvm::errs() << "trace file name is empty, please use -t argument\n";

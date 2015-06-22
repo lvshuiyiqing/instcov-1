@@ -14,7 +14,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <stack>
-#include "instcov/DISlotTree.h"
+#include "DISlotTree.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -23,50 +23,32 @@ using namespace instcov;
 
 extern cl::opt<std::string> DumpFormat;
 
-namespace {
-int64_t findNumNodes(const DbgInfoEntry_View *Root) {
-  std::stack<const DbgInfoEntry_View *> S;
-  int64_t size = 0;
-  S.push(Root);
-  while (!S.empty()) {
-    ++size;
-    const DbgInfoEntry_View *Node = S.top();
-    S.pop();
-    for (auto it = Node->Children.begin(), ie = Node->Children.end();
-         it != ie; ++it) {
-      S.push(*it);
-    }
-  }
-  return size;
-}
-}
-
-DISlotTree::DISlotTree(DbgInfoEntry_View *Root) {
-  NumEmptySlots = findNumNodes(Root);
-  R = Root;
+DISlotTree::DISlotTree(UUID_t Root, const DIBuilder4View &dib)
+    : R(Root), DIB(dib) {
+  NumEmptySlots = DIB.getNumNodes(R);
 }
 
 DISlotTree::~DISlotTree(void) {
 }
 
-bool DISlotTree::canAccept(DbgInfoEntry_View *Node) const {
-  return (Node->toRoot() == R) && Records.count(Node) == 0;
+bool DISlotTree::canAccept(UUID_t Uuid) const {
+  return (DIB.toRoot(Uuid) == R) && Records.count(Uuid) == 0;
 }
 
-void DISlotTree::fill(DbgInfoEntry_View *Node, uint64_t bid) {
-  if (Records.count(Node) == 1) {
+void DISlotTree::fill(UUID_t Uuid, uint64_t bid) {
+  if (Records.count(Uuid) == 1) {
     llvm::errs() << "record already filled in the tree, why another?\n";
     exit(1);
   }
-  if (Node->toRoot() != R) {
+  if (DIB.toRoot(Uuid) != R) {
     llvm::errs() << "recorded a node outside the tree, exiting.\n";
-    llvm::errs() << "the node is: " << Node->Uuid.toString() << "\n";
-    llvm::errs() << "its root node is: " << Node->toRoot()->Uuid.toString()
+    llvm::errs() << "the node is: " << Uuid.toString() << "\n";
+    llvm::errs() << "its root node is: " << DIB.toRoot(Uuid).toString()
                  << "\n";
-    llvm::errs() << "the root should be: " << R->Uuid.toString() << "\n"; 
+    llvm::errs() << "the root should be: " << R.toString() << "\n"; 
     exit(1);
   }
-  Records[Node] = bid;
+  Records[Uuid] = bid;
   --NumEmptySlots;
 }
 
@@ -75,31 +57,32 @@ void DISlotTree::dump(std::ostream &OS) const {
 }
 
 void DISlotTree::printTreeDFS(std::ostream &OS,
-                              const DbgInfoEntry_View *Node,
+                              UUID_t Uuid,
                               uint64_t depth) const {
   for (uint64_t i = 0; i < depth; ++i) {
     OS << "-";
   }
+  const DbgInfo &DI = DIB.getDbgInfo(Uuid); 
   for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
     switch (DumpFormat[i]) {
       case 'u':
-        OS << std::hex << Node->Uuid.high << Node->Uuid.low << std::dec;
+        OS << std::hex << Uuid.high << Uuid.low << std::dec;
         break;
       case 's':
-        OS << Node->Sid;
+        OS << DIB.getSID(Uuid);
         break;
       case 'l':
-        OS << Node->Line;
+        OS << DI.Loc.Line;
         break;
       case 'c':
-        OS << Node->Col;
+        OS << DI.Loc.Col;
         break;
       case 'f':
-        OS << Node->File;
+        OS << DI.Loc.File;
         break;
       case 'b':
-        if (Records.count(Node)){
-          OS << Records.find(Node)->second;
+        if (Records.count(Uuid)){
+          OS << Records.find(Uuid)->second;
         } else {
           OS << "NA";
         }
@@ -110,7 +93,7 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
     }
   }
   OS << "\n";
-  for (auto it = Node->Children.begin(), ie = Node->Children.end();
+  for (auto it = DI.Children.begin(), ie = DI.Children.end();
        it != ie; ++it) {
     printTreeDFS(OS, *it, depth+1);
   }
