@@ -74,16 +74,10 @@ parseLine(std::istream &In, bool &success) {
     size_t loc2 = StrLoc.find(':', loc1+1);
     LI.Line = std::stoi(StrLoc.substr(0,loc1));
     LI.Col = std::stoi(StrLoc.substr(loc1+1, loc2-loc1-1));
-    LI.FileName = StrLoc.substr(loc2+1);
+    LI.File = StrLoc.substr(loc2+1);
     return std::make_tuple(depth, Uuid, Bid, LI);
   }
 }
-}
-
-std::string LocInfo::toString(void) const {
-  std::stringstream ss;
-  ss << Line << ":" << Col << ":" << FileName;
-  return ss.str();
 }
 
 LogMgr::LogMgr() {

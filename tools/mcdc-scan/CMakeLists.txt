@@ -6,3 +6,7 @@ add_clang_executable(mcdc-scan
   FastAnalyzer.cpp
   SCAnalyzer.cpp
 )
+
+target_link_libraries(mcdc-scan
+  instcovBasic
+  )

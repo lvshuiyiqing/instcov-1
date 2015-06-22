@@ -47,8 +47,8 @@ class MCDCAnalyzer {
       }
       const LocInfo &LHS_LI = LM.getLocInfos().find(LHS->first)->second;
       const LocInfo &RHS_LI = LM.getLocInfos().find(RHS->first)->second;
-      return std::make_tuple(LHS_LI.FileName, LHS_LI.Line, LHS_LI.Col) <
-      std::make_tuple(RHS_LI.FileName, RHS_LI.Line, RHS_LI.Col);
+      return std::make_tuple(LHS_LI.File, LHS_LI.Line, LHS_LI.Col) <
+      std::make_tuple(RHS_LI.File, RHS_LI.Line, RHS_LI.Col);
     }
  
    private:

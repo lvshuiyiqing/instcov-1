@@ -25,6 +25,12 @@ const char INSTCOV_MAGIC[] = "INSTCOV";
 const char INSTCOV_VERSION[] = "1";
 }
 
+std::string LocInfo::toString(void) const {
+  std::stringstream ss;
+  ss << Line << ":" << Col << ":" << File;
+  return ss.str();
+}
+
 DbgInfoMgr::DbgInfoMgr(void) {
 }
 
