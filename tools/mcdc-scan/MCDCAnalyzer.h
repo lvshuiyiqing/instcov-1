@@ -15,7 +15,7 @@
 #ifndef MCDCAnalyzer_H_
 #define MCDCAnalyzer_H_
 
-#include "LogMgr.h"
+#include "instcov/LogMgr.h"
 
 namespace instcov {
 class MCDCAnalyzer {
