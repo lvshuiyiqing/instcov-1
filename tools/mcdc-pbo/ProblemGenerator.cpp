@@ -20,13 +20,11 @@
 using namespace llvm;
 using namespace instcov;
 
-void PBTerm::emit(std::ostream &OS) const {
-  OS << (getWeight() > 0 ? "+" : "") << getWeight()
-     << " " << (getSVar().getSign() ? "" : "~")
-     << "x" << getSVar().getPBVar();
+void PBTerm::emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const {
+  OS << TP(*this);
 }
 
-void PBLinear::emit(std::ostream &OS) const {
+void PBLinear::emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const {
   bool IsFirst = true;
   for (auto it = begin(), ie = end(); it != ie; ++it) {
     if (IsFirst) {
@@ -34,16 +32,16 @@ void PBLinear::emit(std::ostream &OS) const {
     } else {
       OS << " ";      
     }
-    it->emit(OS);
+    it->emit(OS, TP);
   }
 }
 
-void PBConstr::emit(std::ostream &OS) const {
+void PBConstr::emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const {
   if (LHS.empty()) {
     std::cerr << "LHS is empty, why?" << std::endl;
     exit(1);
   }
-  LHS.emit(OS);
+  LHS.emit(OS, TP);
   OS << " " << (IsEqual ? "=" : ">=") << " ";
   if (RHS > 0) {
     OS << "+";
@@ -52,31 +50,62 @@ void PBConstr::emit(std::ostream &OS) const {
 }
 
 namespace {
-void emitConstrs(const std::vector<PBConstr> &Constrs, std::ostream &OS) {
+void emitConstrs(const std::vector<PBConstr> &Constrs, std::ostream &OS,
+                 const PBTerm::TermPrinter &TP) {
   for (auto it = Constrs.begin(), ie = Constrs.end(); it != ie; ++it) {
-    it->emit(OS);
+    it->emit(OS, TP);
   }
 }
 }
 
-void PBOProblem::emit(std::ostream &OS) const {
+void PBOProblem::emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const {
   OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs
      << std::endl;
   if (!ObjFunc.empty()) {
     OS << "min: ";
-    ObjFunc.emit(OS);
+    ObjFunc.emit(OS, TP);
     OS << ";";
   }
   OS << "* ConditionMatch" << std::endl;
-  emitConstrs(ConditionMatch, OS);
+  emitConstrs(ConditionMatch, OS, TP);
   OS << "* VisitMatch" << std::endl;
-  emitConstrs(VisitMatch, OS);
+  emitConstrs(VisitMatch, OS, TP);
   OS << "* CDAssgnMatch" << std::endl;
-  emitConstrs(CDAssgnMatch, OS);
+  emitConstrs(CDAssgnMatch, OS, TP);
   OS << "* AssgnPair" << std::endl;
-  emitConstrs(AssgnPair, OS);
+  emitConstrs(AssgnPair, OS, TP);
   OS << "* Assgn" << std::endl;
-  emitConstrs(Assgn, OS);
+  emitConstrs(Assgn, OS, TP);
+}
+
+void PBOProblem::emitRaw(std::ostream &OS) const {
+  struct TermPrinterRaw : public PBTerm::TermPrinter {
+    virtual std::string operator()(const PBTerm &Term) const {
+      std::stringstream ss;
+      ss << (Term.getWeight() > 0 ? "+" : "") << Term.getWeight()
+              << " " << (Term.getSVar().getSign() ? "" : "~")
+              << "x" << Term.getSVar().getPBVar();
+      return ss.str();
+    }
+  };
+  emit(OS, TermPrinterRaw());
+}
+
+void PBOProblem::emitPretty(
+    std::ostream &OS, const ProblemGenerator &PG) const {
+  struct TermPrinterPretty : public PBTerm::TermPrinter {
+    TermPrinterPretty(const ProblemGenerator &pg)
+        : PG(pg) {}
+    virtual std::string operator()(const PBTerm &Term) const {
+      std::stringstream ss;
+      ss << (Term.getWeight() > 0 ? "+" : "") << Term.getWeight()
+         << " " << (Term.getSVar().getSign() ? "" : "~")
+         << PG.decodePBVar(Term.getSVar().getPBVar());
+      return ss.str();
+    }
+    const ProblemGenerator &PG;
+  };
+  emit(OS, TermPrinterPretty(PG));
 }
 
 ProblemGenerator::ProblemGenerator(void) {
@@ -103,6 +132,15 @@ PBVar ProblemGenerator::encodeStr(const std::string &str) {
     ID2Str[IDPool.size()] = str;
   }
   return IDPool[str];
+}
+
+const std::string &ProblemGenerator::decodePBVar(PBVar ID) const {
+  auto it = ID2Str.find(ID);
+  if (it == ID2Str.end()) {
+    std::cerr << "cannot find PBVar" << std::endl;
+    exit(1);
+  }
+  return it->second;
 }
 
 PBVar ProblemGenerator::encodeConditionMatch(UUID_t UuidC) {
@@ -384,5 +422,11 @@ void ProblemGenerator::genPBIdiomOr(
     Constr.IsEqual = false;
     Constrs.push_back(Constr);
     Constr.clear();
+  }
+}
+
+void ProblemGenerator::dumpID2Str(std::ostream &OS) const {
+  for (auto it = ID2Str.begin(), ie = ID2Str.end(); it != ie; ++it) {
+    OS << "x" << it->first << ": " << it->second << std::endl;
   }
 }

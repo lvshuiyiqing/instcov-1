@@ -22,6 +22,8 @@
 #include "instcov/LogMgr.h"
 
 namespace instcov {
+class ProblemGenerator;
+
 typedef std::size_t PBVar;
 struct SignedPBVar : public std::pair<PBVar, bool> {
   typedef std::pair<PBVar, bool> base_t;
@@ -31,18 +33,21 @@ struct SignedPBVar : public std::pair<PBVar, bool> {
 };
 
 struct PBTerm : std::pair<int, SignedPBVar> {
+  struct TermPrinter {
+    virtual std::string operator()(const PBTerm &Term) const = 0;
+  };
   typedef std::pair<int, SignedPBVar> base_t;
   using base_t::pair;
   const SignedPBVar &getSVar(void) const { return second; }
   int getWeight(void) const { return first; }
-  void emit(std::ostream &OS) const;
+  void emit(std::ostream &OS, const TermPrinter &TP) const;
 };
 
 // third tuple indicates whether the variable is positive, i.e. false means "~x"
 struct PBLinear : public std::vector<PBTerm> {
   typedef std::vector<PBTerm> base_t;
   using base_t::vector;
-  void emit(std::ostream &OS) const;
+  void emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const;
 };
   
 struct PBConstr {
@@ -50,7 +55,9 @@ struct PBConstr {
       : LHS(), RHS(0), IsEqual(false) {}
   PBConstr(const PBLinear &lhs, int rhs, bool isEqual)
       : LHS(lhs), RHS(rhs), IsEqual(isEqual) {}
-  void emit(std::ostream &OS) const;
+  void emitRaw(std::ostream &OS) const;
+  void emitPretty(std::ostream &OS, const ProblemGenerator &PG) const;
+  void emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const;
   void clear(void) {
     LHS.clear();
     RHS = 0;
@@ -68,7 +75,9 @@ struct PBOProblem {
   std::size_t NumVars;
   std::size_t NumConstrs;
   
-  void emit(std::ostream &OS) const;
+  void emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const;
+  void emitPretty(std::ostream &OS, const ProblemGenerator &PG) const;
+  void emitRaw(std::ostream &OS) const;
   
   PBLinear ObjFunc;
   std::vector<PBConstr> ConditionMatch;
@@ -86,6 +95,9 @@ class ProblemGenerator {
   void registerLogEntry(const LogEntry *E);
   PBOProblem emitPBO(void);
 
+  void dumpID2Str(std::ostream &OS) const;
+  const std::string &decodePBVar(PBVar ID) const;
+  
  private:
   PBVar encodeStr(const std::string &str);
   PBVar encodeConditionMatch(UUID_t UuidC);
@@ -146,8 +158,8 @@ class ProblemGenerator {
   std::map<UUID_t, std::size_t> Uuid2SID;
   std::map<std::size_t, std::vector<std::size_t> > TID2VIDs;
   std::vector<UUID_t> SID2Uuid;
-  llvm::StringMap<std::size_t> IDPool;
-  std::map<std::size_t, std::string> ID2Str;
+  llvm::StringMap<PBVar> IDPool;
+  std::map<PBVar, std::string> ID2Str;
 };
 }
 
