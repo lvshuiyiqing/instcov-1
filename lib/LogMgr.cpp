@@ -97,7 +97,7 @@ void LogMgr::loadFile(const std::string &fileName) {
   std::stack<std::vector<std::pair<UUID_t, uint64_t> > > S;
   S.push(std::vector<std::pair<UUID_t, uint64_t> >());
   bool success = true;
-  size_t RID = 0;
+  size_t VID = 0;
   while (true) {
     auto PL = parseLine(InFile, success);
     if (!success) {
@@ -114,8 +114,8 @@ void LogMgr::loadFile(const std::string &fileName) {
         S.pop();
       } else {
         LogEntry Entry;
-        Entry.FID = FileNames.size();
-        Entry.RID = ++RID;
+        Entry.TID = FileNames.size();
+        Entry.VID = ++VID;
         Entry.Conditions.clear();
         Entry.Conditions.insert(S.top().begin(), S.top().end());
         S.pop();
@@ -138,8 +138,8 @@ void LogMgr::loadFile(const std::string &fileName) {
       S.pop();
     } else {
       LogEntry Entry;
-      Entry.FID = FileNames.size();
-      Entry.RID = ++RID;
+      Entry.TID = FileNames.size();
+      Entry.VID = ++VID;
       Entry.Conditions.clear();
       Entry.Conditions.insert(S.top().begin(), S.top().end());
       S.pop();

@@ -15,32 +15,125 @@
 #ifndef INSTCOV_PROBLEMGENERATOR_H_
 #define INSTCOV_PROBLEMGENERATOR_H_
 
+#include <vector>
 #include <map>
-#include "instcov/LogMgr.h"
+#include <iostream>
 #include "llvm/ADT/StringMap.h"
+#include "instcov/LogMgr.h"
 
 namespace instcov {
+typedef std::size_t PBVar;
+struct SignedPBVar : public std::pair<PBVar, bool> {
+  typedef std::pair<PBVar, bool> base_t;
+  using base_t::pair;
+  PBVar getPBVar(void) const { return first; }
+  bool getSign(void) const { return second; }
+};
+
+struct PBTerm : std::pair<int, SignedPBVar> {
+  typedef std::pair<int, SignedPBVar> base_t;
+  using base_t::pair;
+  const SignedPBVar &getSVar(void) const { return second; }
+  int getWeight(void) const { return first; }
+  void emit(std::ostream &OS) const;
+};
+
+// third tuple indicates whether the variable is positive, i.e. false means "~x"
+struct PBLinear : public std::vector<PBTerm> {
+  typedef std::vector<PBTerm> base_t;
+  using base_t::vector;
+  void emit(std::ostream &OS) const;
+};
+  
+struct PBConstr {
+  PBConstr(void);
+  PBConstr(const PBLinear &LHS, int RHS, bool isEqual);
+  void emit(std::ostream &OS) const;
+  void clear(void);
+
+  PBLinear LHS;
+  int RHS;
+  bool IsEqual; // >= if false
+};
+
+struct PBOProblem {
+  void emit(std::ostream &OS) const;
+  
+  PBLinear ObjFunc;
+  std::vector<PBConstr> ConditionMatch;
+  std::vector<PBConstr> VisitMatch;
+  std::vector<PBConstr> CDAssgnMatch;
+  std::vector<PBConstr> AssgnPair;
+  std::vector<PBConstr> Assgn;
+};
+
 class ProblemGenerator {
  public:
   ProblemGenerator(void);
   ~ProblemGenerator(void);
 
   void registerLogEntry(const LogEntry *E);
+  PBOProblem emitPBO(void);
 
  private:
-  // decision / conditions
-  std::size_t encodeDC(
-      std::size_t sid,
-      std::size_t fid, std::size_t rid,
-      char type);
-  // test / visit ID
-  std::size_t encodeTV(std::size_t id, char type);
+  PBVar encodeStr(const std::string &str);
+  PBVar encodeConditionMatch(UUID_t UuidC);
+  PBVar encodeVisitMatch(
+      UUID_t UuidC,
+      std::size_t TID1, std::size_t VID1,
+      std::size_t TID2, std::size_t VID2);
+  PBVar encodeCDAssgnMatch(
+      UUID_t Uuid,
+      std::size_t TID1, std::size_t VID1,
+      std::size_t TID2, std::size_t VID2);
+  PBVar encodeAssgnPair(
+      UUID_t Uuid,
+      std::size_t TID1, std::size_t VID1, char Assgn1,
+      std::size_t TID2, std::size_t VID2, char Assgn2);
+  PBVar encodeAssgn(
+      UUID_t Uuid,
+      std::size_t TID, std::size_t VID, char Assgn);
+  PBVar encodeT(std::size_t TID);
+  PBVar getSID(UUID_t Uuid);
+  
+  void pboEmitObj(PBOProblem &Problem);
+  void pboEmitAssgn(PBOProblem &Problem, const LogEntry *E);
+  void pboEmitOneAssgn(
+      PBOProblem &Problem,
+      std::size_t TID, std::size_t VID,
+      const std::pair<UUID_t, uint64_t> &Assgn);
+  void pboEmitAssgnPair(
+      PBOProblem &Problem,
+      const LogEntry *E1, const LogEntry *E2);
+  void pboEmitOneAssgnPair(
+      PBOProblem &Problem, UUID_t Uuid,
+      std::size_t TID1, std::size_t VID1,
+      std::size_t TID2, std::size_t VID2);
+  void pboEmitPerDecision(
+      PBOProblem &Problem, UUID_t UuidD);
+  void pboEmitConditionMatches(
+      PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC);
+  void pboEmitVisitMatches(
+      PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC);
+  void pboEmitOneVisitMatch(
+      PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC,
+      const LogEntry *E1, const LogEntry *E2);
+  void pboEmitPerVisit(PBOProblem &Problem);
 
-  std::size_t encodeStr(const std::string &str);
+  void genPBIdiomAnd(SignedPBVar Var1, SignedPBVar Var2, SignedPBVar VarRes,
+                     std::vector<PBConstr> &Constrs);
+  void genPBIdiomAnd(const std::vector<SignedPBVar> &Vars, SignedPBVar VarRes,
+                     std::vector<PBConstr> &Constrs);
+  void genPBIdiomOr(SignedPBVar Var1, SignedPBVar Var2, SignedPBVar VarRes,
+                    std::vector<PBConstr> &Constrs);
+  void genPBIdiomOr(const std::vector<SignedPBVar> &Vars, SignedPBVar VarRes,
+                    std::vector<PBConstr> &Constrs);
   
  private:
-  std::map<UUID_t, const LogEntry *> Uuid2LogEntries;
+  std::map<UUID_t, std::vector<UUID_t> > Children;
+  std::map<UUID_t, std::vector<const LogEntry *> > Uuid2LogEntries;
   std::map<UUID_t, std::size_t> Uuid2SID;
+  std::map<std::size_t, std::vector<std::size_t> > TID2VIDs;
   std::vector<UUID_t> SID2Uuid;
   llvm::StringMap<std::size_t> IDPool;
   std::vector<std::string> ID2Str;
