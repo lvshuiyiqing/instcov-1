@@ -30,12 +30,12 @@ const uint64_t BID_NA = ~(~((uint64_t)0)>>1);
 class LogEntry {
  public:
   LogEntry(void)
-      : FID(-1), RID(-1) {}
+      : TID(-1), VID(-1) {}
 
   std::map<UUID_t, uint64_t> Conditions;
   std::pair<UUID_t, uint64_t> Decision;
-  std::size_t FID;
-  std::size_t RID;
+  std::size_t TID;
+  std::size_t VID;
 };
 
 class LogMgr {

@@ -136,7 +136,7 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
         if (!CountsOnly) {
           for (auto ita = TrueSideEntries.begin(), iea = TrueSideEntries.end();
                ita != iea; ++ita) {
-            OS << "<" << (*ita)->FID << "," << (*ita)->RID << "> ";
+            OS << "<" << (*ita)->TID << "," << (*ita)->VID << "> ";
           }
         }
         std::cout << std::endl;
@@ -144,7 +144,7 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
         if (!CountsOnly) {
           for (auto ita = FalseSideEntries.begin(), iea = FalseSideEntries.end();
                ita != iea; ++ita) {
-            OS << "<" << (*ita)->FID << "," << (*ita)->RID << "> ";
+            OS << "<" << (*ita)->TID << "," << (*ita)->VID << "> ";
           }
         }
         std::cout << std::endl;

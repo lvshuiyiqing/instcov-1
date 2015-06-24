@@ -32,7 +32,7 @@ void FastAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
        it != ie; ++it) {
     if (it->second == BID_NA) {
       std::cerr << "FastAnalyzer do not accept NA entries, skipping this one"
-                << "<" << entry->FID << "," << entry->RID << ">" << std::endl;
+                << "<" << entry->TID << "," << entry->VID << ">" << std::endl;
     }
     bits.push_back(it->second);
     Uuids.push_back(it->first);
@@ -106,7 +106,7 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
           for (auto ite = ith->second.TrueSide.begin(),
                    iee = ith->second.TrueSide.end();
                ite != iee; ++ite) {
-            OS << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+            OS << "<" << (*ite)->TID << "," << (*ite)->VID << "> ";
           }
         }
         OS << std::endl;
@@ -115,7 +115,7 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
           for (auto ite = ith->second.FalseSide.begin(),
                    iee = ith->second.FalseSide.end();
                ite != iee; ++ite) {
-            OS << "<" << (*ite)->FID << "," << (*ite)->RID << "> ";
+            OS << "<" << (*ite)->TID << "," << (*ite)->VID << "> ";
           }
         }
         OS << std::endl;
