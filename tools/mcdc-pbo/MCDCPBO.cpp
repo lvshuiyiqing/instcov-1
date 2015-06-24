@@ -17,6 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include "ProblemGenerator.h"
 
 using namespace llvm;
 using namespace instcov;
@@ -46,6 +47,13 @@ int main(int argc, char *argv[]) {
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
     LM.loadFile(*it);
   }
+  ProblemGenerator PG;
+  for (auto it = LM.getLogEntries().begin(), ie = LM.getLogEntries().end();
+       it != ie; ++it) {
+    PG.registerLogEntry(&(*it));
+  }
+  PBOProblem Problem = PG.emitPBO();
+  Problem.emit(std::cout);
   return 0;
 }
 

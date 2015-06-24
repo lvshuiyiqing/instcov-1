@@ -60,15 +60,22 @@ void emitConstrs(const std::vector<PBConstr> &Constrs, std::ostream &OS) {
 }
 
 void PBOProblem::emit(std::ostream &OS) const {
+  OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs
+     << std::endl;
   if (!ObjFunc.empty()) {
     OS << "min: ";
     ObjFunc.emit(OS);
     OS << ";";
   }
+  OS << "* ConditionMatch" << std::endl;
   emitConstrs(ConditionMatch, OS);
+  OS << "* VisitMatch" << std::endl;
   emitConstrs(VisitMatch, OS);
+  OS << "* CDAssgnMatch" << std::endl;
   emitConstrs(CDAssgnMatch, OS);
+  OS << "* AssgnPair" << std::endl;
   emitConstrs(AssgnPair, OS);
+  OS << "* Assgn" << std::endl;
   emitConstrs(Assgn, OS);
 }
 
@@ -164,6 +171,7 @@ std::size_t ProblemGenerator::getSID(UUID_t Uuid) {
 
 PBOProblem ProblemGenerator::emitPBO(void) {
   PBOProblem Problem;
+  Problem.NumVars = IDPool.size();
   pboEmitObj(Problem);
   for (auto it = Uuid2LogEntries.begin(), ie = Uuid2LogEntries.end();
        it != ie; ++it) {
@@ -176,6 +184,13 @@ PBOProblem ProblemGenerator::emitPBO(void) {
        itd != ied; ++itd) {
     pboEmitPerDecision(Problem, itd->first);
   }
+  Problem.NumConstrs = 0;
+  Problem.NumConstrs += Problem.ConditionMatch.size();
+  Problem.NumConstrs += Problem.VisitMatch.size();
+  Problem.NumConstrs += Problem.CDAssgnMatch.size();
+  Problem.NumConstrs += Problem.AssgnPair.size();
+  Problem.NumConstrs += Problem.Assgn.size();
+  
   return Problem;
 }
 
