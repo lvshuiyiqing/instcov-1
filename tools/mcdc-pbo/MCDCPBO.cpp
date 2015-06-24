@@ -26,23 +26,21 @@ cl::list<std::string> FileNames(
     cl::Positional,
     cl::desc("<parsed trace files> ..."),
     cl::OneOrMore);
-cl::opt<std::string> Analyzer(
-    "analyzer",
-    cl::desc("select the analyzer. Options:\n"
-             "fast (a fast analyzer but do not accept NA entries)\n"
-             "sc (default, a slower analyzer but can deal with NA entries)\n"),
-    cl::init("sc"));
-cl::opt<bool> CountsOnly("counts-only",
-                         cl::desc("only counts"),
-                         cl::init(false));
-cl::opt<bool> Verbose(
-    "v",
-    cl::desc("dump more verbosely"),
+cl::opt<std::string> OutFileName(
+    "o",
+    cl::desc("PBO output file name"),
+    cl::Required);
+cl::opt<bool> DumpPretty(
+    "emit-pretty",
+    cl::desc("emit pretty-style PBO output"),
     cl::init(false));
-
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
+  if (OutFileName.empty()) {
+    std::cerr << "ERR: output file name is empty" << std::endl;
+    exit(1);
+  }
   LogMgr LM;
   for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
     LM.loadFile(*it);
@@ -53,7 +51,14 @@ int main(int argc, char *argv[]) {
     PG.registerLogEntry(&(*it));
   }
   PBOProblem Problem = PG.emitPBO();
-  Problem.emit(std::cout);
+  std::ofstream PBOFile(OutFileName.c_str());
+  std::ofstream InfoFile((OutFileName + ".info").c_str());
+  if (DumpPretty) {
+    Problem.emitRaw(PBOFile);
+  } else {
+    Problem.emitPretty(PBOFile, PG);
+  }
+  PG.dumpID2Str(InfoFile);
   return 0;
 }
 
