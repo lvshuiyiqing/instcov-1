@@ -46,10 +46,16 @@ struct PBLinear : public std::vector<PBTerm> {
 };
   
 struct PBConstr {
-  PBConstr(void);
-  PBConstr(const PBLinear &LHS, int RHS, bool isEqual);
+  PBConstr(void)
+      : LHS(), RHS(0), IsEqual(false) {}
+  PBConstr(const PBLinear &lhs, int rhs, bool isEqual)
+      : LHS(lhs), RHS(rhs), IsEqual(isEqual) {}
   void emit(std::ostream &OS) const;
-  void clear(void);
+  void clear(void) {
+    LHS.clear();
+    RHS = 0;
+    IsEqual = false;
+  }
 
   PBLinear LHS;
   int RHS;
@@ -57,6 +63,11 @@ struct PBConstr {
 };
 
 struct PBOProblem {
+  PBOProblem(void)
+      : NumVars(0), NumConstrs(0) {}
+  std::size_t NumVars;
+  std::size_t NumConstrs;
+  
   void emit(std::ostream &OS) const;
   
   PBLinear ObjFunc;
