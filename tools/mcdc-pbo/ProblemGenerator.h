@@ -147,7 +147,7 @@ class ProblemGenerator {
   std::map<std::size_t, std::vector<std::size_t> > TID2VIDs;
   std::vector<UUID_t> SID2Uuid;
   llvm::StringMap<std::size_t> IDPool;
-  std::vector<std::string> ID2Str;
+  std::map<std::size_t, std::string> ID2Str;
 };
 }
 
