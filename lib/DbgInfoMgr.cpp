@@ -71,9 +71,8 @@ void DbgInfoMgr::dump(const std::string &MainFileName) const {
   if (PaddingSize) {
     File.write((const char *)&Padding, PaddingSize);
   }
-  for (auto it = QueueOrder.begin(), ie = QueueOrder.end();
-       it != ie; ++it) {
-    dumpOne(File, *it);
+  for (auto QueueItem : QueueOrder) {
+    dumpOne(File, QueueItem);
   }
 }
 
@@ -114,10 +113,9 @@ bool DbgInfoMgr::selfCheck(void) const {
     return false;
   }
   std::set<UUID_t> Visited;
-  for (auto it = RegisteredUuids.begin(), ie = RegisteredUuids.end();
-       it != ie; ++it) {
+  for (auto Uuid : RegisteredUuids) {
     std::set<UUID_t> CurVisited;
-    UUID_t CurUuid = *it;
+    UUID_t CurUuid = Uuid;
     while (CurUuid) {
       if (CurVisited.count(CurUuid)) {
         // cycle

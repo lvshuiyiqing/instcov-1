@@ -120,9 +120,8 @@ void LogMgr::loadFile(const std::string &fileName) {
         Entry.Conditions.insert(S.top().begin(), S.top().end());
         S.pop();
         Entry.Decision = S.top().back();
-        for (auto it = Entry.Conditions.begin(), ie = Entry.Conditions.end();
-             it != ie; ++it) {
-          Children[Entry.Decision.first].insert(it->first);
+        for (auto Condition : Entry.Conditions) {
+          Children[Entry.Decision.first].insert(Condition.first);
         }
         LogEntries.push_back(Entry);
       }
@@ -144,9 +143,8 @@ void LogMgr::loadFile(const std::string &fileName) {
       Entry.Conditions.insert(S.top().begin(), S.top().end());
       S.pop();
       Entry.Decision = S.top().back();
-      for (auto it = Entry.Conditions.begin(), ie = Entry.Conditions.end();
-           it != ie; ++it) {
-        Children[Entry.Decision.first].insert(it->first);
+      for (auto Condition : Entry.Conditions) {
+        Children[Entry.Decision.first].insert(Condition.first);
       }
       LogEntries.push_back(Entry);
     }

@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
     }
   }
   RecordMgr RM;
-  for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
-    RM.getDIB().loadFile(*it);
+  for (auto FileName : FileNames) {
+    RM.getDIB().loadFile(FileName);
   }
   if (!RM.getDIB().selfCheck()) {
     llvm::errs() << "debug information has problems!\n";
@@ -87,4 +87,3 @@ int main(int argc, char *argv[]) {
   }
   return 0;
 }
-

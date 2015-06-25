@@ -159,8 +159,8 @@ void ProblemGenerator::registerLogEntry(const LogEntry *E) {
   TID2VIDs[E->TID].push_back(E->VID);
   if (!Children.count(E->Decision.first)) {
     Children[E->Decision.first];
-    for (auto CondAssgn : E->Conditions) {
-      Children[E->Decision.first].push_back(CondAssgn.first);
+    for (auto Cond_Assgn : E->Conditions) {
+      Children[E->Decision.first].push_back(Cond_Assgn.first);
     }
   }
 }

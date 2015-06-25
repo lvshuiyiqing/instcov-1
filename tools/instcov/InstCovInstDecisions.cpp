@@ -109,9 +109,9 @@ namespace{
       CompoundStmt *s, Rewriter &R,
       const InstInfo &instinfo) {
     std::stringstream ss;
-    for (auto it = instinfo.begin(), ie = instinfo.end(); it != ie; ++it) {
-      ss << "\n  " << INSTCOV_FUNC_NAME << "(" << it->first.toArgString()
-         << ", " << it->second << ");";
+    for (auto Uuid_Bid : instinfo) {
+      ss << "\n  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString()
+         << ", " << Uuid_Bid.second << ");";
     }
     R.InsertText(s->getLBracLoc().getLocWithOffset(1), ss.str(), true, true);
   }
@@ -121,9 +121,9 @@ namespace{
       const InstInfo &instinfo) {
     std::stringstream ss;
     ss << "{\n";
-    for (auto it = instinfo.begin(), ie = instinfo.end(); it != ie; ++it) {
-      ss << "  " << INSTCOV_FUNC_NAME << "(" << it->first.toArgString() << ", "
-       << it->second << ");\n";
+    for (auto Uuid_Bid : instinfo) {
+      ss << "  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
+       << Uuid_Bid.second << ");\n";
     }
     R.InsertText(s->getLocStart(), ss.str(), true, true);
     R.InsertText(FindEndLoc(s, R), "\n}", false, true);
@@ -147,12 +147,12 @@ namespace{
     if (braces) {
       ss << "{\n";
     }
-    for (auto it = instinfo.begin(), ie = instinfo.end(); it != ie; ++it) {
+    for (auto Uuid_Bid : instinfo) {
       if (indent) {
         ss << "  ";
       }
-      ss << INSTCOV_FUNC_NAME << "(" << it->first.toArgString() << ", "
-         << it->second << ");\n";
+      ss << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
+         << Uuid_Bid.second << ");\n";
     }
     if (braces) {
       ss << "}";
@@ -389,8 +389,8 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
   if (!InstRHS) {
     return true;
   }
-  for (auto it = s->decl_begin(), ie = s->decl_end(); it != ie; ++it) {
-    if (VarDecl *VD = dyn_cast<VarDecl>(*it)) {
+  for (auto decl : s->decls()) {
+    if (VarDecl *VD = dyn_cast<VarDecl>(decl)) {
       if (Expr *e = VD->getInit()) {
         handleRHS4Assgn_NormalVarDecl(e);
       }

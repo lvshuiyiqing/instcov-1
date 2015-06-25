@@ -46,8 +46,8 @@ cl::opt<bool> Verbose(
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
   LogMgr LM;
-  for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
-    LM.loadFile(*it);
+  for (auto FileName : FileNames) {
+    LM.loadFile(FileName);
   }
   std::shared_ptr<MCDCAnalyzer> analyzer;
   if (Analyzer == "fast") {
@@ -57,9 +57,8 @@ int main(int argc, char *argv[]) {
   } else {
     std::cerr << "wrong analyzer: " << Analyzer << std::endl;
   }
-  for (auto it = LM.getLogEntries().begin(), ie = LM.getLogEntries().end();
-       it != ie; ++it) {
-    analyzer->registerEntry(&(*it), LM);
+  for (auto Entry : LM.getLogEntries()) {
+    analyzer->registerEntry(&Entry, LM);
   }
   analyzer->finalize();
   analyzer->dump(std::cout, LM);

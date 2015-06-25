@@ -102,9 +102,8 @@ int main(int argc, const char **argv) {
                  << " instcov will not do any instrumentation\n";
   }
 
-  for (auto it = OptMatchFileNames.begin(), ie = OptMatchFileNames.end();
-       it != ie; ++it) {
-    MatchFileNames.insert(*it);
+  for (auto MatchFileName : OptMatchFileNames) {
+    MatchFileNames.insert(MatchFileName);
   }
   
   ClangTool Tool(OptionsParser.getCompilations(),
