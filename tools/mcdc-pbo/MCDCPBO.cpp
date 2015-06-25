@@ -30,7 +30,7 @@ cl::opt<std::string> OutFileName(
     "o",
     cl::desc("PBO output file name"),
     cl::Required);
-cl::opt<bool> DumpPretty(
+cl::opt<bool> EmitPretty(
     "emit-pretty",
     cl::desc("emit pretty-style PBO output"),
     cl::init(false));
@@ -53,12 +53,13 @@ int main(int argc, char *argv[]) {
   PBOProblem Problem = PG.emitPBO();
   std::ofstream PBOFile(OutFileName.c_str());
   std::ofstream InfoFile((OutFileName + ".info").c_str());
-  if (DumpPretty) {
-    Problem.emitRaw(PBOFile);
-  } else {
+  if (EmitPretty) {
     Problem.emitPretty(PBOFile, PG);
+  } else {
+    Problem.emitRaw(PBOFile);
   }
-  PG.dumpID2Str(InfoFile);
+  PG.dumpPBVar2Str(InfoFile);
+  PG.dumpSID2LocInfo(InfoFile, LM);
   return 0;
 }
 

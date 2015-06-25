@@ -95,7 +95,8 @@ class ProblemGenerator {
   void registerLogEntry(const LogEntry *E);
   PBOProblem emitPBO(void);
 
-  void dumpID2Str(std::ostream &OS) const;
+  void dumpPBVar2Str(std::ostream &OS) const;
+  void dumpSID2LocInfo(std::ostream &OS, const LogMgr &LM) const;
   const std::string &decodePBVar(PBVar ID) const;
   
  private:

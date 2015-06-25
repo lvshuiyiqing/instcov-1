@@ -64,7 +64,9 @@ void PBOProblem::emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const {
   if (!ObjFunc.empty()) {
     OS << "min: ";
     ObjFunc.emit(OS, TP);
-    OS << ";";
+    OS << ";" << std::endl;
+  } else {
+    OS << "* no objective function" << std::endl;
   }
   OS << "* ConditionMatch" << std::endl;
   emitConstrs(ConditionMatch, OS, TP);
@@ -145,7 +147,7 @@ const std::string &ProblemGenerator::decodePBVar(PBVar ID) const {
 
 PBVar ProblemGenerator::encodeConditionMatch(UUID_t UuidC) {
   std::stringstream ss;
-  ss << "cm" << getSID(UuidC);
+  ss << "cm_" << getSID(UuidC);
   return encodeStr(ss.str());
 }
 
@@ -154,7 +156,7 @@ PBVar ProblemGenerator::encodeVisitMatch(
       std::size_t TID1, std::size_t VID1,
       std::size_t TID2, std::size_t VID2) {
   std::stringstream ss;
-  ss << "vm" << getSID(UuidC)
+  ss << "vm_" << getSID(UuidC)
      << "_" << TID1 << "_" << VID1
      << "_" << TID2 << "_" << VID2;
   return encodeStr(ss.str());
@@ -165,7 +167,7 @@ PBVar ProblemGenerator::encodeCDAssgnMatch(
       std::size_t TID1, std::size_t VID1,
       std::size_t TID2, std::size_t VID2) {
   std::stringstream ss;
-  ss << "cdm" << getSID(Uuid)
+  ss << "cdm_" << getSID(Uuid)
      << "_" << TID1 << "_" << VID1
      << "_" << TID2 << "_" << VID2;
   return encodeStr(ss.str());
@@ -176,7 +178,7 @@ PBVar ProblemGenerator::encodeAssgnPair(
       std::size_t TID1, std::size_t VID1, char Assgn1,
       std::size_t TID2, std::size_t VID2, char Assgn2) {
   std::stringstream ss;
-  ss << "ap" << getSID(Uuid)
+  ss << "ap_" << getSID(Uuid)
      << "_" << TID1 << "_" << VID1 << "_" << Assgn1
      << "_" << TID2 << "_" << VID2 << "_" << Assgn2;
   return encodeStr(ss.str());
@@ -186,14 +188,14 @@ PBVar ProblemGenerator::encodeAssgn(
       UUID_t Uuid,
       std::size_t TID, std::size_t VID, char Assgn) {
   std::stringstream ss;
-  ss << "a" << getSID(Uuid)
+  ss << "a_" << getSID(Uuid)
      << "_" << TID << "_" << VID << "_" << Assgn;
   return encodeStr(ss.str());
 }
 
 PBVar ProblemGenerator::encodeT(std::size_t TID) {
   std::stringstream ss;
-  ss << "t" << TID;
+  ss << "t_" << TID;
   return encodeStr(ss.str());
 }
 
@@ -331,14 +333,14 @@ void ProblemGenerator::pboEmitOneVisitMatch(
     const LogEntry *E1, const LogEntry *E2) {
   const auto &Conditions = Children[UuidD];
   std::vector<SignedPBVar> SVars;
+  SVars.push_back(SignedPBVar(encodeT(E1->TID), true));
+  SVars.push_back(SignedPBVar(encodeT(E1->TID), true));
+  SVars.push_back(SignedPBVar(
+      encodeCDAssgnMatch(UuidD, E1->TID, E1->VID, E2->TID, E2->VID), false));
   for (auto it = Conditions.begin(), ie = Conditions.end(); it != ie; ++it) {
     PBVar Var = encodeCDAssgnMatch(*it, E1->TID, E1->VID, E2->TID, E2->VID);
     SVars.push_back(SignedPBVar(Var, *it != UuidC));
   }
-  SVars.push_back(SignedPBVar(
-      encodeCDAssgnMatch(UuidD, E1->TID, E1->VID, E2->TID, E2->VID), false));
-  SVars.push_back(SignedPBVar(encodeT(E1->TID), true));
-  SVars.push_back(SignedPBVar(encodeT(E1->TID), true));
   PBVar VarVisitMatch = encodeVisitMatch(
       UuidC, E1->TID, E1->VID, E2->TID, E2->VID);
   genPBIdiomAnd(SVars, SignedPBVar(VarVisitMatch, true), Problem.VisitMatch);
@@ -425,8 +427,39 @@ void ProblemGenerator::genPBIdiomOr(
   }
 }
 
-void ProblemGenerator::dumpID2Str(std::ostream &OS) const {
+void ProblemGenerator::dumpPBVar2Str(std::ostream &OS) const {
   for (auto it = ID2Str.begin(), ie = ID2Str.end(); it != ie; ++it) {
     OS << "x" << it->first << ": " << it->second << std::endl;
+  }
+}
+
+void ProblemGenerator::dumpSID2LocInfo(std::ostream &OS,
+                                       const LogMgr &LM) const {
+  std::vector<std::size_t> SIDs;
+  for (std::size_t i = 0; i < SID2Uuid.size(); ++i) {
+    SIDs.push_back(i);
+  }
+
+  struct SIDSorter {
+    SIDSorter(const LogMgr &lm, const std::vector<UUID_t> &sid2uuid)
+        : LM(lm), SID2Uuid(sid2uuid) {}
+
+    bool operator()(std::size_t LHS, std::size_t RHS) const {
+      const LocInfo &LHSLoc = LM.getLocInfo(SID2Uuid[LHS]);
+      const LocInfo &RHSLoc = LM.getLocInfo(SID2Uuid[RHS]);
+      return std::make_tuple(LHSLoc.File, LHSLoc.Line, LHSLoc.Col) <
+        std::make_tuple(RHSLoc.File, RHSLoc.Line, RHSLoc.Col);
+    }
+    const LogMgr &LM;
+    const std::vector<UUID_t> &SID2Uuid;
+  };
+
+  // std::sort(SIDs.begin(), SIDs.end(), SIDSorter(LM, SID2Uuid));
+  for (auto it = SIDs.begin(), ie = SIDs.end(); it != ie; ++it) {
+    std::size_t SID = *it;
+    UUID_t Uuid = SID2Uuid[SID];
+    const LocInfo &Loc = LM.getLocInfo(Uuid);
+    OS << "SID=" << SID << ": UUID=" << Uuid.toString() << ", File="
+       << Loc.File << ", Line=" << Loc.Line << ", Col=" << Loc.Col << std::endl;
   }
 }
