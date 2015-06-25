@@ -93,7 +93,7 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
   if (NoShortCircuits) {
     TheRewriter.InsertText(e->getLocStart(), "(", true, true);
     std::vector<Expr *> CondExprs = extractConditions(e);
-    for (auto CondExpr : CondExprs) {
+    for (auto &&CondExpr : CondExprs) {
       DIB.registerStmt(CondExpr, p, TheRewriter.getSourceMgr());
       UUID_t uuid = DIB.getUUID(CondExpr);
       std::string dumper;
@@ -111,7 +111,7 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
     TheRewriter.InsertText(endLoc, ")", false, true);
   } else {
     std::vector<Expr *> CondExprs = extractConditions(e);
-    for (auto CondExpr : CondExprs) {
+    for (auto &&CondExpr : CondExprs) {
       DIB.registerStmt(CondExpr, p, TheRewriter.getSourceMgr());
       UUID_t uuid = DIB.getUUID(CondExpr);
       TheRewriter.InsertText(CondExpr->getLocStart(), "((", true, true);

@@ -102,7 +102,7 @@ int main(int argc, const char **argv) {
                  << " instcov will not do any instrumentation\n";
   }
 
-  for (auto MatchFileName : OptMatchFileNames) {
+  for (auto &&MatchFileName : OptMatchFileNames) {
     MatchFileNames.insert(MatchFileName);
   }
   

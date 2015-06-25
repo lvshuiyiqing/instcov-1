@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   LogMgr LM;
-  for (auto FileName : FileNames) {
+  for (auto &&FileName : FileNames) {
     LM.loadFile(FileName);
   }
   ProblemGenerator PG;
-  for (auto Entry : LM.getLogEntries()) {
+  for (auto &&Entry : LM.getLogEntries()) {
     PG.registerLogEntry(&Entry);
   }
   PBOProblem Problem = PG.emitPBO();

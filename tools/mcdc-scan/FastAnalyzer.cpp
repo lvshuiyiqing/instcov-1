@@ -28,7 +28,7 @@ void FastAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
   std::vector<UUID_t> Uuids;
   bits.reserve(entry->Conditions.size()+1);
   Uuids.reserve(entry->Conditions.size()+1);
-  for (auto Cond_Assgn : entry->Conditions) {
+  for (auto &&Cond_Assgn : entry->Conditions) {
     if (Cond_Assgn.second == BID_NA) {
       std::cerr << "FastAnalyzer do not accept NA entries, skipping this one"
                 << "<" << entry->TID << "," << entry->VID << ">" << std::endl;
@@ -64,18 +64,18 @@ void FastAnalyzer::finalize(void) {
 void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   // decision level
   auto dorder = getSortedIterators(Data, LM);
-  for (auto it_Dec_Pairs : dorder) {
+  for (auto &&it_Dec_Pairs : dorder) {
     OS << "Decision: " << it_Dec_Pairs->first.toString()
        << " (" << getLocString(LM, it_Dec_Pairs->first) << ")" << ":"
        << std::endl;
     auto corder =getSortedIterators(it_Dec_Pairs->second, LM);
     // condition level
-    for (auto it_Cond_Pairs : corder) {
+    for (auto &&it_Cond_Pairs : corder) {
       OS << "Condition: " << it_Cond_Pairs->first.toString()
          << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
       bool IsCovered = false;
       // hash level
-      for (auto Hash_Pairs : it_Cond_Pairs->second) {
+      for (auto &&Hash_Pairs : it_Cond_Pairs->second) {
         if (!Hash_Pairs.second.TrueSide.empty() &&
             !Hash_Pairs.second.FalseSide.empty()) {
           IsCovered = true;
@@ -92,7 +92,7 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
         continue;
       }
       // Verbose dump
-      for (auto Hash_Pairs : it_Cond_Pairs->second) {
+      for (auto &&Hash_Pairs : it_Cond_Pairs->second) {
         if (!Hash_Pairs.second.TrueSide.empty() &&
             !Hash_Pairs.second.FalseSide.empty()) {
           OS << "Hash (Covered): ";
@@ -102,14 +102,14 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
         OS << Hash_Pairs.first << std::endl;
         OS << "True side: " << Hash_Pairs.second.TrueSide.size() << std::endl;
         if (!CountsOnly) {
-          for (auto Entry : Hash_Pairs.second.TrueSide) {
+          for (auto &&Entry : Hash_Pairs.second.TrueSide) {
             OS << "<" << Entry->TID << "," << Entry->VID << "> ";
           }
         }
         OS << std::endl;
         OS << "False side: " << Hash_Pairs.second.FalseSide.size() << std::endl;
         if (!CountsOnly) {
-          for (auto Entry : Hash_Pairs.second.FalseSide) {
+          for (auto &&Entry : Hash_Pairs.second.FalseSide) {
             OS << "<" << Entry->TID << "," << Entry->VID << "> ";
           }
         }

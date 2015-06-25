@@ -48,7 +48,7 @@ void SCAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
   std::vector<UUID_t> ThisCondOrder;
   NewAssignment.reserve(entry->Conditions.size()+1);
   auto corder = getSortedIterators(entry->Conditions, LM);
-  for (auto it_Cond_Assgn : corder) {
+  for (auto &&it_Cond_Assgn : corder) {
     NewAssignment.push_back(bid2char(it_Cond_Assgn->second));
     ThisCondOrder.push_back(it_Cond_Assgn->first);
     Dec2Pairs[entry->Decision.first][it_Cond_Assgn->first]; // register in the results
@@ -61,7 +61,7 @@ void SCAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
 
 
 void SCAnalyzer::finalize(void) {
-  for (auto Dec_Assgns : Dec2Assgns) {
+  for (auto &&Dec_Assgns : Dec2Assgns) {
     UUID_t Uuid_D = Dec_Assgns.first;
     for (auto it1 = Dec_Assgns.second.begin(),
              ie = Dec_Assgns.second.end(); it1 != ie; ++it1) {
@@ -107,12 +107,12 @@ size_t SCAnalyzer::findMatch(const Assignment_t &LHS,
 void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   // decision level
   auto dorder = getSortedIterators(Dec2Pairs, LM);
-  for (auto it_Dec_Pairs : dorder) {
+  for (auto &&it_Dec_Pairs : dorder) {
     OS << "Decision: " << it_Dec_Pairs->first.toString()
        << " (" << getLocString(LM, it_Dec_Pairs->first) << ")" << ":" << std::endl;
     // condition level
     auto corder = getSortedIterators(it_Dec_Pairs->second, LM);
-    for (auto it_Cond_Pairs : corder) {
+    for (auto &&it_Cond_Pairs : corder) {
       OS << "Condition: " << it_Cond_Pairs->first.toString()
          << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
       if (it_Cond_Pairs->second.empty()) {
@@ -124,21 +124,21 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
         continue;
       }
       // assgn pair level
-      for (auto Pair : it_Cond_Pairs->second) {
+      for (auto &&Pair : it_Cond_Pairs->second) {
         OS << "Pair: <" << Pair.first << ","
            << Pair.second << ">" << std::endl;
         auto &TrueSideEntries = Assgn2Entries.find(Pair.first)->second;
         auto &FalseSideEntries = Assgn2Entries.find(Pair.second)->second;
         OS << "True side: " << TrueSideEntries.size() << std::endl;
         if (!CountsOnly) {
-          for (auto Entry : TrueSideEntries) {
+          for (auto &&Entry : TrueSideEntries) {
             OS << "<" << Entry->TID << "," << Entry->VID << "> ";
           }
         }
         std::cout << std::endl;
         OS << "False side: " << FalseSideEntries.size() << std::endl;
         if (!CountsOnly) {
-          for (auto Entry : FalseSideEntries) {
+          for (auto &&Entry : FalseSideEntries) {
             OS << "<" << Entry->TID << "," << Entry->VID << "> ";
           }
         }
