@@ -93,14 +93,13 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
   if (NoShortCircuits) {
     TheRewriter.InsertText(e->getLocStart(), "(", true, true);
     std::vector<Expr *> CondExprs = extractConditions(e);
-    for (auto it = CondExprs.begin(), ie = CondExprs.end();
-         it != ie; ++it) {
-      DIB.registerStmt(*it, p, TheRewriter.getSourceMgr());
-      UUID_t uuid = DIB.getUUID(*it);
+    for (auto CondExpr : CondExprs) {
+      DIB.registerStmt(CondExpr, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIB.getUUID(CondExpr);
       std::string dumper;
       llvm::raw_string_ostream os(dumper);
       os << "instcov_dump(" << uuid.toArgString() << ", (";
-      (*it)->printPretty(os, nullptr,
+      CondExpr->printPretty(os, nullptr,
                          PrintingPolicy(TheASTContext.getLangOpts()));
       os << ") ? 1 : 0), ";
       os.flush();
@@ -112,18 +111,17 @@ void InstCovASTVisitor::MCDCVisitExpr(Expr *e, Stmt *p) {
     TheRewriter.InsertText(endLoc, ")", false, true);
   } else {
     std::vector<Expr *> CondExprs = extractConditions(e);
-    for (auto it = CondExprs.begin(), ie = CondExprs.end();
-         it != ie; ++it) {
-      DIB.registerStmt(*it, p, TheRewriter.getSourceMgr());
-      UUID_t uuid = DIB.getUUID(*it);
-      TheRewriter.InsertText((*it)->getLocStart(), "((", true, true);
+    for (auto CondExpr : CondExprs) {
+      DIB.registerStmt(CondExpr, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIB.getUUID(CondExpr);
+      TheRewriter.InsertText(CondExpr->getLocStart(), "((", true, true);
       std::string dumper;
       llvm::raw_string_ostream os(dumper);
       os << ") ? (" << "instcov_dump(" << uuid.toArgString() << ",1),1) : ("
          << "instcov_dump(" << uuid.toArgString() << ",0),0)) ";
       os.flush();
       SourceLocation endLoc = Lexer::getLocForEndOfToken(
-          (*it)->getLocEnd(), 0, TheRewriter.getSourceMgr(),
+          CondExpr->getLocEnd(), 0, TheRewriter.getSourceMgr(),
           TheRewriter.getLangOpts());
       TheRewriter.InsertText(endLoc, dumper, false, true);
     }

@@ -149,22 +149,21 @@ void DIBuilder4View::dumpPrettyDFS(std::ostream &OS,
     }
   }
   OS << "\n";
-  for (auto it = DI.Children.begin(), ie = DI.Children.end();
-       it != ie; ++it) {
-    dumpPrettyDFS(OS, *it, depth+1);
+  for (auto Child : DI.Children) {
+    dumpPrettyDFS(OS, Child, depth+1);
   }
 }
 
 void DIBuilder4View::dumpPretty(std::ostream &OS) const {
   std::vector<const DbgInfo *> RootDIs;
-  for (auto it = getDbgInfos().begin(), ie = getDbgInfos().end(); it != ie; ++it) {
-    if (!(it->second.Uuid_P)) {
-      RootDIs.push_back(&(it->second));
+  for (auto Uuid_DI : getDbgInfos()) {
+    if (!(Uuid_DI.second.Uuid_P)) {
+      RootDIs.push_back(&(Uuid_DI.second));
     }
   }
   std::sort(RootDIs.begin(), RootDIs.end(), CmpFunc());
-  for (auto it = RootDIs.begin(), ie = RootDIs.end(); it != ie; ++it) {
-    dumpPrettyDFS(OS, (*it)->Uuid, 0);
+  for (auto RootDI : RootDIs) {
+    dumpPrettyDFS(OS, RootDI->Uuid, 0);
   }
 }
 
