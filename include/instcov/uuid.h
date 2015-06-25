@@ -17,6 +17,7 @@
 
 #include <tuple>
 #include <sstream>
+#include <iomanip>
 #include <cstdint>
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -40,13 +41,17 @@ struct UUID_t {
 
   std::string toArgString(void) const {
     std::stringstream ss;
-    ss << std::hex << "0x" << high << "ull, 0x" << low << "ull";
+    ss << std::hex << std::setfill('0')
+       << "0x" << std::setw(16) << high << "ull, "
+       << "0x" << std::setw(16) << low << "ull";
     return ss.str();
   }
 
   std::string toString(void) const {
     std::stringstream ss;
-    ss << std::hex << high << low;
+    ss << std::hex << std::setfill('0')
+       << std::setw(16) << high
+       << std::setw(16) << low;
     return ss.str();
   }
 

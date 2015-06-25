@@ -65,6 +65,14 @@ class LogMgr {
   const std::map<UUID_t, LocInfo> &getLocInfos() const {
     return LocInfos;
   }
+
+  bool hasLocInfo(UUID_t Uuid) const {
+    return LocInfos.count(Uuid);
+  }
+  
+  const LocInfo &getLocInfo(UUID_t Uuid) const {
+    return LocInfos.find(Uuid)->second;
+  }
   
  private:
   std::vector<std::string> FileNames;
