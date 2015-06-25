@@ -109,7 +109,7 @@ namespace{
       CompoundStmt *s, Rewriter &R,
       const InstInfo &instinfo) {
     std::stringstream ss;
-    for (auto Uuid_Bid : instinfo) {
+    for (auto &&Uuid_Bid : instinfo) {
       ss << "\n  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString()
          << ", " << Uuid_Bid.second << ");";
     }
@@ -121,7 +121,7 @@ namespace{
       const InstInfo &instinfo) {
     std::stringstream ss;
     ss << "{\n";
-    for (auto Uuid_Bid : instinfo) {
+    for (auto &&Uuid_Bid : instinfo) {
       ss << "  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
        << Uuid_Bid.second << ");\n";
     }
@@ -147,7 +147,7 @@ namespace{
     if (braces) {
       ss << "{\n";
     }
-    for (auto Uuid_Bid : instinfo) {
+    for (auto &&Uuid_Bid : instinfo) {
       if (indent) {
         ss << "  ";
       }
@@ -389,7 +389,7 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
   if (!InstRHS) {
     return true;
   }
-  for (auto decl : s->decls()) {
+  for (auto &&decl : s->decls()) {
     if (VarDecl *VD = dyn_cast<VarDecl>(decl)) {
       if (Expr *e = VD->getInit()) {
         handleRHS4Assgn_NormalVarDecl(e);

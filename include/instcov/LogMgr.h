@@ -18,6 +18,7 @@
 #include <string>
 #include <map>
 #include <set>
+#include <iostream>
 #include <memory>
 #include <vector>
 #include "instcov/uuid.h"
@@ -32,6 +33,7 @@ class LogEntry {
   LogEntry(void)
       : TID(-1), VID(-1) {}
 
+  void dump(std::ostream &OS) const;
   std::map<UUID_t, uint64_t> Conditions;
   std::pair<UUID_t, uint64_t> Decision;
   std::size_t TID;

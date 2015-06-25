@@ -80,6 +80,15 @@ parseLine(std::istream &In, bool &success) {
 }
 }
 
+void LogEntry::dump(std::ostream &OS) const {
+  OS << "TID=" << TID << " " << "VID=" << VID << std::endl;
+  OS << Decision.first.toString() << ":" << Decision.second << std::endl;
+  for (auto &&Cond_Assgn : Conditions) {
+    OS << "-" << Cond_Assgn.first.toString()
+       << ":" << Cond_Assgn.second << std::endl;
+  }
+}
+
 LogMgr::LogMgr() {
 }
 
@@ -120,7 +129,7 @@ void LogMgr::loadFile(const std::string &fileName) {
         Entry.Conditions.insert(S.top().begin(), S.top().end());
         S.pop();
         Entry.Decision = S.top().back();
-        for (auto Condition : Entry.Conditions) {
+        for (auto &&Condition : Entry.Conditions) {
           Children[Entry.Decision.first].insert(Condition.first);
         }
         LogEntries.push_back(Entry);
@@ -143,7 +152,7 @@ void LogMgr::loadFile(const std::string &fileName) {
       Entry.Conditions.insert(S.top().begin(), S.top().end());
       S.pop();
       Entry.Decision = S.top().back();
-      for (auto Condition : Entry.Conditions) {
+      for (auto &&Condition : Entry.Conditions) {
         Children[Entry.Decision.first].insert(Condition.first);
       }
       LogEntries.push_back(Entry);

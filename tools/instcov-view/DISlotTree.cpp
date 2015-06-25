@@ -93,7 +93,7 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
     }
   }
   OS << "\n";
-  for (auto Child : DI.Children) {
+  for (auto &&Child : DI.Children) {
     printTreeDFS(OS, Child, depth+1);
   }
 }
