@@ -42,13 +42,12 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   LogMgr LM;
-  for (auto it = FileNames.begin(), ie = FileNames.end(); it != ie; ++it) {
-    LM.loadFile(*it);
+  for (auto FileName : FileNames) {
+    LM.loadFile(FileName);
   }
   ProblemGenerator PG;
-  for (auto it = LM.getLogEntries().begin(), ie = LM.getLogEntries().end();
-       it != ie; ++it) {
-    PG.registerLogEntry(&(*it));
+  for (auto Entry : LM.getLogEntries()) {
+    PG.registerLogEntry(&Entry);
   }
   PBOProblem Problem = PG.emitPBO();
   std::ofstream PBOFile(OutFileName.c_str());

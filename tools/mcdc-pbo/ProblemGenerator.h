@@ -16,6 +16,7 @@
 #define INSTCOV_PROBLEMGENERATOR_H_
 
 #include <vector>
+#include <list>
 #include <map>
 #include <iostream>
 #include "llvm/ADT/StringMap.h"
@@ -26,28 +27,31 @@ class ProblemGenerator;
 
 typedef std::size_t PBVar;
 struct SignedPBVar : public std::pair<PBVar, bool> {
+  struct SVarPrinter {
+    virtual std::string operator()(const SignedPBVar &SVar) const = 0;
+  };
   typedef std::pair<PBVar, bool> base_t;
   using base_t::pair;
   PBVar getPBVar(void) const { return first; }
   bool getSign(void) const { return second; }
+  SignedPBVar getNeg(void) const { return SignedPBVar(first, !second); }
+  void emit(std::ostream &OS, const SVarPrinter &SVP) const;
 };
 
-struct PBTerm : std::pair<int, SignedPBVar> {
-  struct TermPrinter {
-    virtual std::string operator()(const PBTerm &Term) const = 0;
-  };
-  typedef std::pair<int, SignedPBVar> base_t;
+typedef std::list<SignedPBVar> SVarList;
+struct PBTerm : std::pair<int, SVarList> {
+  typedef std::pair<int, SVarList> base_t;
   using base_t::pair;
-  const SignedPBVar &getSVar(void) const { return second; }
+  const SVarList &getSVars(void) const { return second; }
   int getWeight(void) const { return first; }
-  void emit(std::ostream &OS, const TermPrinter &TP) const;
+  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
 };
 
 // third tuple indicates whether the variable is positive, i.e. false means "~x"
 struct PBLinear : public std::vector<PBTerm> {
   typedef std::vector<PBTerm> base_t;
   using base_t::vector;
-  void emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const;
+  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
 };
   
 struct PBConstr {
@@ -57,7 +61,7 @@ struct PBConstr {
       : LHS(lhs), RHS(rhs), IsEqual(isEqual) {}
   void emitRaw(std::ostream &OS) const;
   void emitPretty(std::ostream &OS, const ProblemGenerator &PG) const;
-  void emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const;
+  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
   void clear(void) {
     LHS.clear();
     RHS = 0;
@@ -71,11 +75,15 @@ struct PBConstr {
 
 struct PBOProblem {
   PBOProblem(void)
-      : NumVars(0), NumConstrs(0) {}
+      : NumVars(0), NumConstrs(0), NumProducts(0), SizeProducts(0) {}
   std::size_t NumVars;
   std::size_t NumConstrs;
+  std::size_t NumProducts;
+  std::size_t SizeProducts;
+
+  void countProducts(void);
   
-  void emit(std::ostream &OS, const PBTerm::TermPrinter &TP) const;
+  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
   void emitPretty(std::ostream &OS, const ProblemGenerator &PG) const;
   void emitRaw(std::ostream &OS) const;
   
@@ -85,6 +93,9 @@ struct PBOProblem {
   std::vector<PBConstr> CDAssgnMatch;
   std::vector<PBConstr> AssgnPair;
   std::vector<PBConstr> Assgn;
+
+ private:
+  void countProducts(const std::vector<PBConstr> &Constrs);
 };
 
 class ProblemGenerator {
@@ -146,11 +157,11 @@ class ProblemGenerator {
 
   void genPBIdiomAnd(SignedPBVar Var1, SignedPBVar Var2, SignedPBVar VarRes,
                      std::vector<PBConstr> &Constrs);
-  void genPBIdiomAnd(const std::vector<SignedPBVar> &Vars, SignedPBVar VarRes,
+  void genPBIdiomAnd(const SVarList &Vars, SignedPBVar VarRes,
                      std::vector<PBConstr> &Constrs);
   void genPBIdiomOr(SignedPBVar Var1, SignedPBVar Var2, SignedPBVar VarRes,
                     std::vector<PBConstr> &Constrs);
-  void genPBIdiomOr(const std::vector<SignedPBVar> &Vars, SignedPBVar VarRes,
+  void genPBIdiomOr(const SVarList &Vars, SignedPBVar VarRes,
                     std::vector<PBConstr> &Constrs);
   
  private:
