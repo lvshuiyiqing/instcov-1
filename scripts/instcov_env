@@ -6,3 +6,4 @@ export INSTCOV_BIN_PATH=/Users/zzq/llvm/3.6/build/bin
 
 # uncomment the next line to disable short circuiting
 export ENABLE_SHORT_CIRCUITING=1
+export INSTCOV_CC=gcc
