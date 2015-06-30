@@ -278,6 +278,7 @@ void ProblemGenerator::pboEmitObj(PBOProblem &Problem) {
       ObjFunc.push_back(PBTerm(-1, SVarList(1, SignedPBVar(Var, true))));
     }
   }
+  Problem.ObjFunc = ObjFunc;
 }
 
 void ProblemGenerator::pboEmitAssgn(PBOProblem &Problem, const LogEntry *E) {
