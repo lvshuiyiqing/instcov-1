@@ -43,7 +43,7 @@ void DIBuilder4View::registerInfo(UUID_t c, UUID_t p, const LocInfo &loc) {
 }
 
 void DIBuilder4View::loadFile(const std::string &FileName) {
-  std::ifstream InFile(FileName.c_str());
+  std::ifstream InFile(FileName.c_str(), std::ios::binary);
   if (!InFile) {
     llvm::errs() << "cannot open file: " << FileName << "\n";
     exit(1);

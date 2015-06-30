@@ -36,7 +36,7 @@ void readOneRecord(std::istream &File, UUID_t &Uuid, uint64_t &bid) {
 }
 
 void RecordMgr::processTrace(const std::string &FileName) {
-  std::ifstream InFile(FileName.c_str());
+  std::ifstream InFile(FileName.c_str(), std::ios::binary);
   if (!InFile) {
     llvm::errs() << "cannot open file: " << FileName << "\n";
     exit(1);
