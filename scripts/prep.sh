@@ -11,5 +11,5 @@ fi
 for file in $@; do
     extension="${file##*.}"
     filename="${file%.*}"
-    gcc -E $file -o ${filename}.i.${extension} -I $INSTCOV_RT_PATH -include instcov_rt.h
+    $INSTCOV_CC -E $file -o ${filename}.i.${extension} -I $INSTCOV_RT_PATH -include instcov_rt.h
 done
