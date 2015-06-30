@@ -6,6 +6,7 @@ instcov-dist*
 *.i.trans.c
 *.di
 *.dbginfo
+*.pyc
 abs
 calDate
 complex
