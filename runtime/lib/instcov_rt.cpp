@@ -53,8 +53,12 @@ namespace {
 static class InstCovLogger {
  public:
   InstCovLogger(void) {
-    TraceFile.open(GenDumpFileName().c_str());
     BinaryMode = IsBinaryMode();
+    if (BinaryMode) {
+      TraceFile.open(GenDumpFileName().c_str(), std::ios::binary);
+    } else {
+      TraceFile.open(GenDumpFileName().c_str());
+    }
     LogMagic();
   }
 

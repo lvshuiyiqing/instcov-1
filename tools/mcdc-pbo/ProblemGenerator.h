@@ -26,32 +26,46 @@ namespace instcov {
 class ProblemGenerator;
 
 typedef std::size_t PBVar;
-struct SignedPBVar : public std::pair<PBVar, bool> {
-  struct SVarPrinter {
+struct SignedPBVar : public std::pair < PBVar, bool > {
+  typedef std::pair<PBVar, bool> base_t;
+  SignedPBVar(void) : base_t() {}
+  SignedPBVar(const PBVar &a, const bool &b) : base_t(a, b) {}
+	struct SVarPrinter {
     virtual std::string operator()(const SignedPBVar &SVar) const = 0;
   };
-  typedef std::pair<PBVar, bool> base_t;
-  using base_t::pair;
   PBVar getPBVar(void) const { return first; }
   bool getSign(void) const { return second; }
   SignedPBVar getNeg(void) const { return SignedPBVar(first, !second); }
   void emit(std::ostream &OS, const SVarPrinter &SVP) const;
+
+  // DO NOT ADD MEMBERS!!!
 };
 
 typedef std::list<SignedPBVar> SVarList;
 struct PBTerm : std::pair<int, SVarList> {
   typedef std::pair<int, SVarList> base_t;
-  using base_t::pair;
+  PBTerm(void) : base_t() {}
+  PBTerm(const int &a, const SVarList &b) : base_t(a, b) {}
   const SVarList &getSVars(void) const { return second; }
   int getWeight(void) const { return first; }
   void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+
+  // DO NOT ADD MEMBERS!!!
 };
 
 // third tuple indicates whether the variable is positive, i.e. false means "~x"
 struct PBLinear : public std::vector<PBTerm> {
   typedef std::vector<PBTerm> base_t;
-  using base_t::vector;
+  PBLinear(void) : base_t() {}
+  PBLinear(std::size_t count,
+           const base_t::value_type &value = base_t::value_type())
+      : base_t(count, value) {}
+  template<typename InputIt>
+  PBLinear(InputIt first, InputIt last)
+      : base_t(first, last) {}
   void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+
+  // DO NOT ADD MEMBERS!!!
 };
   
 struct PBConstr {
