@@ -37,6 +37,8 @@ struct SignedPBVar : public std::pair < PBVar, bool > {
   bool getSign(void) const { return second; }
   SignedPBVar getNeg(void) const { return SignedPBVar(first, !second); }
   void emit(std::ostream &OS, const SVarPrinter &SVP) const;
+
+  // DO NOT ADD MEMBERS!!!
 };
 
 typedef std::list<SignedPBVar> SVarList;
@@ -47,6 +49,8 @@ struct PBTerm : std::pair<int, SVarList> {
   const SVarList &getSVars(void) const { return second; }
   int getWeight(void) const { return first; }
   void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+
+  // DO NOT ADD MEMBERS!!!
 };
 
 // third tuple indicates whether the variable is positive, i.e. false means "~x"
@@ -60,6 +64,8 @@ struct PBLinear : public std::vector<PBTerm> {
   PBLinear(InputIt first, InputIt last)
       : base_t(first, last) {}
   void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+
+  // DO NOT ADD MEMBERS!!!
 };
   
 struct PBConstr {
