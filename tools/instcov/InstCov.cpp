@@ -40,7 +40,8 @@ cl::list<std::string> OptMatchFileNames(
     "mf",
     cl::value_desc("file name to match"),
     cl::desc("Specifying the file names to match,\n"
-             "only the code in matching files will be instrumented.\n"),
+             "only the code in matching files will be instrumented.\n"
+             "If empty, InstCov will instrument all files\n"),
     cl::cat(InstCovCategory));
 
 llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
@@ -99,10 +100,10 @@ int main(int argc, const char **argv) {
   CommonOptionsParser OptionsParser(argc, argv, InstCovCategory);
   if (OptMatchFileNames.empty()) {
     llvm::errs() << "warning: no files to match,"
-                 << " instcov will not do any instrumentation\n";
+                 << " instcov will instrument all files\n";
   }
 
-  for (auto &&MatchFileName : OptMatchFileNames) {
+  for (auto MatchFileName : OptMatchFileNames) {
     MatchFileNames.insert(MatchFileName);
   }
   
