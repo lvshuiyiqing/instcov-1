@@ -16,6 +16,7 @@
 #include <sstream>
 #include <cstdio>
 #include "clang/Lex/Lexer.h"
+#include "clang/Basic/Builtins.h"
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -171,6 +172,9 @@ InstCovASTVisitor::~InstCovASTVisitor(void) {
 }
 
 bool InstCovASTVisitor::checkLocation(Stmt *s) const {
+  if (MatchFileNames.empty()) {
+    return true;
+  }
   SourceManager &SM = TheRewriter.getSourceMgr();
   StringRef PresumedFileName =
       SM.getPresumedLoc(s->getLocStart()).getFilename();
@@ -312,7 +316,9 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
   std::stringstream header_ss;
   DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t Uuid = DIB.getUUID(s);
-  header_ss << "int instcov_f" << Uuid.toString() << " = 1;\n";
+  // BUG FIX: added a ";" before the VarDecl so that this will be legal after
+  // a goto label
+  header_ss << ";int instcov_f" << Uuid.toString() << " = 1;\n";
   TheRewriter.InsertText(s->getLocStart(), header_ss.str(), true, true);
   SwitchCase *SC = s->getSwitchCaseList();
   uint64_t bid = 2;
@@ -333,6 +339,9 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
 }
 
 bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
+  if (!checkLocation(s)) {
+    return true;
+  }
   if (!InstRHS || !s->isAssignmentOp()) {
     return true;
   }
@@ -341,6 +350,9 @@ bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
 }
 
 bool InstCovASTVisitor::VisitReturnStmt(ReturnStmt *s) {
+  if (!checkLocation(s)) {
+    return true;
+  }
   if (!InstRHS) {
     return true;
   }
@@ -352,8 +364,15 @@ bool InstCovASTVisitor::VisitReturnStmt(ReturnStmt *s) {
 
 bool InstCovASTVisitor::VisitAbstractConditionalOperator(
     AbstractConditionalOperator *s) {
+  if (!checkLocation(s)) {
+    return true;
+  }
   MCDCVisitExpr(s->getCond());
   return true;
+}
+
+bool InstCovASTVisitor::VisitFieldDecl(FieldDecl *d) {
+  return false;
 }
 
 bool InstCovASTVisitor::isSimpleRHS(Expr *e) {
@@ -382,6 +401,9 @@ bool InstCovASTVisitor::isSimpleRHS(Expr *e) {
 }
 
 bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
+  if (!checkLocation(s)) {
+    return true;
+  }
   if (VisitedDecls.count(s)) {
     return true;
   }
@@ -394,6 +416,19 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
       if (Expr *e = VD->getInit()) {
         handleRHS4Assgn_NormalVarDecl(e);
       }
+    }
+  }
+  return true;
+}
+
+bool InstCovASTVisitor::VisitCallExpr(CallExpr *e) {
+  if (!checkLocation(e)) {
+    return true;
+  }
+  if (FunctionDecl *decl = e->getDirectCallee()) {
+    if (decl->getBuiltinID() &&
+        decl->getBuiltinID() == clang::Builtin::BI__builtin_object_size) {
+      return false;
     }
   }
   return true;
