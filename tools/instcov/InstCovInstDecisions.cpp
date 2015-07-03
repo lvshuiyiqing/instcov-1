@@ -199,7 +199,6 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   }
   bool SimpleRHS = false;
   if (VD) {
-    VisitedDecls.insert(s->getConditionVariableDeclStmt());
     SimpleRHS = isSimpleRHS(VDInit);
   }
   if (!VD) {
@@ -267,7 +266,6 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   bool SimpleRHS = false;
   if (VD) {
     SimpleRHS = isSimpleRHS(VD->getInit());
-    VisitedDecls.insert(s->getConditionVariableDeclStmt());
   }
   if (!VD) {
     MCDCVisitWhileStmt(s);
@@ -410,10 +408,6 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
-  if (VisitedDecls.count(s)) {
-    return true;
-  }
-  VisitedDecls.insert(s);
   if (!InstRHS) {
     return true;
   }
@@ -439,6 +433,28 @@ bool InstCovASTVisitor::TraverseCallExpr(CallExpr *e) {
     }
   }
   RecursiveASTVisitor<InstCovASTVisitor>::TraverseCallExpr(e);  
+  return true;
+}
+
+bool InstCovASTVisitor::TraverseIfStmt(IfStmt *s) {
+  TRY_TO(WalkUpFromIfStmt(s));
+  for (Stmt *SubStmt : s->children()) {
+    // skip the VarDecl since we have already visited it
+    if (SubStmt != s->getConditionVariableDeclStmt()) {
+      TraverseStmt(SubStmt);
+    }
+  }
+  return true;
+}
+
+bool InstCovASTVisitor::TraverseWhileStmt(WhileStmt *s) {
+  TRY_TO(WalkUpFromWhileStmt(s));
+  for (Stmt *SubStmt : s->children()) {
+    // skip the VarDecl since we have already visited it
+    if (SubStmt != s->getConditionVariableDeclStmt()) {
+      TraverseStmt(SubStmt);
+    }
+  }
   return true;
 }
 
