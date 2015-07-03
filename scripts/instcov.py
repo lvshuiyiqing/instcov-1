@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 import os
 import sys
@@ -13,7 +13,7 @@ def run(argv):
     ARGS += ['-no-short-circuits']
 
   ARGS += argv
-  ARGS += ['--']
+  ARGS += ['--', '-w']
   subprocess.call(ARGS)
 
 if __name__ == "__main__":
