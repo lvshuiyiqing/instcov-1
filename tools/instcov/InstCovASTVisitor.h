@@ -27,12 +27,13 @@
 #include "llvm/Support/raw_ostream.h"
 #include "DIBuilder4Inst.h"
 
-namespace instcov{
+namespace instcov {
 class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
 public:
   InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
       : TheRewriter(R), TheASTContext(C),
-        DIB() {}
+        DIB() {
+  }
   ~InstCovASTVisitor(void);
   
   bool VisitIfStmt(clang::IfStmt *s);
@@ -43,10 +44,12 @@ public:
   bool VisitBinaryOperator(clang::BinaryOperator *s);
   bool VisitDeclStmt(clang::DeclStmt *s);
   bool VisitReturnStmt(clang::ReturnStmt *s);
-  bool VisitCallExpr(clang::CallExpr *s);
-  bool VisitFieldDecl(clang::FieldDecl *d);
   // don't rewrite visit functions for sub-classes
   bool VisitAbstractConditionalOperator(clang::AbstractConditionalOperator *s);
+
+  bool TraverseCallExpr(clang::CallExpr *s);
+  bool TraverseFieldDecl(clang::FieldDecl *d);
+
 
   // insert decision & conditions for assignment operators and normal VarDecls
   void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
@@ -57,7 +60,7 @@ public:
   void MCDCVisitDoStmt(clang::DoStmt *s);
   void MCDCVisitBinaryOperator(clang::BinaryOperator *s);
 
-private:
+ private:
   bool checkLocation(clang::Stmt *s) const;
   void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p = 0);
 

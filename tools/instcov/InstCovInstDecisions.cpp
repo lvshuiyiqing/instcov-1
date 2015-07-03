@@ -162,6 +162,12 @@ namespace{
   }
 }
 
+#define TRY_TO(CALL_EXPR)                                                      \
+  do {                                                                  \
+    if (!getDerived().CALL_EXPR)                                        \
+      return false;                                                     \
+  } while (0)
+
 InstCovASTVisitor::~InstCovASTVisitor(void) {
   if (!DIB.selfCheck()) {
     llvm::errs() << "The debug info has problems\n";
@@ -371,8 +377,8 @@ bool InstCovASTVisitor::VisitAbstractConditionalOperator(
   return true;
 }
 
-bool InstCovASTVisitor::VisitFieldDecl(FieldDecl *d) {
-  return false;
+bool InstCovASTVisitor::TraverseFieldDecl(FieldDecl *d) {
+  return true;
 }
 
 bool InstCovASTVisitor::isSimpleRHS(Expr *e) {
@@ -421,16 +427,18 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitCallExpr(CallExpr *e) {
+bool InstCovASTVisitor::TraverseCallExpr(CallExpr *e) {
   if (!checkLocation(e)) {
     return true;
   }
   if (FunctionDecl *decl = e->getDirectCallee()) {
     if (decl->getBuiltinID() &&
         decl->getBuiltinID() == clang::Builtin::BI__builtin_object_size) {
-      return false;
+      // skip
+      return true;
     }
   }
+  RecursiveASTVisitor<InstCovASTVisitor>::TraverseCallExpr(e);  
   return true;
 }
 
