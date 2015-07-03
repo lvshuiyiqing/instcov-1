@@ -30,6 +30,7 @@
 namespace instcov {
 class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
 public:
+  typedef clang::RecursiveASTVisitor<InstCovASTVisitor> base_t;
   InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
       : TheRewriter(R), TheASTContext(C),
         DIB() {
@@ -49,8 +50,10 @@ public:
 
   bool TraverseCallExpr(clang::CallExpr *s);
   bool TraverseFieldDecl(clang::FieldDecl *d);
-
-
+  
+  bool TraverseIfStmt(clang::IfStmt *s);
+  bool TraverseWhileStmt(clang::WhileStmt *s);
+  
   // insert decision & conditions for assignment operators and normal VarDecls
   void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
   
@@ -73,7 +76,6 @@ public:
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
   DIBuilder4Inst DIB;
-  std::set<const clang::DeclStmt *> VisitedDecls;
 };
 }
 
