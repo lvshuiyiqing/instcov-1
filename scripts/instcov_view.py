@@ -8,8 +8,8 @@ import subprocess
 
 def run(argv):
   ARGS = [ instcov_env.INSTCOV_BIN_PATH+'/instcov-view' ] + argv
-  subprocess.call(ARGS)
+  return subprocess.call(ARGS)
 
 if __name__ == "__main__":
-  run(sys.argv[1:])
+  sys.exit(run(sys.argv[1:]))
   
