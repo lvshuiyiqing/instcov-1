@@ -14,7 +14,7 @@ def run(argv):
 
   ARGS += argv
   ARGS += ['--', '-w']
-  subprocess.call(ARGS)
+  return subprocess.call(ARGS)
 
 if __name__ == "__main__":
-  run(sys.argv[1:])
+  sys.exit(run(sys.argv[1:]))

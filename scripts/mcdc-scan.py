@@ -8,7 +8,7 @@ import subprocess
 
 def run(argv):
   ARGS = [ instcov_env.INSTCOV_BIN_PATH+'/mcdc-scan' ] + argv
-  subprocess.call(ARGS)
+  return subprocess.call(ARGS)
 
 if __name__ == "__main__":
-  run(sys.argv[1:])
+  sys.exit(run(sys.argv[1:]))

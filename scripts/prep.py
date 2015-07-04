@@ -9,7 +9,7 @@ import subprocess
 def run(argv):
   if len(argv) < 1:
     print 'syntax: <input file>'
-    return
+    return 1
 
   for file in argv:
     filename, extension = os.path.splitext(file)
@@ -17,7 +17,10 @@ def run(argv):
       args=[instcov_env.CC, '/P', file, '/Fi'+filename+'.i'+extension, '-I', instcov_env.INSTCOV_RT_PATH, '/FIinstcov_rt.h'] 
     else:
       args=[instcov_env.CC, '-E', file, '-o', filename+'.i'+extension, '-I', instcov_env.INSTCOV_RT_PATH, '-include', 'instcov_rt.h'] 
-    subprocess.call(args)
+    res = subprocess.call(args)
+    if res != 0:
+      return res
+  return 0
 
 if __name__ == "__main__":
-  run(sys.argv[1:])
+  sys.exit(run(sys.argv[1:]))

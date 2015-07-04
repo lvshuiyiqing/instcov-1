@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
   }
   if (int c = a) {
   }
-  while (int c = (a>b) && a>=b) {
+  while (int c = (a= (a>b) && (a>b)) && a>=b) {
   }
   while (int c = a) {
   }

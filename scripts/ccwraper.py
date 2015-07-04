@@ -7,12 +7,12 @@ import instcov_env
 import subprocess
 
 def run(argv):
-  args = [instcov_env.CC] + argv
+  args = [instcov_env.CC] + argv + ['-w']
   if os.name == 'nt':
     args += ['/link', '/LIBPATH:'+instcov_env.INSTCOV_LIBRARY_PATH, 'instcov_rt.lib']
   else:
     args += ['-L', instcov_env.INSTCOV_LIBRARY_PATH, '-linstcov_rt', '-lstdc++']
-  subprocess.call(args)
+  return subprocess.call(args)
 
 if __name__ == "__main__":
-  run(sys.argv[1:])
+  sys.exit(run(sys.argv[1:]))
