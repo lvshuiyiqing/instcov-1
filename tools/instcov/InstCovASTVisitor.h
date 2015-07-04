@@ -25,22 +25,37 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "instcov/DbgInfoMgr.h"
+#include "DIBuilder4Inst.h"
 
-namespace instcov{
+namespace instcov {
 class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
 public:
+  typedef clang::RecursiveASTVisitor<InstCovASTVisitor> base_t;
   InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
       : TheRewriter(R), TheASTContext(C),
-        DIM(R.getSourceMgr().getFileEntryForID(
-            R.getSourceMgr().getMainFileID())->getName()) {}
-
+        DIB() {
+  }
+  ~InstCovASTVisitor(void);
+  
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
   bool VisitWhileStmt(clang::WhileStmt *s);
   bool VisitDoStmt(clang::DoStmt *s);
   bool VisitSwitchStmt(clang::SwitchStmt *s);
   bool VisitBinaryOperator(clang::BinaryOperator *s);
+  bool VisitDeclStmt(clang::DeclStmt *s);
+  bool VisitReturnStmt(clang::ReturnStmt *s);
+  // don't rewrite visit functions for sub-classes
+  bool VisitAbstractConditionalOperator(clang::AbstractConditionalOperator *s);
+
+  bool TraverseCallExpr(clang::CallExpr *s);
+  bool TraverseFieldDecl(clang::FieldDecl *d);
+  
+  bool TraverseIfStmt(clang::IfStmt *s);
+  bool TraverseWhileStmt(clang::WhileStmt *s);
+  
+  // insert decision & conditions for assignment operators and normal VarDecls
+  void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
   
   void MCDCVisitIfStmt(clang::IfStmt *s);
   void MCDCVisitForStmt(clang::ForStmt *s);
@@ -48,14 +63,19 @@ public:
   void MCDCVisitDoStmt(clang::DoStmt *s);
   void MCDCVisitBinaryOperator(clang::BinaryOperator *s);
 
-private:
-  bool ShouldInst(clang::Stmt *s) const;
-  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p);
+ private:
+  bool checkLocation(clang::Stmt *s) const;
+  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p = 0);
 
-  static std::vector<clang::Expr *> ExtractConditions(clang::Expr *e);
+  static bool isSimpleRHS(clang::Expr *e);
+  // skip all top-level implicit casts and find the root expr
+  static clang::Expr *toRHSRoot(clang::Expr *e);
+
+  static std::vector<clang::Expr *> extractConditions(clang::Expr *e);
+
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
-  DbgInfoMgr DIM;
+  DIBuilder4Inst DIB;
 };
 }
 

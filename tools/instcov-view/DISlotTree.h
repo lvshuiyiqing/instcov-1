@@ -18,29 +18,30 @@
 
 #include <map>
 #include <iostream>
-#include "instcov/DbgInfoDB.h"
+#include "DIBuilder4View.h"
 
 namespace instcov {
 class DISlotTree {
  public:
-  DISlotTree(DbgInfoEntry_View *Root);
+  DISlotTree(UUID_t Root, const DIBuilder4View &dib);
   ~DISlotTree(void);
 
   void dump(std::ostream &OS) const;
-  void fill(DbgInfoEntry_View *Node, uint64_t bid);
-  bool canAccept(DbgInfoEntry_View *Node) const;
+  void fill(UUID_t Uuid, uint64_t bid);
+  bool canAccept(UUID_t Uuid) const;
   bool isFull(void) const { return NumEmptySlots == 0; }
   bool isRootFilled(void) const { return Records.count(R) != 0; }
 
  private:
   void printTreeDFS(std::ostream &OS,
-                    const DbgInfoEntry_View *Node,
+                    UUID_t Uuid,
                     uint64_t depth) const;
-
+  
  public:
-  std::map<const DbgInfoEntry_View *, uint64_t> Records;
-  int64_t NumEmptySlots;
-  DbgInfoEntry_View *R;
+  std::map<const UUID_t, uint64_t> Records;
+  std::size_t NumEmptySlots;
+  UUID_t R;
+  const DIBuilder4View &DIB;
 };
 }
 

@@ -18,8 +18,10 @@
 #include <fstream>
 #include <string>
 #include <signal.h>
+#ifndef WIN32
 #include <sys/types.h>
 #include <unistd.h>
+#endif  // WIN32
 #include "instcov_rt.h"
 
 namespace {
@@ -51,8 +53,12 @@ namespace {
 static class InstCovLogger {
  public:
   InstCovLogger(void) {
-    TraceFile.open(GenDumpFileName().c_str());
     BinaryMode = IsBinaryMode();
+    if (BinaryMode) {
+      TraceFile.open(GenDumpFileName().c_str(), std::ios::binary);
+    } else {
+      TraceFile.open(GenDumpFileName().c_str());
+    }
     LogMagic();
   }
 
@@ -114,6 +120,7 @@ static class SigHandler {
          strcmp(env_no_sighandler, "TRUE"))) {
       return;
     }
+#ifndef WIN32
     int sigs[] = {
       SIGILL, SIGFPE, SIGABRT, SIGBUS,
       SIGSEGV, SIGHUP, SIGINT, SIGQUIT,
@@ -128,6 +135,14 @@ static class SigHandler {
         perror("Failed: couldnot set signal handler");
       }
     }
+#else  // WIN32
+    signal(SIGABRT, sighandler);
+    signal(SIGFPE, sighandler);
+    signal(SIGILL, sighandler);
+    signal(SIGINT, sighandler);
+    signal(SIGSEGV, sighandler);
+    signal(SIGTERM, sighandler);
+#endif  // WIN32
   }
 } staSigHandler;
 }

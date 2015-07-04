@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-export INSTCOV_RT_PATH=/Users/zzq/llvm/3.6/instcov/runtime/include/
-export INSTCOV_LIBRARY_PATH=/Users/zzq/llvm/3.6/build/lib
-export INSTCOV_BIN_PATH=/Users/zzq/llvm/3.6/build/bin

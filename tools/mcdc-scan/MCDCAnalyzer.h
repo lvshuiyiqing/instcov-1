@@ -8,48 +8,65 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the class for trace log manager
+/// \brief This file contains the abstract class for MCDC analyzers
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef MCDCAnalyzer_H_
-#define MCDCAnalyzer_H_
+#ifndef INSTCOV_MCDCANALYZER_H_
+#define INSTCOV_MCDCANALYZER_H_
 
-#include <vector>
-#include <map>
-#include <iostream>
-#include <unordered_map>
-#include "instcov/uuid.h"
-#include "LogMgr.h"
+#include "instcov/LogMgr.h"
 
 namespace instcov {
 class MCDCAnalyzer {
  public:
-  typedef struct {
-    std::vector<const LogEntry *> TrueSide;
-    std::vector<const LogEntry *> FalseSide;
-  } CData_entry_t;
-  typedef std::unordered_map<size_t, CData_entry_t> CData_t;
-  typedef std::map<UUID_t, CData_t> DData_t;
-  typedef std::map<UUID_t, DData_t> Data_t;
+  virtual void registerEntry(const LogEntry *entry, const LogMgr &LM) = 0;
+  virtual void dump(std::ostream &OS, const LogMgr &LM) const = 0;
+  virtual void finalize(void) = 0;
 
-  void registerEntry(const LogEntry *entry);
+ public:
+  static std::string getLocString(const LogMgr &LM, UUID_t Uuid) {
+    if (LM.getLocInfos().count(Uuid)) {
+      return LM.getLocInfos().find(Uuid)->second.toString();
+    }
+    return "NA";
+  }
 
-  const Data_t &getData(void) const { return Data; }
+  struct LocSorter {
+   public:
+    LocSorter(const LogMgr &lm)
+        : LM(lm) {}
+    
+    template<typename T>
+    bool operator()(const T &LHS, const T &RHS) const {
+      if (LM.getLocInfos().count(LHS->first) == 0) {
+        return true;
+      }
+      if (LM.getLocInfos().count(RHS->first) == 0) {
+        return false;
+      }
+      const LocInfo &LHS_LI = LM.getLocInfos().find(LHS->first)->second;
+      const LocInfo &RHS_LI = LM.getLocInfos().find(RHS->first)->second;
+      return std::make_tuple(LHS_LI.File, LHS_LI.Line, LHS_LI.Col) <
+      std::make_tuple(RHS_LI.File, RHS_LI.Line, RHS_LI.Col);
+    }
+ 
+   private:
+    const LogMgr &LM;
+  };
+  
+  template<typename T>
+  static std::vector<typename T::const_iterator>
+  getSortedIterators(const T &C, const LogMgr &LM) {
+    std::vector<typename T::const_iterator> vec;
+    for (auto it = C.begin(), ie = C.end(); it != ie; ++it) {
+      vec.push_back(it);
+    }
+    std::sort(vec.begin(), vec.end(), LocSorter(LM));
+    return vec;
+  }
 
-  static std::vector<MCDCAnalyzer::Data_t::const_iterator>
-  getSortedDecisions(
-      const MCDCAnalyzer::Data_t &Data, const LogMgr &LM);
-
-  static std::vector<MCDCAnalyzer::DData_t::const_iterator>
-  getSortedConditions(
-      const MCDCAnalyzer::DData_t &DData, const LogMgr &LM);
-
-  void dump(std::ostream &OS, const LogMgr &LM) const;
-
- private:
-  Data_t Data;
 };
 }
 
-#endif  // MCDCAnalyzer_H_
+#endif  // INSTCOV_MCDCANALYZER_H_

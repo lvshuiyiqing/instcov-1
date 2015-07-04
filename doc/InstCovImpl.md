@@ -28,6 +28,10 @@ to modify the AST (it is not safe and may cause serious problems), and clang CFG
 does not have information to map the BB branches back to the source code
 (ref. Zhenbo Xu).
 
+## Overall workflow
+
+<img src="./InstCov_Workflow.png" height="500" />
+
 ## Important Clang classes/methods used
 
 In our implementation, the following clang classes/methods are very important:
@@ -281,7 +285,7 @@ Now we know that the file should be preprocessed only once, thus we need to work
 on a fully preprocessed file. Fortunately, a preprocessed files has `#line`
 directives indicating the original source location (file and line number) before
 expansion. LibClang uses these directives to guess the location in the original
-file, which is called the [[ presumed ]] location. We use the presumed file name
+file, which is called the *presumed* location. We use the presumed file name
 to determine whether the file need to be instrumented.
 
 ## Analyzing MC/DC coverage
@@ -302,10 +306,11 @@ value, making MC/DC pairs to be hashed into the same value.
 This is done as follows:
 
 1. For each condition of each decision, we initialize an empty hash table,
-   mapping integer values into pairs of containers (denote as the
-   [[ True side ]] and the [[ False Side ]]).
+   mapping integer values into pairs of containers (denote as the *True side*
+   and the *False Side*).
+   
 2. For each visit, we build a Boolean vector, storing all the condition values,
-as well as the decision result.
+   as well as the decision result.
 
 3. For each condition of each visit, if the condition is evaluated to True, then
    the Boolean vector is kept the same, and the corresponding hash value is
@@ -349,6 +354,69 @@ By using the hasing technique, we can avoid enumerating visit pairs and check
 whether they are MC/DC pairs. The complexity is reduced from `O(v*v*d)` to
 `O(v*d)`, where `v` is the number of visits, and `d` is the maximum number of
 conditions in a decision.
+
+## Handling short circuits
+
+The above designs dumps all conditions despite of short-circuits. However as we
+stated earlier, this may have problems when a condition have side-effects,
+because the instrumentation we described above will change the program behavior.
+
+To deal with short circuits, the condition evaluation result is dumped only when
+the corresponding condition is evaluated. The following example illustrates how
+an expression is instrumented. Suppose the expression is:
+
+	a && (b || c)
+
+The instrumented code will be:
+
+	(a ? (dump(), 1) : (dump(), 0)) &&
+	((b ? (dump(), 1) : (dump(), 0)) ||
+	(c ? (dump(), 1) : (dump(), 0)))
+
+A special case is in C++, `if` and `while` conditions may have variable
+declaration. If the initializer expression is not boolean, then the
+instrumentation may change the program behavior. We need to check whether the
+initializer expression is of boolean type, and instrument the expression if the
+answer is yes.
+
+In the resulting log file, some conditions may be missing. To find maching MC/DC
+pairs, we first check each assignment pair to see whether the decision is
+evaluated to different results. If yes, we then check whether there are exactly
+one condition evaluated to different results. If some condition of either
+assignment is not evaluated, we consider the condition is evaluated to same
+values in the two assignments. We denote unevaluated conditions with `N`. Here
+are some examples:
+
+	FTNNN => T
+	FFFFF => F
+	 *       *
+
+This means the two assignments is an MC/DC pair on the second condition.
+
+	FTNNN => T
+	FFTNN => T
+	 *
+
+The two assignments do not form an MC/DC pair since the decision is evaluated to
+same values.
+
+	FTFFN => T
+	TTTNT => F
+	* *      *
+
+The two assignments do not form an MC/DC pair since two decisions are evaluated
+to different values
+
+In instcov, we use the several enhancements to reduce the matching cost:
+
+1. The decision visits are grouped by different decisions. We only compare
+within the same decision.
+
+2. The decision visits are grouped by different assignments. After the grouping,
+   we obtain the set of all unique assignments of each decision. We compare each
+   pair of unique assignments, thus the decision visits having the same
+   assignment will not be compare over and over again.
+
 
 ## Developer FAQs
 

@@ -19,10 +19,10 @@ static token error_or_eof_case(token_stream tstream_ptr,token token_ptr,
 static int check_delimiter(char ch);
 static int keyword(int state);
 static int special(int state);
-static void skip(character_stream stream_ptr);
+static skip(character_stream stream_ptr);
 static int constant(int state,char token_str[],int token_ind);
 static int next_state(int state,char ch);
-static void get_actual_token(char token_str[],int token_ind);
+static get_actual_token(char token_str[],int token_ind);
 
 main(argc,argv)
 int argc;
@@ -130,7 +130,7 @@ BOOLEAN is_end_of_character_stream(stream_ptr)
    to unget the character then it returns
    * ******************************************************************* */
 
-void unget_char(ch,stream_ptr)
+unget_char(ch,stream_ptr)
 CHARACTER ch;
 character_stream stream_ptr;
 {
@@ -409,7 +409,7 @@ static int special(state)
    end_of_character_stream.                   
    * ******************************************************************* */
 
-static void skip(stream_ptr)
+static skip(stream_ptr)
     character_stream stream_ptr;
 {
   char c;
@@ -546,7 +546,7 @@ BOOLEAN print_token(token_ptr)
    the leading and trailing  spaces and prints the token.
    * ****************************************************************** */
 
-static void get_actual_token(token_str,token_ind)
+static get_actual_token(token_str,token_ind)
     int token_ind;
 char token_str[];
 {

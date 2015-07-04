@@ -24,8 +24,8 @@ enqueue(prio, new_process)
     int prio;
 struct process *new_process;
 {
-  int status;
-  if(status = put_end(prio, new_process)) return(status); /* Error */
+  int status = put_end(prio, new_process);
+  if(status) return(status); /* Error */
   return(reschedule(prio));
 }
 
@@ -50,16 +50,20 @@ char *argv[];
   if(argc != MAXPRIO + 1) exit_here(BADNOARGS);
   for(prio = MAXPRIO; prio > 0; prio--)
   {
-    if((nprocs = atoi(argv[MAXPRIO + 1 - prio])) < 0) exit_here(BADARG);
+    nprocs = atoi(argv[MAXPRIO + 1 - prio]);
+    if(nprocs < 0) exit_here(BADARG);
     for(; nprocs > 0; nprocs--)
     {
-      if(status = new_job(prio)) exit_here(status);
+      status = new_job(prio);
+      if(status) exit_here(status);
     }
   }
   /* while there are commands, schedule it */
-  while((status = get_command(&command, &prio, &ratio)) > 0)
+  status = get_command(&command, &prio, &ratio);
+  while(status > 0)
   {
     schedule(command, prio, ratio);
+    status = get_command(&command, &prio, &ratio);
   }
   if(status < 0) exit_here(status); /* Real bad error */
   exit_here(OK);
@@ -72,7 +76,8 @@ float *ratio;
 {
   int status = OK;
   char buf[CMDSIZE];
-  if(fgets(buf, CMDSIZE, stdin))
+  char *tmp = fgets(buf, CMDSIZE, stdin);
+  if(tmp)
   {
     *prio = *command = -1; *ratio =-1.0;
     sscanf(buf, "%d", command);
@@ -89,7 +94,11 @@ float *ratio;
         break;
     }
     /* Find end of  line of input if no EOF */
-    while(buf[strlen(buf)-1] != '\n' && fgets(buf, CMDSIZE, stdin));
+    while(buf[strlen(buf)-1] != '\n') {
+      if (!fgets(buf, CMDSIZE, stdin)) {
+        break;
+      }
+    }
     return(TRUE);
   }
   else return(FALSE);
@@ -133,7 +142,8 @@ float ratio;
   int status;
   struct process * job;
   if(prio < 1 || prio > MAXLOPRIO) return(BADPRIO);
-  if((status = get_process(prio, ratio, &job)) <= 0) return(status);
+  status = get_process(prio, ratio, &job);
+  if(status <= 0) return(status);
   /* We found a job in that queue. Upgrade it */
   job->priority = prio + 1;
   return(enqueue(prio + 1, job));
@@ -158,7 +168,8 @@ unblock(ratio) /* Restore job @ ratio in blocked queue to its queue */
 {
   int status;
   struct process * job;
-  if((status = get_process(BLOCKPRIO, ratio, &job)) <= 0) return(status);
+  status = get_process(BLOCKPRIO, ratio, &job);
+  if(status <= 0) return(status);
   /* We found a blocked process. Put it where it belongs. */
   return(enqueue(job->priority, job));
 }
@@ -195,7 +206,10 @@ finish() /* Get current job, print it, and zap it. */
 int
 flush() /* Get all jobs in priority queues & zap them */
 {
-  while(!finish());
+  int tmp = finish();
+  while(!tmp) {
+    tmp = finish;
+  }
   fprintf(stdout, "\n");
   return(OK);
 }
@@ -208,7 +222,8 @@ get_current() /* If no current process, get it. Return it */
   {
     for(prio = MAXPRIO; prio > 0; prio--)
     { /* find head of highest queue with a process */
-      if(get_process(prio, 0.0, &current_job) > 0) break;
+      int tmp = get_process(prio, 0.0, &current_job);
+      if(tmp > 0) break;
     }
   }
   return(current_job);
@@ -218,10 +233,12 @@ int
 reschedule(prio) /* Put highest priority job into current_job */
     int prio;
 {
-  if(current_job && prio > current_job->priority)
+  if(current_job)
   {
-    put_end(current_job->priority, current_job);
-    current_job = (struct process *)0;
+    if (prio > current_job->priority) {
+      put_end(current_job->priority, current_job);
+      current_job = (struct process *)0;
+    }
   }
   get_current(); /* Reschedule */
   return(OK);
