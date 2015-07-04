@@ -5,3 +5,4 @@ include_directories(BEFORE
 
 add_subdirectory(tools)
 add_subdirectory(runtime)
+add_subdirectory(lib)

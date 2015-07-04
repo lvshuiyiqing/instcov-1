@@ -16,7 +16,7 @@
 #include <fstream>
 #include <stack>
 #include "llvm/Support/raw_ostream.h"
-#include "instcov/RecordMgr.h"
+#include "RecordMgr.h"
 
 using namespace instcov;
 using namespace llvm;
@@ -36,7 +36,7 @@ void readOneRecord(std::istream &File, UUID_t &Uuid, uint64_t &bid) {
 }
 
 void RecordMgr::processTrace(const std::string &FileName) {
-  std::ifstream InFile(FileName.c_str());
+  std::ifstream InFile(FileName.c_str(), std::ios::binary);
   if (!InFile) {
     llvm::errs() << "cannot open file: " << FileName << "\n";
     exit(1);
@@ -69,20 +69,20 @@ void RecordMgr::processTrace(const std::string &FileName) {
     UUID_t Uuid;
     uint64_t bid;
     readOneRecord(InFile, Uuid, bid);
-    if (DIDB.Entries.count(Uuid) == 0) {
+    if (DIB.isExist(Uuid) == 0) {
       llvm::errs() << "cannot find UUID in debug info database!!\n"
                    << "did you run the program again after recompiling?\n";
       exit(1);
     }
-    DbgInfoEntry_View *Node = DIDB.Entries[Uuid];
     // llvm::errs() << "got UUID: " << Node->Uuid.toString() << "==>"
     //              << Node->toRoot()->Uuid.toString() << "\n";
-    if (TreeStack.empty() || !TreeStack.top()->canAccept(Node)) {
+    if (TreeStack.empty() || !TreeStack.top()->canAccept(Uuid)) {
       // llvm::errs() << "creating a new tree\n";
-      TreeStack.push(std::shared_ptr<DISlotTree>(new DISlotTree(Node->toRoot())));
+      TreeStack.push(std::shared_ptr<DISlotTree>(
+          new DISlotTree(getDIB().toRoot(Uuid), getDIB())));
     }
     // llvm::errs() << "current root:"  << TreeStack.top()->R->Uuid.toString() << "\n";
-    TreeStack.top()->fill(Node, bid);
+    TreeStack.top()->fill(Uuid, bid);
     if (TreeStack.top()->isRootFilled()) {
       RecordTrees.push_back(TreeStack.top());
       TreeStack.pop();
@@ -91,8 +91,7 @@ void RecordMgr::processTrace(const std::string &FileName) {
 }
 
 void RecordMgr::dump(std::ostream &OS) const {
-  for (auto it = RecordTrees.begin(), ie = RecordTrees.end();
-       it != ie; ++it) {
-    (*it)->dump(OS);
+  for (auto &&RecordTree : RecordTrees) {
+    RecordTree->dump(OS);
   }
 }

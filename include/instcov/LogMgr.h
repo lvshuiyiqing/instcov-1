@@ -18,33 +18,26 @@
 #include <string>
 #include <map>
 #include <set>
+#include <iostream>
 #include <memory>
 #include <vector>
 #include "instcov/uuid.h"
+#include "instcov/DbgInfo.h"
 
 namespace instcov {
+
+const uint64_t BID_NA = ~(~((uint64_t)0)>>1);
 
 class LogEntry {
  public:
   LogEntry(void)
-      : FID(-1), RID(-1) {}
+      : TID(-1), VID(-1) {}
 
+  void dump(std::ostream &OS) const;
   std::map<UUID_t, uint64_t> Conditions;
   std::pair<UUID_t, uint64_t> Decision;
-  unsigned FID;
-  unsigned RID;
-};
-
-class LocInfo {
- public:
-  LocInfo(void)
-      : FileName(), Line(0), Col(0) {}
-
-  std::string toString(void) const;
-  
-  std::string FileName;
-  uint64_t Line;
-  uint64_t Col;
+  std::size_t TID;
+  std::size_t VID;
 };
 
 class LogMgr {
@@ -73,6 +66,14 @@ class LogMgr {
 
   const std::map<UUID_t, LocInfo> &getLocInfos() const {
     return LocInfos;
+  }
+
+  bool hasLocInfo(UUID_t Uuid) const {
+    return LocInfos.count(Uuid);
+  }
+  
+  const LocInfo &getLocInfo(UUID_t Uuid) const {
+    return LocInfos.find(Uuid)->second;
   }
   
  private:
