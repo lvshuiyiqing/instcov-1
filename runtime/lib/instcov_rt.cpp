@@ -75,7 +75,7 @@ static class InstCovLogger {
         - (sizeof(INSTCOV_DUMP_MAGIC) - 1 + sizeof(INSTCOV_DUMP_VERSION) - 1)
         % sizeof(Padding);
     if (PaddingSize) {
-      TraceFile.write((char *)&Padding, PaddingSize);
+      TraceFile.write((const char *)&Padding, PaddingSize);
     }
   }
   
@@ -85,9 +85,9 @@ static class InstCovLogger {
   }
 
   void LogBinary(uint64_t id_high, uint64_t id_low, uint64_t bid) {
-    TraceFile.write((char *)&id_high, sizeof(id_high));
-    TraceFile.write((char *)&id_low, sizeof(id_low));
-    TraceFile.write((char *)&bid, sizeof(bid));
+    TraceFile.write((const char *)&id_high, sizeof(id_high));
+    TraceFile.write((const char *)&id_low, sizeof(id_low));
+    TraceFile.write((const char *)&bid, sizeof(bid));
   }
   
   void Log(uint64_t id_high, uint64_t id_low, uint64_t bid) {
