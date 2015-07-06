@@ -419,7 +419,7 @@ void ProblemGenerator::genPBIdiomOr(
   for (auto SVar : SVars) {
     Constr.LHS.push_back(PBTerm(1, SVar));
   }
-  Constr.RHS = -1;
+  Constr.RHS = 0;
   Constr.IsEqual = false;
   Constrs.push_back(Constr);
   Constr.clear();
