@@ -7,4 +7,4 @@ tid=$((tid+1))
 echo $tid > TID
 
 ./test "$@" > /dev/null
-../../scripts/instcov-view.sh -t dump.instcov test.i.cpp.dbginfo -o traces/test.${tid}.pt
+../../scripts/instcov_view.py -t dump.instcov test.i.cpp.dbginfo -o traces/test.${tid}.pt

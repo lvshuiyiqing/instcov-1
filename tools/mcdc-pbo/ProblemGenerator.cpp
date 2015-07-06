@@ -21,25 +21,17 @@
 using namespace llvm;
 using namespace instcov;
 
-cl::opt<bool> EmitNonlinear(
-    "emit-nonlinear",
-    cl::desc("emit non linear PBO output"),
-    cl::init(false));
-
 void SignedPBVar::emit(std::ostream &OS,
-                       const SignedPBVar::SVarPrinter &SVP) const {
-  OS << SVP(*this);
+                       const PBVarPrinter &VP) const {
+  OS << (getSign() ? "" : "~") << VP(getPBVar());
 }
 
-void PBTerm::emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const {
+void PBTerm::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   OS << (getWeight() > 0 ? "+" : "") << getWeight();
-  for (auto &&SVar : getSVars()) {
-    OS << " ";
-    SVar.emit(OS, SVP);
-  }
+  getSVar().emit(OS, VP);
 }
 
-void PBLinear::emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const {
+void PBLinear::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   bool IsFirst = true;
   for (auto &&Term : (*this)) {
     if (IsFirst) {
@@ -47,16 +39,16 @@ void PBLinear::emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const
     } else {
       OS << " ";      
     }
-    Term.emit(OS, SVP);
+    Term.emit(OS, VP);
   }
 }
 
-void PBConstr::emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const {
+void PBConstr::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   if (LHS.empty()) {
     std::cerr << "LHS is empty, why?" << std::endl;
     exit(1);
   }
-  LHS.emit(OS, SVP);
+  LHS.emit(OS, VP);
   OS << " " << (IsEqual ? "=" : ">=") << " ";
   if (RHS > 0) {
     OS << "+";
@@ -66,86 +58,59 @@ void PBConstr::emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const
 
 namespace {
 void emitConstrs(const std::vector<PBConstr> &Constrs, std::ostream &OS,
-                 const SignedPBVar::SVarPrinter &SVP) {
+                 const PBVarPrinter &VP) {
   for (auto &&Constr : Constrs) {
-    Constr.emit(OS, SVP);
+    Constr.emit(OS, VP);
   }
 }
 }
 
-void PBOProblem::countProducts(void) {
-  NumProducts = 0;
-  SizeProducts = 0;
-  countProducts(ConditionMatch);
-  countProducts(VisitMatch);
-  countProducts(CDAssgnMatch);
-  countProducts(AssgnPair);
-  countProducts(Assgn);
-}
-
-void PBOProblem::countProducts(const std::vector<PBConstr> &Constrs) {
-  for (auto &&Constr : Constrs) {
-    for (auto &&Term : Constr.LHS) {
-      std::size_t Size = Term.getSVars().size();
-      if (Size > 1) {
-        ++NumProducts;
-        SizeProducts += Size;
-      }
-    }
-  }
-}
-
-void PBOProblem::emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const {
+void PBOProblem::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs;
-  if (EmitNonlinear) {
-    OS << " #product= " << NumProducts << " sizeproduct= " << SizeProducts;
-  }
   OS << std::endl;
   if (!ObjFunc.empty()) {
     OS << "min: ";
-    ObjFunc.emit(OS, SVP);
+    ObjFunc.emit(OS, VP);
     OS << ";" << std::endl;
   } else {
     OS << "* no objective function" << std::endl;
   }
   OS << "* ConditionMatch" << std::endl;
-  emitConstrs(ConditionMatch, OS, SVP);
+  emitConstrs(ConditionMatch, OS, VP);
   OS << "* VisitMatch" << std::endl;
-  emitConstrs(VisitMatch, OS, SVP);
+  emitConstrs(VisitMatch, OS, VP);
   OS << "* CDAssgnMatch" << std::endl;
-  emitConstrs(CDAssgnMatch, OS, SVP);
+  emitConstrs(CDAssgnMatch, OS, VP);
   OS << "* AssgnPair" << std::endl;
-  emitConstrs(AssgnPair, OS, SVP);
+  emitConstrs(AssgnPair, OS, VP);
   OS << "* Assgn" << std::endl;
-  emitConstrs(Assgn, OS, SVP);
+  emitConstrs(Assgn, OS, VP);
 }
 
 void PBOProblem::emitRaw(std::ostream &OS) const {
-  struct SVarPrinterRaw : public SignedPBVar::SVarPrinter {
-    virtual std::string operator()(const SignedPBVar &SVar) const {
+  struct PBVarPrinterRaw : public PBVarPrinter {
+    virtual std::string operator()(PBVar Var) const {
       std::stringstream ss;
-      ss << (SVar.getSign() ? "" : "~")
-         << "x" << SVar.getPBVar();
+      ss << "x" << Var;
       return ss.str();
     }
   };
-  emit(OS, SVarPrinterRaw());
+  emit(OS, PBVarPrinterRaw());
 }
 
 void PBOProblem::emitPretty(
     std::ostream &OS, const ProblemGenerator &PG) const {
-  struct SVarPrinterPretty : public SignedPBVar::SVarPrinter {
-    SVarPrinterPretty(const ProblemGenerator &pg)
+  struct PBVarPrinterPretty : public PBVarPrinter {
+    PBVarPrinterPretty(const ProblemGenerator &pg)
         : PG(pg) {}
-    virtual std::string operator()(const SignedPBVar &SVar) const {
+    virtual std::string operator()(PBVar Var) const {
       std::stringstream ss;
-      ss << (SVar.getSign() ? "" : "~")
-         << PG.decodePBVar(SVar.getPBVar());
+      ss << PG.decodePBVar(Var);
       return ss.str();
     }
     const ProblemGenerator &PG;
   };
-  emit(OS, SVarPrinterPretty(PG));
+  emit(OS, PBVarPrinterPretty(PG));
 }
 
 ProblemGenerator::ProblemGenerator(void) {
@@ -264,9 +229,6 @@ PBOProblem ProblemGenerator::emitPBO(void) {
   Problem.NumConstrs += Problem.CDAssgnMatch.size();
   Problem.NumConstrs += Problem.AssgnPair.size();
   Problem.NumConstrs += Problem.Assgn.size();
-  if (EmitNonlinear) {
-    Problem.countProducts();
-  }
   return Problem;
 }
 
@@ -275,7 +237,7 @@ void ProblemGenerator::pboEmitObj(PBOProblem &Problem) {
   for (auto &&Uuid_Children : Children) {
     for (auto &&Uuid : Uuid_Children.second) {
       PBVar Var = encodeConditionMatch(Uuid);
-      ObjFunc.push_back(PBTerm(-1, SVarList(1, SignedPBVar(Var, true))));
+      ObjFunc.push_back(PBTerm(-1, SignedPBVar(Var, true)));
     }
   }
   Problem.ObjFunc = ObjFunc;
@@ -296,11 +258,11 @@ void ProblemGenerator::pboEmitOneAssgn(
   PBVar VarFalse = encodeAssgn(Assgn.first, TID, VID, 'F');
   Problem.Assgn.push_back(PBConstr(
       PBLinear(1, PBTerm(
-          1, SVarList(1, SignedPBVar(VarTrue, true)))),
+          1, SignedPBVar(VarTrue, true))),
       Assgn.second == 1, true));
   Problem.Assgn.push_back(PBConstr(
       PBLinear(1, PBTerm(
-          1, SVarList(1, SignedPBVar(VarFalse, true)))),
+          1, SignedPBVar(VarFalse, true))),
       Assgn.second == 0, true));
 }
 
@@ -319,7 +281,7 @@ void ProblemGenerator::pboEmitPerDecision(
   const auto &Conditions = Children[UuidD];
   for (auto Condition : Conditions) {
     pboEmitVisitMatches(Problem, UuidD, Condition);
-    pboEmitConditionMatches(Problem, UuidD, Condition);
+    pboEmitConditionMatch(Problem, UuidD, Condition);
   }
 }
 
@@ -390,7 +352,7 @@ void ProblemGenerator::pboEmitOneVisitMatch(
   genPBIdiomAnd(SVars, SignedPBVar(VarVisitMatch, true), Problem.VisitMatch);
 }
 
-void ProblemGenerator::pboEmitConditionMatches(
+void ProblemGenerator::pboEmitConditionMatch(
     PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC) {
   SVarList SVars;
   const auto &Entries = Uuid2LogEntries[UuidD];
@@ -399,7 +361,7 @@ void ProblemGenerator::pboEmitConditionMatches(
     ++it2;
     for (; it2 != ie; ++it2) {
       SVars.push_back(SignedPBVar(
-          encodeCDAssgnMatch(
+          encodeVisitMatch(
               UuidC, (*it1)->TID, (*it1)->VID, (*it2)->TID, (*it2)->VID),
           true));
     }    
@@ -421,31 +383,22 @@ void ProblemGenerator::genPBIdiomAnd(
 void ProblemGenerator::genPBIdiomAnd(
     const SVarList &SVars, SignedPBVar SVarRes,
     std::vector<PBConstr> &Constrs) {
-  if (EmitNonlinear) {
-    PBConstr Constr;
-    Constr.LHS.push_back(PBTerm(1, SVarList(1, SVarRes)));
-    Constr.LHS.push_back(PBTerm(-1, SVars));
+  PBConstr Constr;
+  Constr.LHS.push_back(PBTerm(1, SVarRes));
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(-1, SVar));
+  }
+  Constr.RHS = 1 - SVars.size();
+  Constr.IsEqual = false;
+  Constrs.push_back(Constr);
+  Constr.clear();
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(1, SVar));
+    Constr.LHS.push_back(PBTerm(-1, SVarRes));
     Constr.RHS = 0;
-    Constr.IsEqual = true;
-    Constrs.push_back(Constr);
-  } else {
-    PBConstr Constr;
-    Constr.LHS.push_back(PBTerm(1, SVarList(1, SVarRes)));
-    for (auto SVar : SVars) {
-      Constr.LHS.push_back(PBTerm(-1, SVarList(1, SVar)));
-    }
-    Constr.RHS = 1 - SVars.size();
     Constr.IsEqual = false;
     Constrs.push_back(Constr);
     Constr.clear();
-    for (auto SVar : SVars) {
-      Constr.LHS.push_back(PBTerm(1, SVarList(1, SVar)));
-      Constr.LHS.push_back(PBTerm(-1, SVarList(1, SVarRes)));
-      Constr.RHS = 0;
-      Constr.IsEqual = false;
-      Constrs.push_back(Constr);
-      Constr.clear();
-    }
   }
 }
 
@@ -461,35 +414,22 @@ void ProblemGenerator::genPBIdiomOr(
 void ProblemGenerator::genPBIdiomOr(
     const SVarList &SVars, SignedPBVar SVarRes,
     std::vector<PBConstr> &Constrs) {
-  if (EmitNonlinear) {
-    PBConstr Constr;
-    Constr.LHS.push_back(PBTerm(1, SVarList(1, SVarRes.getNeg())));
-    SVarList NegSVars;
-    for (auto SVar : SVars) {
-      NegSVars.push_back(SVar.getNeg());
-    }
-    Constr.LHS.push_back(PBTerm(-1, NegSVars));
+  PBConstr Constr;
+  Constr.LHS.push_back(PBTerm(-1, SVarRes));
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(1, SVar));
+  }
+  Constr.RHS = -1;
+  Constr.IsEqual = false;
+  Constrs.push_back(Constr);
+  Constr.clear();
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(-1, SVar));
+    Constr.LHS.push_back(PBTerm(1, SVarRes));
     Constr.RHS = 0;
-    Constr.IsEqual = true;
-    Constrs.push_back(Constr);
-  } else {
-    PBConstr Constr;
-    Constr.LHS.push_back(PBTerm(-1, SVarList(1, SVarRes)));
-    for (auto SVar : SVars) {
-      Constr.LHS.push_back(PBTerm(1, SVarList(1, SVar)));
-    }
-    Constr.RHS = -1;
     Constr.IsEqual = false;
     Constrs.push_back(Constr);
     Constr.clear();
-    for (auto SVar : SVars) {
-      Constr.LHS.push_back(PBTerm(-1, SVarList(1, SVar)));
-      Constr.LHS.push_back(PBTerm(1, SVarList(1, SVarRes)));
-      Constr.RHS = 0;
-      Constr.IsEqual = false;
-      Constrs.push_back(Constr);
-      Constr.clear();
-    }
   }
 }
 

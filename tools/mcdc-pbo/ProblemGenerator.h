@@ -26,29 +26,32 @@ namespace instcov {
 class ProblemGenerator;
 
 typedef std::size_t PBVar;
-struct SignedPBVar : public std::pair < PBVar, bool > {
+
+struct PBVarPrinter {
+  virtual std::string operator()(PBVar Var) const = 0;
+};
+
+struct SignedPBVar : public std::pair<PBVar, bool> {
   typedef std::pair<PBVar, bool> base_t;
   SignedPBVar(void) : base_t() {}
   SignedPBVar(const PBVar &a, const bool &b) : base_t(a, b) {}
-	struct SVarPrinter {
-    virtual std::string operator()(const SignedPBVar &SVar) const = 0;
-  };
   PBVar getPBVar(void) const { return first; }
   bool getSign(void) const { return second; }
   SignedPBVar getNeg(void) const { return SignedPBVar(first, !second); }
-  void emit(std::ostream &OS, const SVarPrinter &SVP) const;
+  void emit(std::ostream &OS, const PBVarPrinter &VP) const;
 
   // DO NOT ADD MEMBERS!!!
 };
 
-typedef std::list<SignedPBVar> SVarList;
-struct PBTerm : std::pair<int, SVarList> {
-  typedef std::pair<int, SVarList> base_t;
+typedef std::vector<SignedPBVar> SVarList;
+
+struct PBTerm : std::pair<int, SignedPBVar> {
+  typedef std::pair<int, SignedPBVar> base_t;
   PBTerm(void) : base_t() {}
-  PBTerm(const int &a, const SVarList &b) : base_t(a, b) {}
-  const SVarList &getSVars(void) const { return second; }
+  PBTerm(const int &a, const SignedPBVar &b) : base_t(a, b) {}
+  const SignedPBVar &getSVar(void) const { return second; }
   int getWeight(void) const { return first; }
-  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+  void emit(std::ostream &OS, const PBVarPrinter &VP) const;
 
   // DO NOT ADD MEMBERS!!!
 };
@@ -63,7 +66,7 @@ struct PBLinear : public std::vector<PBTerm> {
   template<typename InputIt>
   PBLinear(InputIt first, InputIt last)
       : base_t(first, last) {}
-  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+  void emit(std::ostream &OS, const PBVarPrinter &VP) const;
 
   // DO NOT ADD MEMBERS!!!
 };
@@ -75,7 +78,7 @@ struct PBConstr {
       : LHS(lhs), RHS(rhs), IsEqual(isEqual) {}
   void emitRaw(std::ostream &OS) const;
   void emitPretty(std::ostream &OS, const ProblemGenerator &PG) const;
-  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+  void emit(std::ostream &OS, const PBVarPrinter &VP) const;
   void clear(void) {
     LHS.clear();
     RHS = 0;
@@ -89,15 +92,11 @@ struct PBConstr {
 
 struct PBOProblem {
   PBOProblem(void)
-      : NumVars(0), NumConstrs(0), NumProducts(0), SizeProducts(0) {}
+      : NumVars(0), NumConstrs(0) {}
   std::size_t NumVars;
   std::size_t NumConstrs;
-  std::size_t NumProducts;
-  std::size_t SizeProducts;
 
-  void countProducts(void);
-  
-  void emit(std::ostream &OS, const SignedPBVar::SVarPrinter &SVP) const;
+  void emit(std::ostream &OS, const PBVarPrinter &VP) const;
   void emitPretty(std::ostream &OS, const ProblemGenerator &PG) const;
   void emitRaw(std::ostream &OS) const;
   
@@ -107,9 +106,6 @@ struct PBOProblem {
   std::vector<PBConstr> CDAssgnMatch;
   std::vector<PBConstr> AssgnPair;
   std::vector<PBConstr> Assgn;
-
- private:
-  void countProducts(const std::vector<PBConstr> &Constrs);
 };
 
 class ProblemGenerator {
@@ -160,7 +156,7 @@ class ProblemGenerator {
       std::size_t TID2, std::size_t VID2);
   void pboEmitPerDecision(
       PBOProblem &Problem, UUID_t UuidD);
-  void pboEmitConditionMatches(
+  void pboEmitConditionMatch(
       PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC);
   void pboEmitVisitMatches(
       PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC);
