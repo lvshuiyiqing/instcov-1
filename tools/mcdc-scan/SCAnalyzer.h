@@ -22,9 +22,11 @@
 #include <iostream>
 #include <unordered_map>
 #include "instcov/uuid.h"
+#include "instcov/PBOProblem.h"
 #include "MCDCAnalyzer.h"
 
 namespace instcov {
+
 class SCAnalyzer : public MCDCAnalyzer {
   virtual void registerEntry(const LogEntry *entry, const LogMgr &LM);
   virtual void dump(std::ostream &OS, const LogMgr &LM) const;
@@ -46,7 +48,6 @@ class SCAnalyzer : public MCDCAnalyzer {
   std::map<UUID_t, std::unordered_set<Assignment_t> > Dec2Assgns;
   std::map<UUID_t, std::vector<UUID_t> > Dec2CondOrder;
 };
-
 }
 
 #endif  // INSTCOV_SCANALYZER_H_
