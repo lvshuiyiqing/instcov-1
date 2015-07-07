@@ -56,16 +56,7 @@ void PBConstr::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   OS << RHS << ";" << std::endl;
 }
 
-namespace {
-void emitConstrs(const std::vector<PBConstr> &Constrs, std::ostream &OS,
-                 const PBVarPrinter &VP) {
-  for (auto &&Constr : Constrs) {
-    Constr.emit(OS, VP);
-  }
-}
-}
-
-void PBOProblem::emit(std::ostream &OS, const PBVarPrinter &VP) const {
+void PBOProblemNOpt::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs;
   OS << std::endl;
   if (!ObjFunc.empty()) {
@@ -85,32 +76,6 @@ void PBOProblem::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   emitConstrs(AssgnPair, OS, VP);
   OS << "* Assgn" << std::endl;
   emitConstrs(Assgn, OS, VP);
-}
-
-void PBOProblem::emitRaw(std::ostream &OS) const {
-  struct PBVarPrinterRaw : public PBVarPrinter {
-    virtual std::string operator()(PBVar Var) const {
-      std::stringstream ss;
-      ss << "x" << Var;
-      return ss.str();
-    }
-  };
-  emit(OS, PBVarPrinterRaw());
-}
-
-void PBOProblem::emitPretty(
-    std::ostream &OS, const ProblemGenerator &PG) const {
-  struct PBVarPrinterPretty : public PBVarPrinter {
-    PBVarPrinterPretty(const ProblemGenerator &pg)
-        : PG(pg) {}
-    virtual std::string operator()(PBVar Var) const {
-      std::stringstream ss;
-      ss << PG.decodePBVar(Var);
-      return ss.str();
-    }
-    const ProblemGenerator &PG;
-  };
-  emit(OS, PBVarPrinterPretty(PG));
 }
 
 ProblemGenerator::ProblemGenerator(void) {
@@ -136,15 +101,6 @@ PBVar ProblemGenerator::encodeStr(const std::string &str) {
     ID2Str[IDPool.size()] = str;
   }
   return IDPool[str];
-}
-
-const std::string &ProblemGenerator::decodePBVar(PBVar ID) const {
-  auto it = ID2Str.find(ID);
-  if (it == ID2Str.end()) {
-    std::cerr << "cannot find PBVar" << std::endl;
-    exit(1);
-  }
-  return it->second;
 }
 
 PBVar ProblemGenerator::encodeConditionMatch(UUID_t UuidC) {
@@ -211,8 +167,8 @@ std::size_t ProblemGenerator::getSID(UUID_t Uuid) {
   return Uuid2SID[Uuid];
 }
 
-PBOProblem ProblemGenerator::emitPBO(void) {
-  PBOProblem Problem;
+PBOProblemNOpt ProblemGenerator::emitPBO(void) {
+  PBOProblemNOpt Problem;
   pboEmitObj(Problem);
   for (auto &&Uuid_LogEntries : Uuid2LogEntries) {
     for (auto &&Entry : Uuid_LogEntries.second) {
@@ -232,7 +188,7 @@ PBOProblem ProblemGenerator::emitPBO(void) {
   return Problem;
 }
 
-void ProblemGenerator::pboEmitObj(PBOProblem &Problem) {
+void ProblemGenerator::pboEmitObj(PBOProblemNOpt &Problem) {
   PBLinear ObjFunc;
   for (auto &&Uuid_Children : Children) {
     for (auto &&Uuid : Uuid_Children.second) {
@@ -243,7 +199,7 @@ void ProblemGenerator::pboEmitObj(PBOProblem &Problem) {
   Problem.ObjFunc = ObjFunc;
 }
 
-void ProblemGenerator::pboEmitAssgn(PBOProblem &Problem, const LogEntry *E) {
+void ProblemGenerator::pboEmitAssgn(PBOProblemNOpt &Problem, const LogEntry *E) {
   pboEmitOneAssgn(Problem, E->TID, E->VID, E->Decision);
   for (auto Cond_Assgn : E->Conditions) {
     pboEmitOneAssgn(Problem, E->TID, E->VID, Cond_Assgn);
@@ -251,7 +207,7 @@ void ProblemGenerator::pboEmitAssgn(PBOProblem &Problem, const LogEntry *E) {
 }
 
 void ProblemGenerator::pboEmitOneAssgn(
-    PBOProblem &Problem,
+    PBOProblemNOpt &Problem,
     std::size_t TID, std::size_t VID,
     const std::pair<UUID_t, uint64_t> &Assgn) {
   PBVar VarTrue = encodeAssgn(Assgn.first, TID, VID, 'T');
@@ -267,7 +223,7 @@ void ProblemGenerator::pboEmitOneAssgn(
 }
 
 void ProblemGenerator::pboEmitPerDecision(
-    PBOProblem &Problem, UUID_t UuidD) {
+    PBOProblemNOpt &Problem, UUID_t UuidD) {
   // emit the assignment pairs first
   const auto &Entries = Uuid2LogEntries[UuidD];
   for (auto it1 = Entries.begin(), ie = Entries.end(); it1 != ie; ++it1) {    
@@ -286,7 +242,7 @@ void ProblemGenerator::pboEmitPerDecision(
 }
 
 void ProblemGenerator::pboEmitAssgnPair(
-    PBOProblem &Problem, const LogEntry *E1, const LogEntry *E2) {
+    PBOProblemNOpt &Problem, const LogEntry *E1, const LogEntry *E2) {
   UUID_t UuidD = E1->Decision.first;
   pboEmitOneAssgnPair(
       Problem, UuidD,
@@ -297,7 +253,7 @@ void ProblemGenerator::pboEmitAssgnPair(
 }
 
 void ProblemGenerator::pboEmitOneAssgnPair(
-    PBOProblem &Problem, UUID_t Uuid,
+    PBOProblemNOpt &Problem, UUID_t Uuid,
     std::size_t TID1, std::size_t VID1,
     std::size_t TID2, std::size_t VID2) {
   PBVar VarTF = encodeAssgnPair(Uuid, TID1, VID1, 'T', TID2, VID2, 'F');
@@ -323,7 +279,7 @@ void ProblemGenerator::pboEmitOneAssgnPair(
 }
 
 void ProblemGenerator::pboEmitVisitMatches(
-    PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC) {
+    PBOProblemNOpt &Problem, UUID_t UuidD, UUID_t UuidC) {
   const auto &Entries = Uuid2LogEntries[UuidD];
   for (auto it1 = Entries.begin(), ie = Entries.end(); it1 != ie; ++it1) {
     auto it2 = it1;
@@ -335,7 +291,7 @@ void ProblemGenerator::pboEmitVisitMatches(
 }
 
 void ProblemGenerator::pboEmitOneVisitMatch(
-    PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC,
+    PBOProblemNOpt &Problem, UUID_t UuidD, UUID_t UuidC,
     const LogEntry *E1, const LogEntry *E2) {
   const auto &Conditions = Children[UuidD];
   SVarList SVars;
@@ -353,7 +309,7 @@ void ProblemGenerator::pboEmitOneVisitMatch(
 }
 
 void ProblemGenerator::pboEmitConditionMatch(
-    PBOProblem &Problem, UUID_t UuidD, UUID_t UuidC) {
+    PBOProblemNOpt &Problem, UUID_t UuidD, UUID_t UuidC) {
   SVarList SVars;
   const auto &Entries = Uuid2LogEntries[UuidD];
   for (auto it1 = Entries.begin(), ie = Entries.end(); it1 != ie; ++it1) {
@@ -371,7 +327,7 @@ void ProblemGenerator::pboEmitConditionMatch(
                Problem.ConditionMatch);
 }
 
-void ProblemGenerator::genPBIdiomAnd(
+void instcov::genPBIdiomAnd(
     SignedPBVar SVar1, SignedPBVar SVar2, SignedPBVar SVarRes,
     std::vector<PBConstr> &Constrs) {
   SVarList SVars;
@@ -380,7 +336,7 @@ void ProblemGenerator::genPBIdiomAnd(
   genPBIdiomAnd(SVars, SVarRes, Constrs);
 }
 
-void ProblemGenerator::genPBIdiomAnd(
+void instcov::genPBIdiomAnd(
     const SVarList &SVars, SignedPBVar SVarRes,
     std::vector<PBConstr> &Constrs) {
   PBConstr Constr;
@@ -402,7 +358,7 @@ void ProblemGenerator::genPBIdiomAnd(
   }
 }
 
-void ProblemGenerator::genPBIdiomOr(
+void instcov::genPBIdiomOr(
     SignedPBVar SVar1, SignedPBVar SVar2, SignedPBVar SVarRes,
     std::vector<PBConstr> &Constrs) {
   SVarList SVars;
@@ -411,7 +367,7 @@ void ProblemGenerator::genPBIdiomOr(
   genPBIdiomOr(SVars, SVarRes, Constrs);
 }
 
-void ProblemGenerator::genPBIdiomOr(
+void instcov::genPBIdiomOr(
     const SVarList &SVars, SignedPBVar SVarRes,
     std::vector<PBConstr> &Constrs) {
   PBConstr Constr;

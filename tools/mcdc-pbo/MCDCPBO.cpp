@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   std::ofstream PBOFile(OutFileName.c_str());
   std::ofstream InfoFile((OutFileName + ".info").c_str());
   if (EmitPretty) {
-    Problem.emitPretty(PBOFile, PG);
+    Problem.emitPretty(PBOFile, PG.getID2Str());
   } else {
     Problem.emitRaw(PBOFile);
   }
