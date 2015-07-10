@@ -32,8 +32,8 @@ struct PBOProblemNOpt : public PBOProblem {
   std::vector<PBConstr> ConditionMatch;
   std::vector<PBConstr> VisitMatch;
   std::vector<PBConstr> CDAssgnMatch;
-  std::vector<PBConstr> AssgnPair;
-  std::vector<PBConstr> Assgn;
+  std::vector<PBConstr> CDAssgnPair;
+  std::vector<PBConstr> CDAssgn;
 };
 
 class ProblemGenerator {
@@ -62,15 +62,15 @@ class ProblemGenerator {
       UUID_t Uuid,
       std::size_t TID1, std::size_t VID1,
       std::size_t TID2, std::size_t VID2);
-  PBVar encodeAssgnPair(
+  PBVar encodeCDAssgnPair(
       UUID_t Uuid,
       std::size_t TID1, std::size_t VID1, char Assgn1,
       std::size_t TID2, std::size_t VID2, char Assgn2);
-  PBVar encodeAssgn(
+  PBVar encodeCDAssgn(
       UUID_t Uuid,
       std::size_t TID, std::size_t VID, char Assgn);
   PBVar encodeT(std::size_t TID);
-  PBVar getSID(UUID_t Uuid);
+  std::size_t getSID(UUID_t Uuid);
   void pboEmitObj(PBOProblemNOpt &Problem);
   void pboEmitAssgn(PBOProblemNOpt &Problem, const LogEntry *E);
   void pboEmitOneAssgn(
