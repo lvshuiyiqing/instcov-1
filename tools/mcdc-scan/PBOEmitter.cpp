@@ -121,17 +121,19 @@ void PBOEmitter::pboEmitByAssgnPairs(PBOProblemOpt &Problem) {
     UUID_t UuidD = Dec_Assgn2Entries.first;
     auto &Assgn2Entries = Dec_Assgn2Entries.second;
     auto &Conditions = Analyzer.getDec2CondOrder().find(UuidD)->second;
-    for (auto &UuidC : Conditions) {
-      for (auto it1 = Assgn2Entries.begin(), ie = Assgn2Entries.end();
-           it1 != ie; ++it1) {
-        auto it2 = it1;
-        ++it2;
-        for (; it2 != ie; ++it2) {
+    for (auto it1 = Assgn2Entries.begin(), ie = Assgn2Entries.end();
+         it1 != ie; ++it1) {
+      auto it2 = it1;
+      ++it2;
+      for (; it2 != ie; ++it2) {
+        for (auto &UuidC : Conditions) {
           pboEmitPerAssgnMatch(
               Problem, UuidD, UuidC, it1->first, it2->first);
           pboEmitPerCDAssgnMatchAndPairs(
               Problem, UuidD, UuidC, it1->first, it2->first);
         }
+        pboEmitPerCDAssgnMatchAndPairs(
+            Problem, UuidD, UuidD, it1->first, it2->first);        
       }
     }
   }
@@ -159,16 +161,16 @@ void PBOEmitter::pboEmitPerAssgnMatch(
 
 void PBOEmitter::pboEmitPerCDAssgnMatchAndPairs(
     PBOProblemOpt &Problem,
-    UUID_t UuidD, UUID_t UuidC,
+    UUID_t UuidD, UUID_t Uuid,
     const Assignment_t &Assgn1,
     const Assignment_t &Assgn2) {
-  PBVar VarTF = encodeCDAssgnPair(UuidD, UuidC, Assgn1, 'T', Assgn2, 'F');
-  PBVar VarFT = encodeCDAssgnPair(UuidD, UuidC, Assgn1, 'F', Assgn2, 'T');
-  PBVar VarT1 = encodeCDAssgn(UuidD, UuidC, Assgn1, 'T');
-  PBVar VarF1 = encodeCDAssgn(UuidD, UuidC, Assgn1, 'F');
-  PBVar VarT2 = encodeCDAssgn(UuidD, UuidC, Assgn2, 'T');
-  PBVar VarF2 = encodeCDAssgn(UuidD, UuidC, Assgn2, 'F');
-  PBVar VarMatch = encodeCDAssgnMatch(UuidD, UuidC, Assgn1, Assgn2);
+  PBVar VarTF = encodeCDAssgnPair(UuidD, Uuid, Assgn1, 'T', Assgn2, 'F');
+  PBVar VarFT = encodeCDAssgnPair(UuidD, Uuid, Assgn1, 'F', Assgn2, 'T');
+  PBVar VarT1 = encodeCDAssgn(UuidD, Uuid, Assgn1, 'T');
+  PBVar VarF1 = encodeCDAssgn(UuidD, Uuid, Assgn1, 'F');
+  PBVar VarT2 = encodeCDAssgn(UuidD, Uuid, Assgn2, 'T');
+  PBVar VarF2 = encodeCDAssgn(UuidD, Uuid, Assgn2, 'F');
+  PBVar VarMatch = encodeCDAssgnMatch(UuidD, Uuid, Assgn1, Assgn2);
 
   genPBIdiomAnd(SignedPBVar(VarT1, true),
                 SignedPBVar(VarF2, true),
