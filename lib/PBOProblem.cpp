@@ -105,3 +105,66 @@ void PBOProblem::emitPretty(
   };
   emit(OS, PBVarPrinterPretty(ID2Str));
 }
+
+
+void instcov::genPBIdiomAnd(
+    SignedPBVar SVar1, SignedPBVar SVar2, SignedPBVar SVarRes,
+    std::vector<PBConstr> &Constrs) {
+  SVarList SVars;
+  SVars.push_back(SVar1);
+  SVars.push_back(SVar2);
+  genPBIdiomAnd(SVars, SVarRes, Constrs);
+}
+
+void instcov::genPBIdiomAnd(
+    const SVarList &SVars, SignedPBVar SVarRes,
+    std::vector<PBConstr> &Constrs) {
+  PBConstr Constr;
+  Constr.LHS.push_back(PBTerm(1, SVarRes));
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(-1, SVar));
+  }
+  Constr.RHS = 1 - SVars.size();
+  Constr.IsEqual = false;
+  Constrs.push_back(Constr);
+  Constr.clear();
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(1, SVar));
+    Constr.LHS.push_back(PBTerm(-1, SVarRes));
+    Constr.RHS = 0;
+    Constr.IsEqual = false;
+    Constrs.push_back(Constr);
+    Constr.clear();
+  }
+}
+
+void instcov::genPBIdiomOr(
+    SignedPBVar SVar1, SignedPBVar SVar2, SignedPBVar SVarRes,
+    std::vector<PBConstr> &Constrs) {
+  SVarList SVars;
+  SVars.push_back(SVar1);
+  SVars.push_back(SVar2);
+  genPBIdiomOr(SVars, SVarRes, Constrs);
+}
+
+void instcov::genPBIdiomOr(
+    const SVarList &SVars, SignedPBVar SVarRes,
+    std::vector<PBConstr> &Constrs) {
+  PBConstr Constr;
+  Constr.LHS.push_back(PBTerm(-1, SVarRes));
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(1, SVar));
+  }
+  Constr.RHS = 0;
+  Constr.IsEqual = false;
+  Constrs.push_back(Constr);
+  Constr.clear();
+  for (auto SVar : SVars) {
+    Constr.LHS.push_back(PBTerm(-1, SVar));
+    Constr.LHS.push_back(PBTerm(1, SVarRes));
+    Constr.RHS = 0;
+    Constr.IsEqual = false;
+    Constrs.push_back(Constr);
+    Constr.clear();
+  }
+}

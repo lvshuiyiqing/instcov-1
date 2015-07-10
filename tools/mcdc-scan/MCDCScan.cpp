@@ -13,10 +13,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Casting.h"
 #include "instcov/LogMgr.h"
 #include "MCDCAnalyzer.h"
 #include "FastAnalyzer.h"
 #include "SCAnalyzer.h"
+#include "PBOEmitter.h"
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -42,12 +44,31 @@ cl::opt<bool> Verbose(
     cl::desc("dump more verbosely"),
     cl::init(false));
 
+cl::opt<bool> EmitPBO(
+    "emit-pbo",
+    cl::desc("to emit a PBO problem,"
+             "which is to be solved by a constraint solver\n"
+             "Only combines with sc analyzer"),
+    cl::init(false));
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
   LogMgr LM;
   for (auto &&FileName : FileNames) {
     LM.loadFile(FileName);
+  }
+  if (EmitPBO && Analyzer != "sc") {
+    std::cerr << "PBO emitting should be used with sc analyzer"
+              << std::endl;
+  }
+  if (EmitPBO) {
+    SCAnalyzer SCA;
+    for (auto &&Entry : LM.getLogEntries()) {
+      SCA.registerEntry(&Entry, LM);
+    }
+    PBOEmitter Emitter(SCA);
+    PBOProblem Problem = Emitter.emitPBO();
+    Problem.emitRaw(std::cout);
   }
   std::shared_ptr<MCDCAnalyzer> analyzer;
   if (Analyzer == "fast") {
