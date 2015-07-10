@@ -51,6 +51,16 @@ cl::opt<bool> EmitPBO(
              "Only combines with sc analyzer"),
     cl::init(false));
 
+cl::opt<bool> EmitPretty(
+    "emit-pretty",
+    cl::desc("emit pretty-style PBO output"),
+    cl::init(false));
+
+cl::opt<std::string> OutFileName(
+    "o",
+    cl::desc("specify the output file"),
+    cl::Required);
+
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
   LogMgr LM;
@@ -60,6 +70,13 @@ int main(int argc, char *argv[]) {
   if (EmitPBO && Analyzer != "sc") {
     std::cerr << "PBO emitting should be used with sc analyzer"
               << std::endl;
+    return 1;
+  }
+  std::ofstream OutFile(OutFileName.c_str());
+  if (!OutFile) {
+    std::cerr << "cannot open \"" << OutFileName << "\" for output"
+              << std::endl;
+    return 1;
   }
   if (EmitPBO) {
     SCAnalyzer SCA;
@@ -67,8 +84,21 @@ int main(int argc, char *argv[]) {
       SCA.registerEntry(&Entry, LM);
     }
     PBOEmitter Emitter(SCA);
-    PBOProblem Problem = Emitter.emitPBO();
-    Problem.emitRaw(std::cout);
+    PBOProblemOpt Problem = Emitter.emitPBO();
+    if (EmitPretty) {
+      Problem.emitPretty(OutFile, Emitter.getID2Str());
+    } else {
+      Problem.emitRaw(OutFile);
+    }
+    std::ofstream InfoFile((OutFileName + ".info").c_str());
+    if (!InfoFile) {
+      std::cerr << "cannot open file for dumping information"
+                << std::endl;
+      return 1;
+    }
+    Emitter.dumpPBVar2Str(InfoFile);
+    Emitter.dumpSID2LocInfo(InfoFile, LM);
+    return 0;
   }
   std::shared_ptr<MCDCAnalyzer> analyzer;
   if (Analyzer == "fast") {
@@ -82,7 +112,7 @@ int main(int argc, char *argv[]) {
     analyzer->registerEntry(&Entry, LM);
   }
   analyzer->finalize();
-  analyzer->dump(std::cout, LM);
+  analyzer->dump(OutFile, LM);
   return 0;
 }
 

@@ -26,7 +26,7 @@ void SignedPBVar::emit(std::ostream &OS,
 }
 
 void PBTerm::emit(std::ostream &OS, const PBVarPrinter &VP) const {
-  OS << (getWeight() > 0 ? "+" : "") << getWeight();
+  OS << (getWeight() > 0 ? "+" : "") << getWeight() << " ";
   getSVar().emit(OS, VP);
 }
 
@@ -63,9 +63,12 @@ void instcov::emitConstrs(
   }
 }
 
-void PBOProblem::emit(std::ostream &OS, const PBVarPrinter &VP) const {
-  OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs;
-  OS << std::endl;
+void PBOProblem::emitHeader(std::ostream &OS) const {
+  OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs
+     << std::endl;
+}
+
+void PBOProblem::emitObj(std::ostream &OS, const PBVarPrinter &VP) const {
   if (!ObjFunc.empty()) {
     OS << "min: ";
     ObjFunc.emit(OS, VP);
@@ -73,8 +76,17 @@ void PBOProblem::emit(std::ostream &OS, const PBVarPrinter &VP) const {
   } else {
     OS << "* no objective function" << std::endl;
   }
+}
+
+void PBOProblem::emitConstrs(std::ostream &OS, const PBVarPrinter &VP) const {
   OS << "* General Constrs" << std::endl;
-  emitConstrs(GeneralConstrs, OS, VP);
+  instcov::emitConstrs(GeneralConstrs, OS, VP);  
+}
+
+void PBOProblem::emit(std::ostream &OS, const PBVarPrinter &VP) const {
+  emitHeader(OS);
+  emitObj(OS, VP);
+  emitConstrs(OS, VP);
 }
 
 void PBOProblem::emitRaw(std::ostream &OS) const {

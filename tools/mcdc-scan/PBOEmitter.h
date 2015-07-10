@@ -23,7 +23,7 @@ namespace instcov {
 struct PBOProblemOpt : public PBOProblem {
   PBOProblemOpt(void)
       : PBOProblem() {}
-  virtual void emit(std::ostream &OS, const PBVarPrinter &VP) const;
+  virtual void emitConstrs(std::ostream &OS, const PBVarPrinter &VP) const;
 
   std::vector<PBConstr> TID2Assgn;
   std::vector<PBConstr> ConditionMatch;
@@ -40,6 +40,13 @@ class PBOEmitter {
       : Analyzer(analyzer) {}
 
   PBOProblemOpt emitPBO(void);
+
+  const std::map<PBVar, std::string> &getID2Str(void) const {
+    return ID2Str;
+  }
+
+  void dumpPBVar2Str(std::ostream &OS) const;
+  void dumpSID2LocInfo(std::ostream &OS, const LogMgr &LM) const;
 
  private:
   PBVar encodeStr(const std::string &str);
