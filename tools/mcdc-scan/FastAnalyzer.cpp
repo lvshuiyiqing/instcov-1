@@ -62,6 +62,8 @@ void FastAnalyzer::finalize(void) {
 }
 
 void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
+  std::size_t NumCovered = 0;
+  std::size_t NumUncovered = 0;
   // decision level
   auto dorder = getSortedIterators(Data, LM);
   for (auto &&it_Dec_Pairs : dorder) {
@@ -84,8 +86,10 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
       }
       if (IsCovered) {
         OS << " > Covered" << std::endl;
+        ++NumCovered;
       } else {
         OS << " > Uncovered" << std::endl;
+        ++NumUncovered;
       }
 
       if (!Verbose) {
@@ -117,4 +121,7 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
       }
     }
   }
+  OS << "SUMMARY: # covered=" << NumCovered << ", # uncovered=" << NumUncovered
+     << std::endl;
+
 }

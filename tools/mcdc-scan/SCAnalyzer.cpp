@@ -63,20 +63,12 @@ void SCAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
 void SCAnalyzer::finalize(void) {
   for (auto &&Dec_Assgn2Entries : Dec2Assgn2Entries) {
     UUID_t Uuid_D = Dec_Assgn2Entries.first;
-    std::cerr << Uuid_D.toString() << std::endl;
     for (auto it1 = Dec_Assgn2Entries.second.begin(),
              ie = Dec_Assgn2Entries.second.end(); it1 != ie; ++it1) {
       auto it2 = it1;
       ++it2;
       for (; it2 != ie; ++it2) {
         size_t MatchedID = findMatch(it1->first, it2->first);
-        std::cerr << "<" << it1->first << "," << it2->first << ">:";
-        if (MatchedID != (size_t)-1) {
-          std::cerr << MatchedID;
-        } else {
-          std::cerr << "NA";
-        }
-        std::cerr << std::endl;
         if (MatchedID != (size_t)-1) {
           UUID_t Uuid_C = Dec2CondOrder[Uuid_D][MatchedID];
           if (it1->first[MatchedID] == 'T') {
@@ -113,6 +105,8 @@ size_t SCAnalyzer::findMatch(const Assignment_t &LHS,
 }
 
 void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
+  std::size_t NumCovered = 0;
+  std::size_t NumUncovered = 0;
   // decision level
   auto dorder = getSortedIterators(Dec2Pairs, LM);
   for (auto &&it_Dec_Pairs : dorder) {
@@ -127,8 +121,10 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
          << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
       if (it_Cond_Pairs->second.empty()) {
         OS << " > Uncovered" << std::endl;
+        ++NumUncovered;
       } else {
         OS << " > Covered" << std::endl;
+        ++NumCovered;
       }
       if (!Verbose) {
         continue;
@@ -158,4 +154,6 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
       }
     }
   }
+  OS << "SUMMARY: # covered=" << NumCovered << ", # uncovered=" << NumUncovered
+     << std::endl;
 }
