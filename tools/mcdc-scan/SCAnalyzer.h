@@ -39,13 +39,13 @@ class SCAnalyzer : public MCDCAnalyzer {
   typedef std::map<UUID_t, CondPairs_t> DecPairs_t;
 
  public:
-  DecPairs_t getDec2Pairs(void) const { return Dec2Pairs; }
-  std::map<UUID_t, Assgn2Entries_t>
-  getDec2Assgn2Entries(void) const { return Dec2Assgn2Entries; }
-  std::map<UUID_t, std::vector<UUID_t> >
-  getDec2CondOrder(void) const { return Dec2CondOrder; }
-  std::map<UUID_t, std::size_t>
-  getUuid2AssgnPos(void) const { return Uuid2AssgnPos; }
+  const DecPairs_t &getDec2Pairs(void) const { return Dec2Pairs; }
+  const std::map<UUID_t, Assgn2Entries_t>
+  &getDec2Assgn2Entries(void) const { return Dec2Assgn2Entries; }
+  const std::map<UUID_t, std::vector<UUID_t> >
+  &getDec2CondOrder(void) const { return Dec2CondOrder; }
+  const std::map<UUID_t, std::size_t>
+  &getUuid2AssgnPos(void) const { return Uuid2AssgnPos; }
   
  private:
   static size_t findMatch(const Assignment_t &LHS,

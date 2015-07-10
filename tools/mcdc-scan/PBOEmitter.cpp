@@ -21,28 +21,21 @@
 using namespace llvm;
 using namespace instcov;
 
-void PBOProblemOpt::emit(std::ostream &OS, const PBVarPrinter &VP) const {
-  OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs;
-  OS << std::endl;
-  if (!ObjFunc.empty()) {
-    OS << "min: ";
-    ObjFunc.emit(OS, VP);
-    OS << ";" << std::endl;
-  } else {
-    OS << "* no objective function" << std::endl;
-  }
-  OS << "* GeneralConstrs" << std::endl;
-  emitConstrs(GeneralConstrs, OS, VP);
+void PBOProblemOpt::emitConstrs(
+    std::ostream &OS, const PBVarPrinter &VP) const {
+  PBOProblem::emitConstrs(OS, VP);
   OS << "* TID2Assgn" << std::endl;
-  emitConstrs(TID2Assgn, OS, VP);
+  instcov::emitConstrs(TID2Assgn, OS, VP);
   OS << "* ConditionMatch" << std::endl;
-  emitConstrs(ConditionMatch, OS, VP);
+  instcov::emitConstrs(ConditionMatch, OS, VP);
+  OS << "* AssgnMatch" << std::endl;
+  instcov::emitConstrs(AssgnMatch, OS, VP);  
   OS << "* CDAssgnMatch" << std::endl;
-  emitConstrs(CDAssgnMatch, OS, VP);
+  instcov::emitConstrs(CDAssgnMatch, OS, VP);
   OS << "* CDAssgnPair" << std::endl;
-  emitConstrs(CDAssgnPair, OS, VP);
+  instcov::emitConstrs(CDAssgnPair, OS, VP);
   OS << "* CDAssgn" << std::endl;
-  emitConstrs(CDAssgn, OS, VP);
+  instcov::emitConstrs(CDAssgn, OS, VP);
 }
 
 PBOProblemOpt PBOEmitter::emitPBO(void) {
@@ -170,7 +163,7 @@ void PBOEmitter::pboEmitPerCDAssgnMatchAndPairs(
     const Assignment_t &Assgn1,
     const Assignment_t &Assgn2) {
   PBVar VarTF = encodeCDAssgnPair(UuidD, UuidC, Assgn1, 'T', Assgn2, 'F');
-  PBVar VarFT = encodeCDAssgnPair(UuidD, UuidC, Assgn1, 'T', Assgn2, 'F');
+  PBVar VarFT = encodeCDAssgnPair(UuidD, UuidC, Assgn1, 'F', Assgn2, 'T');
   PBVar VarT1 = encodeCDAssgn(UuidD, UuidC, Assgn1, 'T');
   PBVar VarF1 = encodeCDAssgn(UuidD, UuidC, Assgn1, 'F');
   PBVar VarT2 = encodeCDAssgn(UuidD, UuidC, Assgn2, 'T');
@@ -210,9 +203,7 @@ void PBOEmitter::pboEmitPerCDAssgn(
   PBVar VarTrue = encodeCDAssgn(UuidD, Uuid, Assgn, 'T');
   PBVar VarFalse = encodeCDAssgn(UuidD, Uuid, Assgn, 'F');
   std::size_t Pos = Analyzer.getUuid2AssgnPos().find(Uuid)->second;
-  std::cerr << "A" << std::endl;
   char Val = Assgn[Pos];
-  std::cerr << "B" << std::endl;
   Problem.CDAssgn.push_back(PBConstr(
       PBLinear(1, PBTerm(
           1, SignedPBVar(VarTrue, true))),
@@ -294,4 +285,41 @@ std::size_t PBOEmitter::getSID(UUID_t Uuid) {
   Uuid2SID[Uuid] = Uuid2SID.size();
   SID2Uuid.push_back(Uuid);
   return Uuid2SID[Uuid];
+}
+
+
+void PBOEmitter::dumpPBVar2Str(std::ostream &OS) const {
+  for (auto ID_Str : ID2Str) {
+    OS << "x" << ID_Str.first << ": " << ID_Str.second << std::endl;
+  }
+}
+
+void PBOEmitter::dumpSID2LocInfo(std::ostream &OS,
+                                 const LogMgr &LM) const {
+  std::vector<std::size_t> SIDs;
+  for (std::size_t i = 0; i < SID2Uuid.size(); ++i) {
+    SIDs.push_back(i);
+  }
+
+  struct SIDSorter {
+    SIDSorter(const LogMgr &lm, const std::vector<UUID_t> &sid2uuid)
+        : LM(lm), SID2Uuid(sid2uuid) {}
+
+    bool operator()(std::size_t LHS, std::size_t RHS) const {
+      const LocInfo &LHSLoc = LM.getLocInfo(SID2Uuid[LHS]);
+      const LocInfo &RHSLoc = LM.getLocInfo(SID2Uuid[RHS]);
+      return std::make_tuple(LHSLoc.File, LHSLoc.Line, LHSLoc.Col) <
+        std::make_tuple(RHSLoc.File, RHSLoc.Line, RHSLoc.Col);
+    }
+    const LogMgr &LM;
+    const std::vector<UUID_t> &SID2Uuid;
+  };
+
+  // std::sort(SIDs.begin(), SIDs.end(), SIDSorter(LM, SID2Uuid));
+  for (auto SID : SIDs) {
+    UUID_t Uuid = SID2Uuid[SID];
+    const LocInfo &Loc = LM.getLocInfo(Uuid);
+    OS << "SID=" << SID << ": UUID=" << Uuid.toString() << ", File="
+       << Loc.File << ", Line=" << Loc.Line << ", Col=" << Loc.Col << std::endl;
+  }
 }

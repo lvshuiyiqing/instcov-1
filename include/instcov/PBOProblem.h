@@ -102,7 +102,10 @@ struct PBOProblem {
   std::size_t NumVars;
   std::size_t NumConstrs;
 
-  virtual void emit(std::ostream &OS, const PBVarPrinter &VP) const;
+  void emitHeader(std::ostream &OS) const;
+  void emitObj(std::ostream &OS, const PBVarPrinter &VP) const;
+  virtual void emitConstrs(std::ostream &OS, const PBVarPrinter &VP) const;
+  void emit(std::ostream &OS, const PBVarPrinter &VP) const;
   void emitPretty(std::ostream &OS,
                   const std::map<PBVar, std::string> &ID2Str) const;
   void emitRaw(std::ostream &OS) const;

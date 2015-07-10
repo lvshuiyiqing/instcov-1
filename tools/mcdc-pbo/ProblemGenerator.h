@@ -27,7 +27,7 @@ struct PBOProblemNOpt : public PBOProblem {
   PBOProblemNOpt(void)
       : PBOProblem() {}
   
-  virtual void emit(std::ostream &OS, const PBVarPrinter &VP) const;
+  virtual void emitConstrs(std::ostream &OS, const PBVarPrinter &VP) const;
   
   std::vector<PBConstr> ConditionMatch;
   std::vector<PBConstr> VisitMatch;

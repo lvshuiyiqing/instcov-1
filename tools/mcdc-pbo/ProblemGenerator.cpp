@@ -21,28 +21,19 @@
 using namespace llvm;
 using namespace instcov;
 
-void PBOProblemNOpt::emit(std::ostream &OS, const PBVarPrinter &VP) const {
-  OS << "* #variable= " << NumVars << " #constraint= " << NumConstrs;
-  OS << std::endl;
-  if (!ObjFunc.empty()) {
-    OS << "min: ";
-    ObjFunc.emit(OS, VP);
-    OS << ";" << std::endl;
-  } else {
-    OS << "* no objective function" << std::endl;
-  }
-  OS << "* GeneralConstrs" << std::endl;
-  emitConstrs(GeneralConstrs, OS, VP);
+void PBOProblemNOpt::emitConstrs(
+    std::ostream &OS, const PBVarPrinter &VP) const {
+  PBOProblem::emitConstrs(OS, VP);
   OS << "* ConditionMatch" << std::endl;
-  emitConstrs(ConditionMatch, OS, VP);
+  instcov::emitConstrs(ConditionMatch, OS, VP);
   OS << "* VisitMatch" << std::endl;
-  emitConstrs(VisitMatch, OS, VP);
+  instcov::emitConstrs(VisitMatch, OS, VP);
   OS << "* CDAssgnMatch" << std::endl;
-  emitConstrs(CDAssgnMatch, OS, VP);
+  instcov::emitConstrs(CDAssgnMatch, OS, VP);
   OS << "* CDAssgnPair" << std::endl;
-  emitConstrs(CDAssgnPair, OS, VP);
+  instcov::emitConstrs(CDAssgnPair, OS, VP);
   OS << "* CDAssgn" << std::endl;
-  emitConstrs(CDAssgn, OS, VP);
+  instcov::emitConstrs(CDAssgn, OS, VP);
 }
 
 ProblemGenerator::ProblemGenerator(void) {
