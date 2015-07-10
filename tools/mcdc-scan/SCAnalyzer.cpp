@@ -63,12 +63,20 @@ void SCAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
 void SCAnalyzer::finalize(void) {
   for (auto &&Dec_Assgn2Entries : Dec2Assgn2Entries) {
     UUID_t Uuid_D = Dec_Assgn2Entries.first;
+    std::cerr << Uuid_D.toString() << std::endl;
     for (auto it1 = Dec_Assgn2Entries.second.begin(),
              ie = Dec_Assgn2Entries.second.end(); it1 != ie; ++it1) {
       auto it2 = it1;
       ++it2;
       for (; it2 != ie; ++it2) {
         size_t MatchedID = findMatch(it1->first, it2->first);
+        std::cerr << "<" << it1->first << "," << it2->first << ">:";
+        if (MatchedID != (size_t)-1) {
+          std::cerr << MatchedID;
+        } else {
+          std::cerr << "NA";
+        }
+        std::cerr << std::endl;
         if (MatchedID != (size_t)-1) {
           UUID_t Uuid_C = Dec2CondOrder[Uuid_D][MatchedID];
           if (it1->first[MatchedID] == 'T') {
