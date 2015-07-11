@@ -26,8 +26,11 @@ struct PBOProblemOpt : public PBOProblem {
   virtual void emitConstrs(std::ostream &OS, const PBVarPrinter &VP) const;
 
   std::vector<PBConstr> TID2Assgn;
+  std::vector<PBConstr> MaxConditionMatch;
   std::vector<PBConstr> ConditionMatch;
+  std::vector<PBConstr> ConditionCanMatch;
   std::vector<PBConstr> AssgnMatch;
+  std::vector<PBConstr> AssgnCanMatch;
   std::vector<PBConstr> CDAssgnMatch;
   std::vector<PBConstr> CDAssgnPair;
   std::vector<PBConstr> CDAssgn;
@@ -52,8 +55,12 @@ class PBOEmitter {
   PBVar encodeStr(const std::string &str);
   PBVar encodeTID(std::size_t TID);
   PBVar encodeConditionMatch(UUID_t UuidC);
+  PBVar encodeConditionCanMatch(UUID_t UuidC);
   PBVar encodeAssgn(UUID_t UuidD, const Assignment_t &Assgn);
   PBVar encodeAssgnMatch(
+      UUID_t UuidD, UUID_t UuidC,
+      const Assignment_t &Assgn1, const Assignment_t &Assgn2);
+  PBVar encodeAssgnCanMatch(
       UUID_t UuidD, UUID_t UuidC,
       const Assignment_t &Assgn1, const Assignment_t &Assgn2);
   PBVar encodeCDAssgnMatch(
@@ -90,6 +97,7 @@ class PBOEmitter {
       UUID_t UuidD, UUID_t Uuid, const Assignment_t &Assgn);
 
  private:
+  std::set<std::size_t> TIDs;
   std::map<UUID_t, std::size_t> Uuid2SID;
   std::vector<UUID_t> SID2Uuid;
   llvm::StringMap<PBVar> IDPool;

@@ -26,10 +26,16 @@ void PBOProblemOpt::emitConstrs(
   PBOProblem::emitConstrs(OS, VP);
   OS << "* TID2Assgn" << std::endl;
   instcov::emitConstrs(TID2Assgn, OS, VP);
+  OS << "* MaxConditionMatch" << std::endl;
+  instcov::emitConstrs(MaxConditionMatch, OS, VP);
   OS << "* ConditionMatch" << std::endl;
   instcov::emitConstrs(ConditionMatch, OS, VP);
+  OS << "* ConditionCanMatch" << std::endl;
+  instcov::emitConstrs(ConditionCanMatch, OS, VP);
   OS << "* AssgnMatch" << std::endl;
-  instcov::emitConstrs(AssgnMatch, OS, VP);  
+  instcov::emitConstrs(AssgnMatch, OS, VP);
+  OS << "* AssgnCanMatch" << std::endl;
+  instcov::emitConstrs(AssgnCanMatch, OS, VP);
   OS << "* CDAssgnMatch" << std::endl;
   instcov::emitConstrs(CDAssgnMatch, OS, VP);
   OS << "* CDAssgnPair" << std::endl;
@@ -40,17 +46,21 @@ void PBOProblemOpt::emitConstrs(
 
 PBOProblemOpt PBOEmitter::emitPBO(void) {
   PBOProblemOpt Problem;
-  pboEmitObj(Problem);
   pboEmitTIDAssgn(Problem);
   pboEmitConditionMatch(Problem);
   pboEmitByAssgnPairs(Problem);
   pboEmitCDAssgn(Problem);
+  // emit last
+  pboEmitObj(Problem);
 
   Problem.NumVars = IDPool.size();
   Problem.NumConstrs = 0;
   Problem.NumConstrs += Problem.TID2Assgn.size();
+  Problem.NumConstrs += Problem.MaxConditionMatch.size();
   Problem.NumConstrs += Problem.ConditionMatch.size();
+  Problem.NumConstrs += Problem.ConditionCanMatch.size();
   Problem.NumConstrs += Problem.AssgnMatch.size();
+  Problem.NumConstrs += Problem.AssgnCanMatch.size();
   Problem.NumConstrs += Problem.CDAssgnMatch.size();
   Problem.NumConstrs += Problem.CDAssgnPair.size();
   Problem.NumConstrs += Problem.CDAssgn.size();
@@ -59,11 +69,15 @@ PBOProblemOpt PBOEmitter::emitPBO(void) {
 
 void PBOEmitter::pboEmitObj(PBOProblemOpt &Problem) {
   PBLinear ObjFunc;
-  for (auto &Dec_CondOrder : Analyzer.getDec2CondOrder()) {
-    for (auto &UuidC : Dec_CondOrder.second) {
-      PBVar Var = encodeConditionMatch(UuidC);
-      ObjFunc.push_back(PBTerm(-1, SignedPBVar(Var, true)));
-    }
+  // for (auto &Dec_CondOrder : Analyzer.getDec2CondOrder()) {
+  //   for (auto &UuidC : Dec_CondOrder.second) {
+  //     PBVar Var = encodeConditionMatch(UuidC);
+  //     ObjFunc.push_back(PBTerm(-1, SignedPBVar(Var, true)));
+  //   }
+  // }
+  for (auto TID : TIDs) {
+    PBVar Var = encodeTID(TID);
+    ObjFunc.push_back(PBTerm(1, SignedPBVar(Var, true)));
   }
   Problem.ObjFunc = ObjFunc;
 }
@@ -102,7 +116,7 @@ void PBOEmitter::pboEmitPerConditionMatch(
     PBOProblemOpt &Problem, UUID_t UuidD, UUID_t UuidC) {
   auto &Assgn2Entries =
       Analyzer.getDec2Assgn2Entries().find(UuidD)->second;
-  SVarList SVars;
+  SVarList SVars, SVarsCanMatch;
   for (auto it1 = Assgn2Entries.begin(), ie = Assgn2Entries.end();
        it1 != ie; ++it1) {
     auto it2 = it1;
@@ -110,10 +124,23 @@ void PBOEmitter::pboEmitPerConditionMatch(
     for (; it2 != ie; ++it2) {
       SVars.push_back(SignedPBVar(
           encodeAssgnMatch(UuidD, UuidC, it1->first, it2->first), true));
+      SVarsCanMatch.push_back(SignedPBVar(
+          encodeAssgnCanMatch(UuidD, UuidC, it1->first, it2->first), true));
     }
   }
-  genPBIdiomOr(SVars, SignedPBVar(encodeConditionMatch(UuidC), true),
+  SignedPBVar SVarConditionMatch(encodeConditionMatch(UuidC), true);
+  SignedPBVar SVarConditionCanMatch(encodeConditionCanMatch(UuidC), true);
+  genPBIdiomOr(SVars, SVarConditionMatch,
                Problem.ConditionMatch);
+  genPBIdiomOr(SVarsCanMatch, SVarConditionCanMatch,
+               Problem.ConditionCanMatch);
+  // for maximizing condition match
+  PBConstr Constr;
+  Constr.LHS.push_back(PBTerm(1, SVarConditionMatch));
+  Constr.LHS.push_back(PBTerm(-1, SVarConditionCanMatch));
+  Constr.RHS = 0;
+  Constr.IsEqual = false;
+  Problem.MaxConditionMatch.push_back(Constr);
 }
 
 void PBOEmitter::pboEmitByAssgnPairs(PBOProblemOpt &Problem) {
@@ -145,18 +172,25 @@ void PBOEmitter::pboEmitPerAssgnMatch(
     const Assignment_t &Assgn1,
     const Assignment_t &Assgn2) {
   const auto &Conditions = Analyzer.getDec2CondOrder().find(UuidD)->second;
-  SVarList SVars;
+  SVarList SVars, SVarsCanMatch;
   SVars.push_back(SignedPBVar(encodeAssgn(UuidD, Assgn1), true));
   SVars.push_back(SignedPBVar(encodeAssgn(UuidD, Assgn2), true));
   SVars.push_back(SignedPBVar(
       encodeCDAssgnMatch(UuidD, UuidD, Assgn1, Assgn2), false));
+  SVarsCanMatch.push_back(SignedPBVar(
+      encodeCDAssgnMatch(UuidD, UuidD, Assgn1, Assgn2), false));
   for (auto &Cond : Conditions) {
     PBVar Var = encodeCDAssgnMatch(UuidD, Cond, Assgn1, Assgn2);
     SVars.push_back(SignedPBVar(Var, Cond != UuidC));
+    SVarsCanMatch.push_back(SignedPBVar(Var, Cond != UuidC));
   }
   PBVar VarAssgnMatch = encodeAssgnMatch(
       UuidD, UuidC, Assgn1, Assgn2);
+  PBVar VarAssgnCanMatch = encodeAssgnCanMatch(
+      UuidD, UuidC, Assgn1, Assgn2);
   genPBIdiomAnd(SVars, SignedPBVar(VarAssgnMatch, true), Problem.AssgnMatch);
+  genPBIdiomAnd(SVarsCanMatch, SignedPBVar(VarAssgnCanMatch, true),
+                Problem.AssgnCanMatch);
 }
 
 void PBOEmitter::pboEmitPerCDAssgnMatchAndPairs(
@@ -225,6 +259,7 @@ PBVar PBOEmitter::encodeStr(const std::string &str) {
 }
 
 PBVar PBOEmitter::encodeTID(std::size_t TID) {
+  TIDs.insert(TID);
   std::stringstream ss;
   ss << "t_" << TID;
   return encodeStr(ss.str());
@@ -233,6 +268,12 @@ PBVar PBOEmitter::encodeTID(std::size_t TID) {
 PBVar PBOEmitter::encodeConditionMatch(UUID_t UuidC) {
   std::stringstream ss;
   ss << "cm_" << getSID(UuidC);
+  return encodeStr(ss.str());
+}
+
+PBVar PBOEmitter::encodeConditionCanMatch(UUID_t UuidC) {
+  std::stringstream ss;
+  ss << "ccm_" << getSID(UuidC);
   return encodeStr(ss.str());
 }
 
@@ -247,6 +288,15 @@ PBVar PBOEmitter::encodeAssgnMatch(
     const Assignment_t &Assgn1, const Assignment_t &Assgn2) {
   std::stringstream ss;
   ss << "am_" << getSID(UuidD) << "_" << getSID(UuidC)
+     << "_" << Assgn1 << "_" << Assgn2;
+  return encodeStr(ss.str());
+}
+
+PBVar PBOEmitter::encodeAssgnCanMatch(
+    UUID_t UuidD, UUID_t UuidC,
+    const Assignment_t &Assgn1, const Assignment_t &Assgn2) {
+  std::stringstream ss;
+  ss << "acm_" << getSID(UuidD) << "_" << getSID(UuidC)
      << "_" << Assgn1 << "_" << Assgn2;
   return encodeStr(ss.str());
 }

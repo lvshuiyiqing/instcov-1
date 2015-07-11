@@ -14,7 +14,7 @@ ENABLE_SHORT_CIRCUITING = True
 CC = 'gcc'
 
 if CC == '':
-  if os.name == 'nt':
-    CC='cl'
-  else:
-    CC='gcc'
+    if os.name == 'nt':
+        CC='cl'
+    else:
+        CC='gcc'
