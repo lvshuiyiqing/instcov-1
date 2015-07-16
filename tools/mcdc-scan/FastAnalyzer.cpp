@@ -46,7 +46,7 @@ void FastAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
       // flip corresponding bits
       bits[i] = !bits[i];
       bits.back() = !bits.back();
-      
+
       size_t hash_value = std::hash<std::vector<bool> >()(bits);
       Data[entry->Decision.first][Uuids[i]][hash_value]
           .FalseSide.push_back(entry);
@@ -67,13 +67,13 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   // decision level
   auto dorder = getSortedIterators(Data, LM);
   for (auto &&it_Dec_Pairs : dorder) {
-    OS << "Decision: " << it_Dec_Pairs->first.toString()
+    OS << it_Dec_Pairs->first.toString()
        << " (" << getLocString(LM, it_Dec_Pairs->first) << ")" << ":"
        << std::endl;
     auto corder =getSortedIterators(it_Dec_Pairs->second, LM);
     // condition level
     for (auto &&it_Cond_Pairs : corder) {
-      OS << "Condition: " << it_Cond_Pairs->first.toString()
+      OS << "-" << it_Cond_Pairs->first.toString()
          << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
       bool IsCovered = false;
       // hash level
@@ -121,7 +121,6 @@ void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
       }
     }
   }
-  OS << "SUMMARY: # covered=" << NumCovered << ", # uncovered=" << NumUncovered
-     << std::endl;
-
+  OS << "SUMMARY: " << NumCovered << "/" << NumCovered + NumUncovered
+     << "covered" << std::endl;
 }
