@@ -81,6 +81,7 @@ class InfoMgr:
                 self.Vars.append(self.translateVar(Var))
 
     def genCoverageReport(self):
+        print "============ coverage report ============"
         CondCover = {}
         NumCovered = 0
         NumTotal = 0
@@ -96,15 +97,15 @@ class InfoMgr:
                 else:
                     CondCover[Uuid] = False
         for UuidD in self.DOrder:
-            print "Condition: "+UuidD+" "+self.Uuid2Loc[UuidD].toString()+":"
+            print UuidD+" "+self.Uuid2Loc[UuidD].toString()+":"
             for UuidC in self.Uuid2Children[UuidD]:
-                msg = "Decision: "+UuidC+" "+self.Uuid2Loc[UuidC].toString()
+                msg = "-"+UuidC+" "+self.Uuid2Loc[UuidC].toString()
                 if CondCover[UuidC]:
                     msg += " > Covered"
                 else:
                     msg += " > Uncovered"
                 print msg
-        print "{0}/{1} covered".format(NumCovered, NumTotal)
+        print "SUMMARY: {0}/{1} covered".format(NumCovered, NumTotal)
 
     def genTestCaseReport(self):
         NumSelected = 0
@@ -119,8 +120,9 @@ class InfoMgr:
                     NumSelected += 1
                 NumTotal += 1
         Selected = sorted(Selected)
+        print "============ selected test cases ============"
         print ' '.join(Selected)
-        print "{0}/{1} selected".format(NumSelected, NumTotal)
+        print "SUMMARY: {0}/{1} selected".format(NumSelected, NumTotal)
 
     def genReport(self):
         self.genCoverageReport()

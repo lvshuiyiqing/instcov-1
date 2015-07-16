@@ -111,13 +111,13 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
   auto dorder = getSortedIterators(Dec2Pairs, LM);
   for (auto &&it_Dec_Pairs : dorder) {
     UUID_t UuidD = it_Dec_Pairs->first;
-    OS << "Decision: " << UuidD.toString()
+    OS << UuidD.toString()
        << " (" << getLocString(LM, it_Dec_Pairs->first) << ")"
        << ":" << std::endl;
     // condition level
     auto corder = getSortedIterators(it_Dec_Pairs->second, LM);
     for (auto &&it_Cond_Pairs : corder) {
-      OS << "Condition: " << it_Cond_Pairs->first.toString()
+      OS << "-" << it_Cond_Pairs->first.toString()
          << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
       if (it_Cond_Pairs->second.empty()) {
         OS << " > Uncovered" << std::endl;
@@ -154,6 +154,6 @@ void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
       }
     }
   }
-  OS << "SUMMARY: # covered=" << NumCovered << ", # uncovered=" << NumUncovered
-     << std::endl;
+  OS << "SUMMARY: " << NumCovered << "/" << NumCovered + NumUncovered
+     << "covered" << std::endl;
 }
