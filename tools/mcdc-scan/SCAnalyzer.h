@@ -27,10 +27,17 @@
 namespace instcov {
 class SCAnalyzer : public MCDCAnalyzer {
  public:
+  SCAnalyzer() : MCDCAnalyzer(AK_SC) {}
+
+  static bool classof(const MCDCAnalyzer *A) {
+    return A->getKind() == AK_SC;
+  }
+
+ public:
   virtual void registerEntry(const LogEntry *entry, const LogMgr &LM);
   virtual void dump(std::ostream &OS, const LogMgr &LM) const;
   virtual void finalize(void);
-  
+
   typedef std::string Assignment_t;
   typedef std::unordered_map<Assignment_t, std::vector<const LogEntry*> >
   Assgn2Entries_t;
@@ -46,7 +53,7 @@ class SCAnalyzer : public MCDCAnalyzer {
   &getDec2CondOrder(void) const { return Dec2CondOrder; }
   const std::map<UUID_t, std::size_t>
   &getUuid2AssgnPos(void) const { return Uuid2AssgnPos; }
-  
+
  private:
   static size_t findMatch(const Assignment_t &LHS,
                           const Assignment_t &RHS);

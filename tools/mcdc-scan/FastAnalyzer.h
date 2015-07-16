@@ -25,6 +25,13 @@
 namespace instcov {
 class FastAnalyzer : public MCDCAnalyzer {
  public:
+  FastAnalyzer() : MCDCAnalyzer(AK_Fast) {}
+
+  static bool classof(const MCDCAnalyzer *A) {
+    return A->getKind() == AK_Fast;
+  }
+
+ public:
   typedef struct {
     std::vector<const LogEntry *> TrueSide;
     std::vector<const LogEntry *> FalseSide;
