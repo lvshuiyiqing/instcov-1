@@ -78,28 +78,6 @@ int main(int argc, char *argv[]) {
               << std::endl;
     return 1;
   }
-  if (EmitPBO) {
-    SCAnalyzer SCA;
-    for (auto &&Entry : LM.getLogEntries()) {
-      SCA.registerEntry(&Entry, LM);
-    }
-    PBOEmitter Emitter(SCA);
-    PBOProblemOpt Problem = Emitter.emitPBO();
-    if (EmitPretty) {
-      Problem.emitPretty(OutFile, Emitter.getID2Str());
-    } else {
-      Problem.emitRaw(OutFile);
-    }
-    std::ofstream InfoFile((OutFileName + ".info").c_str());
-    if (!InfoFile) {
-      std::cerr << "cannot open file for dumping information"
-                << std::endl;
-      return 1;
-    }
-    Emitter.dumpPBVar2Str(InfoFile);
-    Emitter.dumpSID2LocInfo(InfoFile, LM);
-    return 0;
-  }
   std::shared_ptr<MCDCAnalyzer> analyzer;
   if (Analyzer == "fast") {
     analyzer.reset(new FastAnalyzer());
@@ -111,8 +89,21 @@ int main(int argc, char *argv[]) {
   for (auto &&Entry : LM.getLogEntries()) {
     analyzer->registerEntry(&Entry, LM);
   }
-  analyzer->finalize();
-  analyzer->dump(OutFile, LM);
+  if (EmitPBO) {
+    SCAnalyzer *SCA = cast<SCAnalyzer>(analyzer.get());
+    PBOEmitter Emitter(*SCA);
+    PBOProblemOpt Problem = Emitter.emitPBO();
+    if (EmitPretty) {
+      Problem.emitPretty(OutFile, Emitter.getID2Str());
+    } else {
+      Problem.emitRaw(OutFile);
+    }
+    Emitter.dumpPBVar2Str(OutFile);
+    Emitter.dumpSID2LocInfo(OutFile, LM);
+  } else {
+    analyzer->finalize();
+    analyzer->dump(OutFile, LM);
+  }
   return 0;
 }
 

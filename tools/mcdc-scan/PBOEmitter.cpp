@@ -160,7 +160,7 @@ void PBOEmitter::pboEmitByAssgnPairs(PBOProblemOpt &Problem) {
               Problem, UuidD, UuidC, it1->first, it2->first);
         }
         pboEmitPerCDAssgnMatchAndPairs(
-            Problem, UuidD, UuidD, it1->first, it2->first);        
+            Problem, UuidD, UuidD, it1->first, it2->first);
       }
     }
   }
@@ -217,7 +217,7 @@ void PBOEmitter::pboEmitPerCDAssgnMatchAndPairs(
   genPBIdiomOr(SignedPBVar(VarTF, true),
                SignedPBVar(VarFT, true),
                SignedPBVar(VarMatch, false),
-               Problem.CDAssgnMatch);  
+               Problem.CDAssgnMatch);
 }
 
 void PBOEmitter::pboEmitCDAssgn(PBOProblemOpt &Problem) {
@@ -341,37 +341,58 @@ std::size_t PBOEmitter::getSID(UUID_t Uuid) {
 
 
 void PBOEmitter::dumpPBVar2Str(std::ostream &OS) const {
+  OS << "* PB variable info" << std::endl;
   for (auto ID_Str : ID2Str) {
-    OS << "x" << ID_Str.first << ": " << ID_Str.second << std::endl;
+    OS << "* x" << ID_Str.first << ": " << ID_Str.second << std::endl;
   }
 }
 
 void PBOEmitter::dumpSID2LocInfo(std::ostream &OS,
                                  const LogMgr &LM) const {
-  std::vector<std::size_t> SIDs;
-  for (std::size_t i = 0; i < SID2Uuid.size(); ++i) {
-    SIDs.push_back(i);
-  }
-
-  struct SIDSorter {
-    SIDSorter(const LogMgr &lm, const std::vector<UUID_t> &sid2uuid)
-        : LM(lm), SID2Uuid(sid2uuid) {}
-
-    bool operator()(std::size_t LHS, std::size_t RHS) const {
-      const LocInfo &LHSLoc = LM.getLocInfo(SID2Uuid[LHS]);
-      const LocInfo &RHSLoc = LM.getLocInfo(SID2Uuid[RHS]);
-      return std::make_tuple(LHSLoc.File, LHSLoc.Line, LHSLoc.Col) <
-        std::make_tuple(RHSLoc.File, RHSLoc.Line, RHSLoc.Col);
+  OS << "* LocInfo" << std::endl;
+  auto dorder = getSortedIterators(Analyzer.getDec2CondOrder(), LM);
+  for (auto it_Dec_CondOrder : dorder) {
+    UUID_t UuidD = it_Dec_CondOrder->first;
+    const LocInfo &LocD = LM.getLocInfo(UuidD);
+    std::size_t SIDD = Uuid2SID.find(UuidD)->second;
+    OS << "* SID=" << SIDD
+       << ": UUID=" << UuidD.toString() << ", Parent=" << UUID_t().toString()
+       << ", File=" << LocD.File << ", Line=" << LocD.Line
+       << ", Col=" << LocD.Col << std::endl;
+    for (auto UuidC : it_Dec_CondOrder->second) {
+      const LocInfo &LocC = LM.getLocInfo(UuidC);
+      std::size_t SIDC = Uuid2SID.find(UuidC)->second;
+      OS << "* SID=" << SIDC
+         << ": UUID=" << UuidC.toString() << ", Parent=" << UuidD.toString()
+         << ", File=" << LocC.File << ", Line=" << LocC.Line
+         << ", Col=" << LocC.Col << std::endl;
     }
-    const LogMgr &LM;
-    const std::vector<UUID_t> &SID2Uuid;
-  };
-
-  // std::sort(SIDs.begin(), SIDs.end(), SIDSorter(LM, SID2Uuid));
-  for (auto SID : SIDs) {
-    UUID_t Uuid = SID2Uuid[SID];
-    const LocInfo &Loc = LM.getLocInfo(Uuid);
-    OS << "SID=" << SID << ": UUID=" << Uuid.toString() << ", File="
-       << Loc.File << ", Line=" << Loc.Line << ", Col=" << Loc.Col << std::endl;
   }
+  // std::vector<std::size_t> SIDs;
+  // for (std::size_t i = 0; i < SID2Uuid.size(); ++i) {
+  //   SIDs.push_back(i);
+  // }
+
+  // struct SIDSorter {
+  //   SIDSorter(const LogMgr &lm, const std::vector<UUID_t> &sid2uuid)
+  //       : LM(lm), SID2Uuid(sid2uuid) {}
+
+  //   bool operator()(std::size_t LHS, std::size_t RHS) const {
+  //     const LocInfo &LHSLoc = LM.getLocInfo(SID2Uuid[LHS]);
+  //     const LocInfo &RHSLoc = LM.getLocInfo(SID2Uuid[RHS]);
+  //     return std::make_tuple(LHSLoc.File, LHSLoc.Line, LHSLoc.Col) <
+  //       std::make_tuple(RHSLoc.File, RHSLoc.Line, RHSLoc.Col);
+  //   }
+  //   const LogMgr &LM;
+  //   const std::vector<UUID_t> &SID2Uuid;
+  // };
+
+  // OS << "* LocInfo" << std::endl;
+  // // std::sort(SIDs.begin(), SIDs.end(), SIDSorter(LM, SID2Uuid));
+  // for (auto SID : SIDs) {
+  //   UUID_t Uuid = SID2Uuid[SID];
+  //   const LocInfo &Loc = LM.getLocInfo(Uuid);
+  //   OS << "* SID=" << SID << ": UUID=" << Uuid.toString() << ", File="
+  //      << Loc.File << ", Line=" << Loc.Line << ", Col=" << Loc.Col << std::endl;
+  // }
 }
