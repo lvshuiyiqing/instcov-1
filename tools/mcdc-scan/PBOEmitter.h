@@ -25,20 +25,20 @@ struct PBOProblemOpt : public PBOProblem {
       : PBOProblem() {}
   virtual void emitConstrs(std::ostream &OS, const PBVarPrinter &VP) const;
 
-  std::vector<PBConstr> TID2Assgn;
+  std::vector<PBConstr> TID2EV;
   std::vector<PBConstr> MaxConditionMatch;
   std::vector<PBConstr> ConditionMatch;
   std::vector<PBConstr> ConditionCanMatch;
-  std::vector<PBConstr> AssgnMatch;
-  std::vector<PBConstr> AssgnCanMatch;
-  std::vector<PBConstr> CDAssgnMatch;
-  std::vector<PBConstr> CDAssgnPair;
-  std::vector<PBConstr> CDAssgn;
+  std::vector<PBConstr> EVMatch;
+  std::vector<PBConstr> EVCanMatch;
+  std::vector<PBConstr> CDValMatch;
+  std::vector<PBConstr> CDValPair;
+  std::vector<PBConstr> CDVal;
 };
 
 class PBOEmitter {
  public:
-  typedef SCAnalyzer::Assignment_t Assignment_t;
+  typedef SCAnalyzer::EvalVec_t EvalVec_t;
   PBOEmitter(const SCAnalyzer &analyzer)
       : Analyzer(analyzer) {}
 
@@ -56,45 +56,45 @@ class PBOEmitter {
   PBVar encodeTID(std::size_t TID);
   PBVar encodeConditionMatch(UUID_t UuidC);
   PBVar encodeConditionCanMatch(UUID_t UuidC);
-  PBVar encodeAssgn(UUID_t UuidD, const Assignment_t &Assgn);
-  PBVar encodeAssgnMatch(
+  PBVar encodeEV(UUID_t UuidD, const EvalVec_t &EV);
+  PBVar encodeEVMatch(
       UUID_t UuidD, UUID_t UuidC,
-      const Assignment_t &Assgn1, const Assignment_t &Assgn2);
-  PBVar encodeAssgnCanMatch(
+      const EvalVec_t &EV1, const EvalVec_t &EV2);
+  PBVar encodeEVCanMatch(
       UUID_t UuidD, UUID_t UuidC,
-      const Assignment_t &Assgn1, const Assignment_t &Assgn2);
-  PBVar encodeCDAssgnMatch(
+      const EvalVec_t &EV1, const EvalVec_t &EV2);
+  PBVar encodeCDValMatch(
       UUID_t UuidD, UUID_t Uuid,
-      const Assignment_t &Assgn1, const Assignment_t &Assgn2);
-  PBVar encodeCDAssgnPair(
+      const EvalVec_t &EV1, const EvalVec_t &EV2);
+  PBVar encodeCDValPair(
       UUID_t UuidD, UUID_t Uuid,
-      const Assignment_t &Assgn1, char Val1,
-      const Assignment_t &Assgn2, char Val2);
-  PBVar encodeCDAssgn(
-      UUID_t UuidD, UUID_t Uuid, const Assignment_t &Assgn, char Val);
+      const EvalVec_t &EV1, char Val1,
+      const EvalVec_t &EV2, char Val2);
+  PBVar encodeCDVal(
+      UUID_t UuidD, UUID_t Uuid, const EvalVec_t &EV, char Val);
   std::size_t getSID(UUID_t Uuid);
 
   void pboEmitObj(PBOProblemOpt &Problem);
-  void pboEmitTIDAssgn(PBOProblemOpt &Problem);
+  void pboEmitTID2EV(PBOProblemOpt &Problem);
   void pboEmitConditionMatch(PBOProblemOpt &Problem);
   void pboEmitPerConditionMatch(
       PBOProblemOpt &Problem,
       UUID_t UuidD, UUID_t UuidC);
-  void pboEmitByAssgnPairs(PBOProblemOpt &Problem);
-  void pboEmitPerAssgnMatch(
+  void pboEmitByEVPairs(PBOProblemOpt &Problem);
+  void pboEmitPerEVMatch(
       PBOProblemOpt &Problem,
       UUID_t UuidD, UUID_t UuidC,
-      const Assignment_t &Assgn1,
-      const Assignment_t &Assgn2);
-  void pboEmitPerCDAssgnMatchAndPairs(
+      const EvalVec_t &EV1,
+      const EvalVec_t &EV2);
+  void pboEmitPerCDValMatchAndPairs(
       PBOProblemOpt &Problem,
       UUID_t UuidD, UUID_t UuidC,
-      const Assignment_t &Assgn1,
-      const Assignment_t &Assgn2);
-  void pboEmitCDAssgn(PBOProblemOpt &Problem);
-  void pboEmitPerCDAssgn(
+      const EvalVec_t &EV1,
+      const EvalVec_t &EV2);
+  void pboEmitCDVal(PBOProblemOpt &Problem);
+  void pboEmitPerCDVal(
       PBOProblemOpt &Problem,
-      UUID_t UuidD, UUID_t Uuid, const Assignment_t &Assgn);
+      UUID_t UuidD, UUID_t Uuid, const EvalVec_t &EV);
 
  private:
   std::set<std::size_t> TIDs;

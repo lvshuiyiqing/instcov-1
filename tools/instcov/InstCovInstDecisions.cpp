@@ -76,7 +76,7 @@ namespace{
           << "ERR: cannot find the original location\n";
       exit(1);
     }
-    
+
     const char *tokenBegin = file.data() + locInfo.second;
 
     Lexer lexer(SM.getLocForStartOfFile(locInfo.first),
@@ -105,12 +105,12 @@ namespace{
   }
 
   typedef std::vector<std::pair<UUID_t, uint64_t> > InstInfo;
-  
+
   void InstCompoundStmt(
       CompoundStmt *s, Rewriter &R,
       const InstInfo &instinfo) {
     std::stringstream ss;
-    for (auto &&Uuid_Bid : instinfo) {
+    for (auto &Uuid_Bid : instinfo) {
       ss << "\n  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString()
          << ", " << Uuid_Bid.second << ");";
     }
@@ -122,7 +122,7 @@ namespace{
       const InstInfo &instinfo) {
     std::stringstream ss;
     ss << "{\n";
-    for (auto &&Uuid_Bid : instinfo) {
+    for (auto &Uuid_Bid : instinfo) {
       ss << "  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
        << Uuid_Bid.second << ");\n";
     }
@@ -148,7 +148,7 @@ namespace{
     if (braces) {
       ss << "{\n";
     }
-    for (auto &&Uuid_Bid : instinfo) {
+    for (auto &Uuid_Bid : instinfo) {
       if (indent) {
         ss << "  ";
       }
@@ -225,7 +225,7 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
     ThenInfo.push_back(std::make_pair(UuidVD, 1));
     ElseInfo.push_back(std::make_pair(UuidVD, 0));
   }
-  
+
   if (Else) {
     InstInBlock(Else, TheRewriter, ElseInfo);
   } else {
@@ -411,7 +411,7 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
   if (!InstRHS) {
     return true;
   }
-  for (auto &&decl : s->decls()) {
+  for (auto &decl : s->decls()) {
     if (VarDecl *VD = dyn_cast<VarDecl>(decl)) {
       if (Expr *e = VD->getInit()) {
         handleRHS4Assgn_NormalVarDecl(e);
@@ -432,7 +432,7 @@ bool InstCovASTVisitor::TraverseCallExpr(CallExpr *e) {
       return true;
     }
   }
-  RecursiveASTVisitor<InstCovASTVisitor>::TraverseCallExpr(e);  
+  RecursiveASTVisitor<InstCovASTVisitor>::TraverseCallExpr(e);
   return true;
 }
 
