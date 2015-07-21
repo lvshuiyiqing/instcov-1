@@ -58,13 +58,12 @@ cl::opt<bool> EmitPretty(
 
 cl::opt<std::string> OutFileName(
     "o",
-    cl::desc("specify the output file"),
-    cl::Required);
+    cl::desc("specify the output file"));
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
   LogMgr LM;
-  for (auto &&FileName : FileNames) {
+  for (auto &FileName : FileNames) {
     LM.loadFile(FileName);
   }
   if (EmitPBO && Analyzer != "sc") {
@@ -72,11 +71,16 @@ int main(int argc, char *argv[]) {
               << std::endl;
     return 1;
   }
-  std::ofstream OutFile(OutFileName.c_str());
-  if (!OutFile) {
-    std::cerr << "cannot open \"" << OutFileName << "\" for output"
-              << std::endl;
-    return 1;
+  std::unique_ptr<std::ofstream> OutFile;
+  std::ostream *OS = &std::cout;
+  if (!OutFileName.empty()) {
+    OutFile.reset(new std::ofstream(OutFileName.c_str()));
+    if (!OutFile) {
+      std::cerr << "cannot open \"" << OutFileName << "\" for output"
+                << std::endl;
+      return 1;
+    }
+    OS = OutFile.get();
   }
   std::shared_ptr<MCDCAnalyzer> analyzer;
   if (Analyzer == "fast") {
@@ -86,7 +90,7 @@ int main(int argc, char *argv[]) {
   } else {
     std::cerr << "wrong analyzer: " << Analyzer << std::endl;
   }
-  for (auto &&Entry : LM.getLogEntries()) {
+  for (auto &Entry : LM.getLogEntries()) {
     analyzer->registerEntry(&Entry, LM);
   }
   if (EmitPBO) {
@@ -94,16 +98,15 @@ int main(int argc, char *argv[]) {
     PBOEmitter Emitter(*SCA);
     PBOProblemOpt Problem = Emitter.emitPBO();
     if (EmitPretty) {
-      Problem.emitPretty(OutFile, Emitter.getID2Str());
+      Problem.emitPretty(*OS, Emitter.getID2Str());
     } else {
-      Problem.emitRaw(OutFile);
+      Problem.emitRaw(*OS);
     }
-    Emitter.dumpPBVar2Str(OutFile);
-    Emitter.dumpSID2LocInfo(OutFile, LM);
+    Emitter.dumpPBVar2Str(*OS);
+    Emitter.dumpSID2LocInfo(*OS, LM);
   } else {
     analyzer->finalize();
-    analyzer->dump(OutFile, LM);
+    analyzer->dump(*OS, LM);
   }
   return 0;
 }
-

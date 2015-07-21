@@ -64,15 +64,31 @@ instcov. The code will be injected with profiling code:
     can be run after Step 2.
 
 6. When you have run one or more test cases, and have obtained one or more `.pt`
-files, you can analysis the MC/DC coverage using `mcdc-scan`:
+   files, you can analysis the MC/DC coverage using `mcdc-scan`:
 
-	`<path-to-mcdc-scan>/mcdc-scan <.pt files ...>`
+	`<path-to-mcdc-scan>/mcdc-scan <.pt files ...> <-o output_file>`
 
 	You can also use `-v` option to make `mcdc-scan` to print more verbosely,
     showing all the MC/DC pairs. Node that the MC/DC pairs are recognized by
     visits, because one test case may visit a decision multiple times. We need
     to tell which visit of which test case pairs with another visit of some test
     case. Each visit is identified by `<test ID, visit ID>`.
+
+7. Additionally, `mcdc-scan` also supports encoding the problem of minimizing
+   the number of selected test cases to reach maximum MC/DC coverage into a PBO
+   (pseudo-Boolean Optimization) problem.
+
+	You can enable this feature by adding `-emit-pbo` option to `mcdc-scan`,
+   then the output file will be a PBO problem.
+
+	You should then solve the problem using PBO solvers (e.g. `clasp`) to
+   generate the result. The output of PBO solvers is barely easy to understand,
+   you can use
+
+	`scripts/parse_pbo_out.py <solver_output_file> <PBO file>`
+
+	to parse the output and generate the result. Note that the generated PBO
+   problem file contains meta information which is used by the script.
 
 ## Using the scripts
 
@@ -166,7 +182,7 @@ programs such as `tcas` and `replace`. Here are several examples.
 			}
 			return 0;
 		}
-			
+
 	The analyzed trace (the format is `<condition/decision id>:<branch id>
     (<line>:<col>:<file>)`)
 

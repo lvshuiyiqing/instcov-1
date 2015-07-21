@@ -38,30 +38,30 @@ class SCAnalyzer : public MCDCAnalyzer {
   virtual void dump(std::ostream &OS, const LogMgr &LM) const;
   virtual void finalize(void);
 
-  typedef std::string Assignment_t;
-  typedef std::unordered_map<Assignment_t, std::vector<const LogEntry*> >
-  Assgn2Entries_t;
-  typedef std::pair<Assignment_t, Assignment_t> MCDCPair_t;
+  typedef std::string EvalVec_t;
+  typedef std::unordered_map<EvalVec_t, std::set<std::size_t> >
+  EV2TIDs_t;
+  typedef std::pair<EvalVec_t, EvalVec_t> MCDCPair_t;
   typedef std::map<UUID_t, std::vector<MCDCPair_t> > CondPairs_t;
   typedef std::map<UUID_t, CondPairs_t> DecPairs_t;
 
  public:
   const DecPairs_t &getDec2Pairs(void) const { return Dec2Pairs; }
-  const std::map<UUID_t, Assgn2Entries_t>
-  &getDec2Assgn2Entries(void) const { return Dec2Assgn2Entries; }
+  const std::map<UUID_t, EV2TIDs_t>
+  &getDec2EV2TIDs(void) const { return Dec2EV2TIDs; }
   const std::map<UUID_t, std::vector<UUID_t> >
   &getDec2CondOrder(void) const { return Dec2CondOrder; }
   const std::map<UUID_t, std::size_t>
-  &getUuid2AssgnPos(void) const { return Uuid2AssgnPos; }
+  &getUuid2EVPos(void) const { return Uuid2EVPos; }
 
  private:
-  static size_t findMatch(const Assignment_t &LHS,
-                          const Assignment_t &RHS);
+  static size_t findMatch(const EvalVec_t &LHS,
+                          const EvalVec_t &RHS);
   DecPairs_t Dec2Pairs;
 
-  std::map<UUID_t, Assgn2Entries_t> Dec2Assgn2Entries;
+  std::map<UUID_t, EV2TIDs_t> Dec2EV2TIDs;
   std::map<UUID_t, std::vector<UUID_t> > Dec2CondOrder;
-  std::map<UUID_t, std::size_t> Uuid2AssgnPos;
+  std::map<UUID_t, std::size_t> Uuid2EVPos;
 };
 }
 

@@ -35,8 +35,8 @@ class LogEntry {
       : TID(-1), VID(-1) {}
 
   void dump(std::ostream &OS) const;
-  std::map<UUID_t, uint64_t> Conditions;
-  std::pair<UUID_t, uint64_t> Decision;
+  std::map<UUID_t, uint64_t> Cond2Val;
+  std::pair<UUID_t, uint64_t> DecVal;
   std::size_t TID;
   std::size_t VID;
 };
@@ -56,11 +56,11 @@ class LogMgr {
   const std::vector<std::string> &getFileNames() const {
     return FileNames;
   }
-  
+
   const std::vector<LogEntry> &getLogEntries() const {
     return LogEntries;
   }
-  
+
   const std::map<UUID_t, std::set<UUID_t> > &getChildren() const {
     return Children;
   }
@@ -72,11 +72,11 @@ class LogMgr {
   bool hasLocInfo(UUID_t Uuid) const {
     return LocInfos.count(Uuid);
   }
-  
+
   const LocInfo &getLocInfo(UUID_t Uuid) const {
     return LocInfos.find(Uuid)->second;
   }
-  
+
  private:
   std::vector<std::string> FileNames;
   std::vector<LogEntry> LogEntries;
