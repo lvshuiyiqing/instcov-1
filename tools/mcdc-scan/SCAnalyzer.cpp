@@ -31,7 +31,7 @@ char bid2char(uint64_t bid) {
     return 'F';
   }
   if (bid == BID_NA) {
-    return 'N';
+    return 'X';
   }
   std::cerr << "invalid BID" << std::endl;
   exit(1);
@@ -39,7 +39,7 @@ char bid2char(uint64_t bid) {
 }
 
 bool isMatch(char LHS, char RHS) {
-  return (LHS == RHS || LHS == 'N' || RHS == 'N');
+  return (LHS == RHS || LHS == 'X' || RHS == 'X');
 }
 }
 

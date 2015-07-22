@@ -41,7 +41,9 @@ void PBOProblemOpt::emitConstrs(
       " specific condition) " << std::endl;
   instcov::emitConstrs(EVCanMatch, OS, VP);
   OS << "* CDValMatch (whether the value of a decision/condition is the same"
-      " for two evaluation vectors)" << std::endl;
+      " for two evaluation vectors. Only TT/FF/*X/X*/XX are considered as"
+      " matching pairs)"
+     << std::endl;
   instcov::emitConstrs(CDValMatch, OS, VP);
   OS << "* CDValPair (auxiliary variable representing a decision/condition x"
       " takes the value of v1 in evaluation vector EV1, and takes the value"
