@@ -26,21 +26,29 @@ void PBOProblemOpt::emitConstrs(
   PBOProblem::emitConstrs(OS, VP);
   OS << "* TID2EV" << std::endl;
   instcov::emitConstrs(TID2EV, OS, VP);
-  OS << "* MaxConditionMatch" << std::endl;
+  OS << "* MaxConditionMatch (condition can match"
+      " -> condition must match)" << std::endl;
   instcov::emitConstrs(MaxConditionMatch, OS, VP);
-  OS << "* ConditionMatch" << std::endl;
+  OS << "* ConditionMatch (by selected test cases)" << std::endl;
   instcov::emitConstrs(ConditionMatch, OS, VP);
-  OS << "* ConditionCanMatch" << std::endl;
+  OS << "* ConditionCanMatch (whether match is possible)" << std::endl;
   instcov::emitConstrs(ConditionCanMatch, OS, VP);
-  OS << "* EVMatch" << std::endl;
+  OS << "* EVMatch (two evaluation vectors is a MC/DC pair on"
+      " specific condition and are covered by selected test cases)"
+     << std::endl;
   instcov::emitConstrs(EVMatch, OS, VP);
-  OS << "* EVCanMatch" << std::endl;
+  OS << "* EVCanMatch (two evaluation vectors is a MC/DC pair on"
+      " specific condition) " << std::endl;
   instcov::emitConstrs(EVCanMatch, OS, VP);
-  OS << "* CDValMatch" << std::endl;
+  OS << "* CDValMatch (whether the value of a decision/condition is the same"
+      " for two evaluation vectors)" << std::endl;
   instcov::emitConstrs(CDValMatch, OS, VP);
-  OS << "* CDValPair" << std::endl;
+  OS << "* CDValPair (auxiliary variable representing a decision/condition x"
+      " takes the value of v1 in evaluation vector EV1, and takes the value"
+      " of v2 in evaluation vector EV2)" << std::endl;
   instcov::emitConstrs(CDValPair, OS, VP);
-  OS << "* CDVal" << std::endl;
+  OS << "* CDVal (the values of decisions/conditions in evaluation vectors)"
+     << std::endl;
   instcov::emitConstrs(CDVal, OS, VP);
 }
 
@@ -50,7 +58,8 @@ PBOProblemOpt PBOEmitter::emitPBO(void) {
   pboEmitConditionMatch(Problem);
   pboEmitByEVPairs(Problem);
   pboEmitCDVal(Problem);
-  // emit last
+  // emit last, since the TID information need to be stored first,
+  // which is done during the previous steps
   pboEmitObj(Problem);
 
   Problem.NumVars = IDPool.size();
