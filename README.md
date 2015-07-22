@@ -125,12 +125,12 @@ the program and run `instcov-view`.
 By default, instcov supports short-circuit handling. This means that only the
 conditions that are evaluated during execution is dumped. For example, if the
 decision is `a||b`, and if `a=true`, `b=true` at this point, the value of `b`
-will not dumped, thus labeled as `N` (unevaluated).
+will not dumped, thus labeled as `X` (unevaluated).
 
-When finding `MC/DC` pairs, if either side of assignment of a condition is `N`,
+When finding `MC/DC` pairs, if either side of assignment of a condition is `X`,
 then the two assignment of the condition is identical. For example, assignments:
 
-	TN=>T
+	TX=>T
 	FF=>F
 
 will be considered an `MC/DC` pair on the first condition.

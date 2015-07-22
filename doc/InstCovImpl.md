@@ -387,24 +387,25 @@ pairs, we first check each evaluation vector pair to see whether the decision is
 evaluated to different results. If yes, we then check whether there are exactly
 one condition evaluated to different results. If some condition of either
 evaluation vector is not evaluated, we consider the condition is evaluated to
-same values in the two evaluation vectors. We denote unevaluated conditions with
-`N`. Here are some examples:
+same values in the two evaluation vectors (i.e. `TT/FF/TX/FX/XT/XF/XX` are
+considered matching values). We denote unevaluated conditions with
+`X`. Here are some examples:
 
-	FTNNN => T
+	FTXXX => T
 	FFFFF => F
 	 *       *
 
 This means the two evaluation vectors is an MC/DC pair on the second condition.
 
-	FTNNN => T
-	FFTNN => T
+	FTXXX => T
+	FFTXX => T
 	 *
 
 The two evaluation vectors do not form an MC/DC pair since the decision is
 evaluated to same values.
 
-	FTFFN => T
-	TTTNT => F
+	FTFFX => T
+	TTTXT => F
 	* *      *
 
 The two evaluation vectors do not form an MC/DC pair since two decisions are
