@@ -45,7 +45,7 @@ void DISlotTree::fill(UUID_t Uuid, uint64_t bid) {
     llvm::errs() << "the node is: " << Uuid.toString() << "\n";
     llvm::errs() << "its root node is: " << DIB.toRoot(Uuid).toString()
                  << "\n";
-    llvm::errs() << "the root should be: " << R.toString() << "\n"; 
+    llvm::errs() << "the root should be: " << R.toString() << "\n";
     exit(1);
   }
   Records[Uuid] = bid;
@@ -62,7 +62,7 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
   for (uint64_t i = 0; i < depth; ++i) {
     OS << "-";
   }
-  const DbgInfo &DI = DIB.getDbgInfo(Uuid); 
+  const DbgInfo &DI = DIB.getDbgInfo(Uuid);
   for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
     switch (DumpFormat[i]) {
       case 'u':
@@ -93,7 +93,7 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
     }
   }
   OS << "\n";
-  for (auto &&Child : DI.Children) {
+  for (auto &Child : DI.Children) {
     printTreeDFS(OS, Child, depth+1);
   }
 }

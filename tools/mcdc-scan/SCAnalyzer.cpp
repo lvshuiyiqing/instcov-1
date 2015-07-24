@@ -31,7 +31,7 @@ char bid2char(uint64_t bid) {
     return 'F';
   }
   if (bid == BID_NA) {
-    return 'N';
+    return 'X';
   }
   std::cerr << "invalid BID" << std::endl;
   exit(1);
@@ -39,44 +39,44 @@ char bid2char(uint64_t bid) {
 }
 
 bool isMatch(char LHS, char RHS) {
-  return (LHS == RHS || LHS == 'N' || RHS == 'N');
+  return (LHS == RHS || LHS == 'X' || RHS == 'X');
 }
 }
 
 void SCAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
-  Assignment_t NewAssignment;
+  EvalVec_t NewEV;
   std::vector<UUID_t> ThisCondOrder;
-  NewAssignment.reserve(entry->Conditions.size()+1);
-  auto corder = getSortedIterators(entry->Conditions, LM);
-  for (auto &&it_Cond_Assgn : corder) {
-    NewAssignment.push_back(bid2char(it_Cond_Assgn->second));
-    ThisCondOrder.push_back(it_Cond_Assgn->first);
-    Dec2Pairs[entry->Decision.first][it_Cond_Assgn->first]; // register in the results
+  NewEV.reserve(entry->Cond2Val.size()+1);
+  auto corder = getSortedIterators(entry->Cond2Val, LM);
+  for (auto &it_Cond_Val : corder) {
+    Uuid2EVPos[it_Cond_Val->first] = NewEV.size();
+    NewEV.push_back(bid2char(it_Cond_Val->second));
+    ThisCondOrder.push_back(it_Cond_Val->first);
+    Dec2Pairs[entry->DecVal.first][it_Cond_Val->first]; // register in the results
   }
-  NewAssignment.push_back(bid2char(entry->Decision.second));
-  Dec2Assgns[entry->Decision.first].insert(NewAssignment);
-  Assgn2Entries[NewAssignment].push_back(entry);
-  Dec2CondOrder[entry->Decision.first] = ThisCondOrder;
+  Uuid2EVPos[entry->DecVal.first] = NewEV.size();
+  NewEV.push_back(bid2char(entry->DecVal.second));
+  Dec2EV2TIDs[entry->DecVal.first][NewEV].insert(entry->TID);
+  Dec2CondOrder[entry->DecVal.first] = ThisCondOrder;
 }
 
-
 void SCAnalyzer::finalize(void) {
-  for (auto &&Dec_Assgns : Dec2Assgns) {
-    UUID_t Uuid_D = Dec_Assgns.first;
-    for (auto it1 = Dec_Assgns.second.begin(),
-             ie = Dec_Assgns.second.end(); it1 != ie; ++it1) {
+  for (auto &Dec_EV2TIDs : Dec2EV2TIDs) {
+    UUID_t Uuid_D = Dec_EV2TIDs.first;
+    for (auto it1 = Dec_EV2TIDs.second.begin(),
+             ie = Dec_EV2TIDs.second.end(); it1 != ie; ++it1) {
       auto it2 = it1;
       ++it2;
       for (; it2 != ie; ++it2) {
-        size_t MatchedID = findMatch(*it1, *it2);
+        size_t MatchedID = findMatch(it1->first, it2->first);
         if (MatchedID != (size_t)-1) {
           UUID_t Uuid_C = Dec2CondOrder[Uuid_D][MatchedID];
-          if ((*it1)[MatchedID] == 'T') {
+          if (it1->first[MatchedID] == 'T') {
             Dec2Pairs[Uuid_D][Uuid_C].push_back(
-                std::make_pair(*it1, *it2));
+                std::make_pair(it1->first, it2->first));
           } else {
             Dec2Pairs[Uuid_D][Uuid_C].push_back(
-                std::make_pair(*it2, *it1));
+                std::make_pair(it2->first, it1->first));
           }
         }
       }
@@ -84,8 +84,8 @@ void SCAnalyzer::finalize(void) {
   }
 }
 
-size_t SCAnalyzer::findMatch(const Assignment_t &LHS,
-                             const Assignment_t &RHS) {
+size_t SCAnalyzer::findMatch(const EvalVec_t &LHS,
+                             const EvalVec_t &RHS) {
   if (LHS.empty() || RHS.empty() || LHS.size() != RHS.size()) {
     return -1;
   }
@@ -105,45 +105,55 @@ size_t SCAnalyzer::findMatch(const Assignment_t &LHS,
 }
 
 void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
+  std::size_t NumCovered = 0;
+  std::size_t NumUncovered = 0;
   // decision level
   auto dorder = getSortedIterators(Dec2Pairs, LM);
-  for (auto &&it_Dec_Pairs : dorder) {
-    OS << "Decision: " << it_Dec_Pairs->first.toString()
-       << " (" << getLocString(LM, it_Dec_Pairs->first) << ")" << ":" << std::endl;
+  for (auto &it_Dec_Pairs : dorder) {
+    UUID_t UuidD = it_Dec_Pairs->first;
+    OS << UuidD.toString()
+       << " (" << getLocString(LM, it_Dec_Pairs->first) << ")"
+       << ":" << std::endl;
     // condition level
     auto corder = getSortedIterators(it_Dec_Pairs->second, LM);
-    for (auto &&it_Cond_Pairs : corder) {
-      OS << "Condition: " << it_Cond_Pairs->first.toString()
+    for (auto &it_Cond_Pairs : corder) {
+      OS << "-" << it_Cond_Pairs->first.toString()
          << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
       if (it_Cond_Pairs->second.empty()) {
         OS << " > Uncovered" << std::endl;
+        ++NumUncovered;
       } else {
         OS << " > Covered" << std::endl;
+        ++NumCovered;
       }
       if (!Verbose) {
         continue;
       }
       // assgn pair level
-      for (auto &&Pair : it_Cond_Pairs->second) {
+      for (auto &Pair : it_Cond_Pairs->second) {
         OS << "Pair: <" << Pair.first << ","
            << Pair.second << ">" << std::endl;
-        auto &TrueSideEntries = Assgn2Entries.find(Pair.first)->second;
-        auto &FalseSideEntries = Assgn2Entries.find(Pair.second)->second;
-        OS << "True side: " << TrueSideEntries.size() << std::endl;
+        auto &TrueSideTIDs =
+            Dec2EV2TIDs.find(UuidD)->second.find(Pair.first)->second;
+        auto &FalseSideTIDs =
+            Dec2EV2TIDs.find(UuidD)->second.find(Pair.second)->second;
+        OS << "True side: " << TrueSideTIDs.size() << std::endl;
         if (!CountsOnly) {
-          for (auto &&Entry : TrueSideEntries) {
-            OS << "<" << Entry->TID << "," << Entry->VID << "> ";
+          for (auto TID : TrueSideTIDs) {
+            OS << TID << " ";
           }
         }
         std::cout << std::endl;
-        OS << "False side: " << FalseSideEntries.size() << std::endl;
+        OS << "False side: " << FalseSideTIDs.size() << std::endl;
         if (!CountsOnly) {
-          for (auto &&Entry : FalseSideEntries) {
-            OS << "<" << Entry->TID << "," << Entry->VID << "> ";
+          for (auto TID : FalseSideTIDs) {
+            OS << TID << " ";
           }
         }
         std::cout << std::endl;
       }
     }
   }
+  OS << "SUMMARY: " << NumCovered << "/" << NumCovered + NumUncovered
+     << "covered" << std::endl;
 }

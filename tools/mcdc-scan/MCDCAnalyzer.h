@@ -20,6 +20,18 @@
 namespace instcov {
 class MCDCAnalyzer {
  public:
+  enum AnalyzerKind {
+    AK_Fast,
+    AK_SC,
+  };
+ private:
+  const AnalyzerKind Kind;
+
+ public:
+  AnalyzerKind getKind() const { return Kind; }
+
+  MCDCAnalyzer(AnalyzerKind K) : Kind(K) {}
+
   virtual void registerEntry(const LogEntry *entry, const LogMgr &LM) = 0;
   virtual void dump(std::ostream &OS, const LogMgr &LM) const = 0;
   virtual void finalize(void) = 0;
@@ -31,41 +43,6 @@ class MCDCAnalyzer {
     }
     return "NA";
   }
-
-  struct LocSorter {
-   public:
-    LocSorter(const LogMgr &lm)
-        : LM(lm) {}
-    
-    template<typename T>
-    bool operator()(const T &LHS, const T &RHS) const {
-      if (LM.getLocInfos().count(LHS->first) == 0) {
-        return true;
-      }
-      if (LM.getLocInfos().count(RHS->first) == 0) {
-        return false;
-      }
-      const LocInfo &LHS_LI = LM.getLocInfos().find(LHS->first)->second;
-      const LocInfo &RHS_LI = LM.getLocInfos().find(RHS->first)->second;
-      return std::make_tuple(LHS_LI.File, LHS_LI.Line, LHS_LI.Col) <
-      std::make_tuple(RHS_LI.File, RHS_LI.Line, RHS_LI.Col);
-    }
- 
-   private:
-    const LogMgr &LM;
-  };
-  
-  template<typename T>
-  static std::vector<typename T::const_iterator>
-  getSortedIterators(const T &C, const LogMgr &LM) {
-    std::vector<typename T::const_iterator> vec;
-    for (auto it = C.begin(), ie = C.end(); it != ie; ++it) {
-      vec.push_back(it);
-    }
-    std::sort(vec.begin(), vec.end(), LocSorter(LM));
-    return vec;
-  }
-
 };
 }
 
