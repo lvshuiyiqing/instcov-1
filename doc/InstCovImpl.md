@@ -159,9 +159,10 @@ Suppose the original program piece is:
 		body2;
 	}
 
-The instrumented code would be:
-	
-	int flag = 1;
+The instrumented code would be (note the leading semicolon, which is used to
+avoid syntax error after jump labels):
+
+	;int flag = 1;
 	switch (var) {
 	case value1:
 	case value2:
@@ -220,7 +221,7 @@ recognition. All dumping is in binary format and is aligned by the size of
 ## Debug information
 
 The debug information contains the UUID of this entity, the UUID of the
-parent entity, the file name, the line number and the column number. 
+parent entity, the file name, the line number and the column number.
 
 Before dumping the debug information, a magic string is inserted first for file
 type recognition. All dumping is in binary format and is aligned by the size of
@@ -295,31 +296,32 @@ MC/DC coverage on it. Our goal is to do it right and fast.
 
 Firstly, each test case may visit a decision multiple times. We need to
 distinguish between different visits. We mark each visit by the test ID and
-visit ID.
+visit ID. Here we call the evaluation result of the decision and the conditions
+for each visit a *evaluation vector*.
 
 To quickly identify the MC/DC pairs. Here we use a hashing trick. We know that a
-MC/DC pair is two visits of a decision, having one of the conditions be
-evaluated differently, and all other conditions be evaluated the same, making
-the whole decision evaluated differently. Here we hash each visit into a integer
-value, making MC/DC pairs to be hashed into the same value.
+MC/DC pair is two evaluation vectors of a decision, having one of the conditions
+be evaluated differently, and all other conditions be evaluated the same, making
+the whole decision evaluated differently. Here we hash each evaluation vector
+into a integer value, making MC/DC pairs to be hashed into the same value.
 
 This is done as follows:
 
 1. For each condition of each decision, we initialize an empty hash table,
    mapping integer values into pairs of containers (denote as the *True side*
    and the *False Side*).
-   
-2. For each visit, we build a Boolean vector, storing all the condition values,
-   as well as the decision result.
 
-3. For each condition of each visit, if the condition is evaluated to True, then
-   the Boolean vector is kept the same, and the corresponding hash value is
-   computed using the vector. Then we put the visit into the True side
-   container.
+2. For each evaluation vector, we build a Boolean vector, storing all the
+   condition values, as well as the decision result.
+
+3. For each condition of each evaluation vector, if the condition is evaluated
+   to True, then the Boolean vector is kept the same, and the corresponding hash
+   value is computed using the vector. Then we put the evaluation vector into
+   the True side container.
 
 	If the condition is evaluated to False, then the value of this condition and
     the decision is flipped, and the corresponding hash value is computed using
-    the vector. Then we put the visit into the False side container.
+    the vector. Then we put the evaluation vector into the False side container.
 
 4. If for some hash value, the True side container and the False side container
    are both non-empty, then any one from the True side and any one from the
@@ -335,9 +337,10 @@ Suppose decision `d` is `a||b`. We have test cases:
 	T4: 1 1 -> 1
 
 For the T1, we have vector `000`.  Decision `a` is false, so it is flipped into
-`101`, we store the visit on the false side of `a:101`.  Similarily, we store
-the visit on the false side of `b:011`.  We omit the following process. The
-resulting table is as follows (note that we omitted the visit ID):
+`101`, we store the evaluation vector on the false side of `a:101`.  Similarily,
+we store the evaluation vector on the false side of `b:011`.  We omit the
+following process. The resulting table is as follows (note that we omitted the
+visit ID):
 
 	a:101: {T2}, {T1} >> MC/DC pair
 	a:110: {}, {T3}
@@ -350,10 +353,10 @@ resulting table is as follows (note that we omitted the visit ID):
 Now we recognized an MC/DC pair for `a`, which is `<T2,T1>`, and an MC/DC pair
 for `b`, which is `<T3,T1>`.
 
-By using the hasing technique, we can avoid enumerating visit pairs and check
-whether they are MC/DC pairs. The complexity is reduced from `O(v*v*d)` to
-`O(v*d)`, where `v` is the number of visits, and `d` is the maximum number of
-conditions in a decision.
+By using the hasing technique, we can avoid enumerating evaluation vector pairs
+and check whether they are MC/DC pairs. The complexity is reduced from
+`O(v*v*d)` to `O(v*d)`, where `v` is the number of evaluation s, and `d` is the
+maximum number of conditions in a decision.
 
 ## Handling short circuits
 
@@ -380,42 +383,44 @@ initializer expression is of boolean type, and instrument the expression if the
 answer is yes.
 
 In the resulting log file, some conditions may be missing. To find maching MC/DC
-pairs, we first check each assignment pair to see whether the decision is
+pairs, we first check each evaluation vector pair to see whether the decision is
 evaluated to different results. If yes, we then check whether there are exactly
 one condition evaluated to different results. If some condition of either
-assignment is not evaluated, we consider the condition is evaluated to same
-values in the two assignments. We denote unevaluated conditions with `N`. Here
-are some examples:
+evaluation vector is not evaluated, we consider the condition is evaluated to
+same values in the two evaluation vectors (i.e. `TT/FF/TX/FX/XT/XF/XX` are
+considered matching values). We denote unevaluated conditions with
+`X`. Here are some examples:
 
-	FTNNN => T
+	FTXXX => T
 	FFFFF => F
 	 *       *
 
-This means the two assignments is an MC/DC pair on the second condition.
+This means the two evaluation vectors is an MC/DC pair on the second condition.
 
-	FTNNN => T
-	FFTNN => T
+	FTXXX => T
+	FFTXX => T
 	 *
 
-The two assignments do not form an MC/DC pair since the decision is evaluated to
-same values.
+The two evaluation vectors do not form an MC/DC pair since the decision is
+evaluated to same values.
 
-	FTFFN => T
-	TTTNT => F
+	FTFFX => T
+	TTTXT => F
 	* *      *
 
-The two assignments do not form an MC/DC pair since two decisions are evaluated
-to different values
+The two evaluation vectors do not form an MC/DC pair since two decisions are
+evaluated to different values
 
 In instcov, we use the several enhancements to reduce the matching cost:
 
 1. The decision visits are grouped by different decisions. We only compare
 within the same decision.
 
-2. The decision visits are grouped by different assignments. After the grouping,
-   we obtain the set of all unique assignments of each decision. We compare each
-   pair of unique assignments, thus the decision visits having the same
-   assignment will not be compare over and over again.
+2. The decision visits are grouped by different evaluation vectors. After the
+   grouping, we obtain the set of all unique evaluation vectors of each
+   decision. We compare each pair of unique evaluation vectors, thus the
+   decision visits having the same evaluation vectors will not be compare over
+   and over again.
 
 
 ## Developer FAQs
@@ -502,8 +507,8 @@ developer communities.
 You need at least gcc-4.7 to build the source code. If your Ubuntu source does
 not have it, you can add the following PPA to your APT sources:
 
-	deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu YOUR_UBUNTU_VERSION_HERE main 
-	deb-src http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu YOUR_UBUNTU_VERSION_HERE main 
+	deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu YOUR_UBUNTU_VERSION_HERE main
+	deb-src http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu YOUR_UBUNTU_VERSION_HERE main
 
 To specify your new compiler for `cmake`, you need to change the following
 command:

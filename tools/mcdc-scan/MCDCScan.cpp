@@ -13,10 +13,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Casting.h"
 #include "instcov/LogMgr.h"
 #include "MCDCAnalyzer.h"
 #include "FastAnalyzer.h"
 #include "SCAnalyzer.h"
+#include "PBOEmitter.h"
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -42,12 +44,43 @@ cl::opt<bool> Verbose(
     cl::desc("dump more verbosely"),
     cl::init(false));
 
+cl::opt<bool> EmitPBO(
+    "emit-pbo",
+    cl::desc("to emit a PBO problem,"
+             "which is to be solved by a constraint solver\n"
+             "Only combines with sc analyzer"),
+    cl::init(false));
+
+cl::opt<bool> EmitPretty(
+    "emit-pretty",
+    cl::desc("emit pretty-style PBO output"),
+    cl::init(false));
+
+cl::opt<std::string> OutFileName(
+    "o",
+    cl::desc("specify the output file"));
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
   LogMgr LM;
-  for (auto &&FileName : FileNames) {
+  for (auto &FileName : FileNames) {
     LM.loadFile(FileName);
+  }
+  if (EmitPBO && Analyzer != "sc") {
+    std::cerr << "PBO emitting should be used with sc analyzer"
+              << std::endl;
+    return 1;
+  }
+  std::unique_ptr<std::ofstream> OutFile;
+  std::ostream *OS = &std::cout;
+  if (!OutFileName.empty()) {
+    OutFile.reset(new std::ofstream(OutFileName.c_str()));
+    if (!OutFile) {
+      std::cerr << "cannot open \"" << OutFileName << "\" for output"
+                << std::endl;
+      return 1;
+    }
+    OS = OutFile.get();
   }
   std::shared_ptr<MCDCAnalyzer> analyzer;
   if (Analyzer == "fast") {
@@ -57,11 +90,23 @@ int main(int argc, char *argv[]) {
   } else {
     std::cerr << "wrong analyzer: " << Analyzer << std::endl;
   }
-  for (auto &&Entry : LM.getLogEntries()) {
+  for (auto &Entry : LM.getLogEntries()) {
     analyzer->registerEntry(&Entry, LM);
   }
-  analyzer->finalize();
-  analyzer->dump(std::cout, LM);
+  if (EmitPBO) {
+    SCAnalyzer *SCA = cast<SCAnalyzer>(analyzer.get());
+    PBOEmitter Emitter(*SCA);
+    PBOProblemOpt Problem = Emitter.emitPBO();
+    if (EmitPretty) {
+      Problem.emitPretty(*OS, Emitter.getID2Str());
+    } else {
+      Problem.emitRaw(*OS);
+    }
+    Emitter.dumpPBVar2Str(*OS);
+    Emitter.dumpSID2LocInfo(*OS, LM);
+  } else {
+    analyzer->finalize();
+    analyzer->dump(*OS, LM);
+  }
   return 0;
 }
-

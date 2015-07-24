@@ -91,7 +91,7 @@ void RecordMgr::processTrace(const std::string &FileName) {
 }
 
 void RecordMgr::dump(std::ostream &OS) const {
-  for (auto &&RecordTree : RecordTrees) {
+  for (auto &RecordTree : RecordTrees) {
     RecordTree->dump(OS);
   }
 }

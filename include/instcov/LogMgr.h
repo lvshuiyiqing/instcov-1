@@ -21,6 +21,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <algorithm>
 #include "instcov/uuid.h"
 #include "instcov/DbgInfo.h"
 
@@ -34,8 +35,8 @@ class LogEntry {
       : TID(-1), VID(-1) {}
 
   void dump(std::ostream &OS) const;
-  std::map<UUID_t, uint64_t> Conditions;
-  std::pair<UUID_t, uint64_t> Decision;
+  std::map<UUID_t, uint64_t> Cond2Val;
+  std::pair<UUID_t, uint64_t> DecVal;
   std::size_t TID;
   std::size_t VID;
 };
@@ -55,11 +56,11 @@ class LogMgr {
   const std::vector<std::string> &getFileNames() const {
     return FileNames;
   }
-  
+
   const std::vector<LogEntry> &getLogEntries() const {
     return LogEntries;
   }
-  
+
   const std::map<UUID_t, std::set<UUID_t> > &getChildren() const {
     return Children;
   }
@@ -71,17 +72,51 @@ class LogMgr {
   bool hasLocInfo(UUID_t Uuid) const {
     return LocInfos.count(Uuid);
   }
-  
+
   const LocInfo &getLocInfo(UUID_t Uuid) const {
     return LocInfos.find(Uuid)->second;
   }
-  
+
  private:
   std::vector<std::string> FileNames;
   std::vector<LogEntry> LogEntries;
   std::map<UUID_t, std::set<UUID_t> > Children;
   std::map<UUID_t, LocInfo> LocInfos;
 };
+
+
+struct LocSorter {
+ public:
+  LocSorter(const LogMgr &lm)
+      : LM(lm) {}
+  template<typename T>
+  bool operator()(const T &LHS, const T &RHS) const {
+    if (LM.getLocInfos().count(LHS->first) == 0) {
+      return true;
+    }
+    if (LM.getLocInfos().count(RHS->first) == 0) {
+      return false;
+    }
+    const LocInfo &LHS_LI = LM.getLocInfos().find(LHS->first)->second;
+    const LocInfo &RHS_LI = LM.getLocInfos().find(RHS->first)->second;
+    return std::make_tuple(LHS_LI.File, LHS_LI.Line, LHS_LI.Col) <
+      std::make_tuple(RHS_LI.File, RHS_LI.Line, RHS_LI.Col);
+  }
+ private:
+  const LogMgr &LM;
+};
+
+template<typename T>
+std::vector<typename T::const_iterator>
+getSortedIterators(const T &C, const LogMgr &LM) {
+  std::vector<typename T::const_iterator> vec;
+  for (auto it = C.begin(), ie = C.end(); it != ie; ++it) {
+    vec.push_back(it);
+  }
+  std::sort(vec.begin(), vec.end(), LocSorter(LM));
+  return vec;
+}
+
 }
 
 #endif  // INSTCOV_LOGMGR_H_

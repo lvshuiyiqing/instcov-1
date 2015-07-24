@@ -82,10 +82,10 @@ parseLine(std::istream &In, bool &success) {
 
 void LogEntry::dump(std::ostream &OS) const {
   OS << "TID=" << TID << " " << "VID=" << VID << std::endl;
-  OS << Decision.first.toString() << ":" << Decision.second << std::endl;
-  for (auto &&Cond_Assgn : Conditions) {
-    OS << "-" << Cond_Assgn.first.toString()
-       << ":" << Cond_Assgn.second << std::endl;
+  OS << DecVal.first.toString() << ":" << DecVal.second << std::endl;
+  for (auto &&Cond_Val : Cond2Val) {
+    OS << "-" << Cond_Val.first.toString()
+       << ":" << Cond_Val.second << std::endl;
   }
 }
 
@@ -125,12 +125,12 @@ void LogMgr::loadFile(const std::string &fileName) {
         LogEntry Entry;
         Entry.TID = FileNames.size();
         Entry.VID = ++VID;
-        Entry.Conditions.clear();
-        Entry.Conditions.insert(S.top().begin(), S.top().end());
+        Entry.Cond2Val.clear();
+        Entry.Cond2Val.insert(S.top().begin(), S.top().end());
         S.pop();
-        Entry.Decision = S.top().back();
-        for (auto &&Condition : Entry.Conditions) {
-          Children[Entry.Decision.first].insert(Condition.first);
+        Entry.DecVal = S.top().back();
+        for (auto &&Cond_Val : Entry.Cond2Val) {
+          Children[Entry.DecVal.first].insert(Cond_Val.first);
         }
         LogEntries.push_back(Entry);
       }
@@ -148,12 +148,12 @@ void LogMgr::loadFile(const std::string &fileName) {
       LogEntry Entry;
       Entry.TID = FileNames.size();
       Entry.VID = ++VID;
-      Entry.Conditions.clear();
-      Entry.Conditions.insert(S.top().begin(), S.top().end());
+      Entry.Cond2Val.clear();
+      Entry.Cond2Val.insert(S.top().begin(), S.top().end());
       S.pop();
-      Entry.Decision = S.top().back();
-      for (auto &&Condition : Entry.Conditions) {
-        Children[Entry.Decision.first].insert(Condition.first);
+      Entry.DecVal = S.top().back();
+      for (auto &Cond_Val : Entry.Cond2Val) {
+        Children[Entry.DecVal.first].insert(Cond_Val.first);
       }
       LogEntries.push_back(Entry);
     }

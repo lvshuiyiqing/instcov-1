@@ -48,7 +48,7 @@ void DIBuilder4View::loadFile(const std::string &FileName) {
     llvm::errs() << "cannot open file: " << FileName << "\n";
     exit(1);
   }
-  
+
   // read magic
   char Magic[sizeof(INSTCOV_MAGIC)-1];
   char Version[sizeof(INSTCOV_VERSION)-1];
@@ -149,20 +149,20 @@ void DIBuilder4View::dumpPrettyDFS(std::ostream &OS,
     }
   }
   OS << "\n";
-  for (auto &&Child : DI.Children) {
+  for (auto &Child : DI.Children) {
     dumpPrettyDFS(OS, Child, depth+1);
   }
 }
 
 void DIBuilder4View::dumpPretty(std::ostream &OS) const {
   std::vector<const DbgInfo *> RootDIs;
-  for (auto &&Uuid_DI : getDbgInfos()) {
+  for (auto &Uuid_DI : getDbgInfos()) {
     if (!(Uuid_DI.second.Uuid_P)) {
       RootDIs.push_back(&(Uuid_DI.second));
     }
   }
   std::sort(RootDIs.begin(), RootDIs.end(), CmpFunc());
-  for (auto &&RootDI : RootDIs) {
+  for (auto &RootDI : RootDIs) {
     dumpPrettyDFS(OS, RootDI->Uuid, 0);
   }
 }

@@ -26,27 +26,43 @@
 
 namespace instcov {
 class SCAnalyzer : public MCDCAnalyzer {
+ public:
+  SCAnalyzer() : MCDCAnalyzer(AK_SC) {}
+
+  static bool classof(const MCDCAnalyzer *A) {
+    return A->getKind() == AK_SC;
+  }
+
+ public:
   virtual void registerEntry(const LogEntry *entry, const LogMgr &LM);
   virtual void dump(std::ostream &OS, const LogMgr &LM) const;
   virtual void finalize(void);
-  
-  typedef std::string Assignment_t;
-  typedef std::unordered_map<Assignment_t, std::vector<const LogEntry*> >
-  SortedEntries_t;
-  typedef std::pair<Assignment_t, Assignment_t> MCDCPair_t;
+
+  typedef std::string EvalVec_t;
+  typedef std::unordered_map<EvalVec_t, std::set<std::size_t> >
+  EV2TIDs_t;
+  typedef std::pair<EvalVec_t, EvalVec_t> MCDCPair_t;
   typedef std::map<UUID_t, std::vector<MCDCPair_t> > CondPairs_t;
   typedef std::map<UUID_t, CondPairs_t> DecPairs_t;
 
- private:
-  static size_t findMatch(const Assignment_t &LHS,
-                          const Assignment_t &RHS);
-  DecPairs_t Dec2Pairs;
-  std::unordered_map<Assignment_t, std::vector<const LogEntry *> >
-  Assgn2Entries;
-  std::map<UUID_t, std::unordered_set<Assignment_t> > Dec2Assgns;
-  std::map<UUID_t, std::vector<UUID_t> > Dec2CondOrder;
-};
+ public:
+  const DecPairs_t &getDec2Pairs(void) const { return Dec2Pairs; }
+  const std::map<UUID_t, EV2TIDs_t>
+  &getDec2EV2TIDs(void) const { return Dec2EV2TIDs; }
+  const std::map<UUID_t, std::vector<UUID_t> >
+  &getDec2CondOrder(void) const { return Dec2CondOrder; }
+  const std::map<UUID_t, std::size_t>
+  &getUuid2EVPos(void) const { return Uuid2EVPos; }
 
+ private:
+  static size_t findMatch(const EvalVec_t &LHS,
+                          const EvalVec_t &RHS);
+  DecPairs_t Dec2Pairs;
+
+  std::map<UUID_t, EV2TIDs_t> Dec2EV2TIDs;
+  std::map<UUID_t, std::vector<UUID_t> > Dec2CondOrder;
+  std::map<UUID_t, std::size_t> Uuid2EVPos;
+};
 }
 
 #endif  // INSTCOV_SCANALYZER_H_

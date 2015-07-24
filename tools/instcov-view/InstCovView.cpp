@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     }
   }
   RecordMgr RM;
-  for (auto &&FileName : FileNames) {
+  for (auto &FileName : FileNames) {
     RM.getDIB().loadFile(FileName);
   }
   if (!RM.getDIB().selfCheck()) {
