@@ -256,7 +256,8 @@ void PBOEmitter::pboEmitPerCDVal(
 
 PBVar PBOEmitter::encodeStr(const std::string &str) {
   if (!IDPool.count(str)) {
-    IDPool[str] = IDPool.size()+1;
+    std::size_t NewID = IDPool.size() + 1;
+    IDPool[str] = NewID;
     ID2Str[IDPool.size()] = str;
   }
   return IDPool[str];
