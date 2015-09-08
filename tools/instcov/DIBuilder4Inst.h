@@ -12,6 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#ifndef DIBUILDER4INST_H_
+#define DIBUILDER4INST_H_
+
 #include <map>
 #include "instcov/DbgInfoMgr.h"
 #include "clang/AST/Stmt.h"
@@ -25,7 +28,7 @@ class DIBuilder4Inst : private DbgInfoMgr {
  private:
   DIBuilder4Inst(const DIBuilder4Inst &from);
   const DIBuilder4Inst &operator = (const DIBuilder4Inst &right);
-  
+
  public:
   void registerStmt(const clang::Stmt *c, const clang::Stmt *p,
                     const clang::SourceManager &SM);
@@ -36,7 +39,7 @@ class DIBuilder4Inst : private DbgInfoMgr {
   using DbgInfoMgr::getDbgInfo;
   using DbgInfoMgr::getNumNodes;
   using DbgInfoMgr::isExist;
-  
+
  private:
   UUID_t regAndGetUUID(const clang::Stmt *s);
 
@@ -45,3 +48,4 @@ class DIBuilder4Inst : private DbgInfoMgr {
 };
 }
 
+#endif  // DIBUILDER4INST_H_
