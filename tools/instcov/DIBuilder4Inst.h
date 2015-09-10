@@ -35,10 +35,12 @@ class DIBuilder4Inst : private DbgInfoMgr {
   UUID_t getUUID(const clang::Stmt *s) const;
 
   using DbgInfoMgr::dump;
-  using DbgInfoMgr::selfCheck;
+  using DbgInfoMgr::selfCheck4DC;
+  using DbgInfoMgr::getDbgInfoDC;
   using DbgInfoMgr::getDbgInfo;
-  using DbgInfoMgr::getNumNodes;
+  using DbgInfoMgr::getNumNodes4DC;
   using DbgInfoMgr::isExist;
+  using DbgInfoMgr::isDC;
 
  private:
   UUID_t regAndGetUUID(const clang::Stmt *s);

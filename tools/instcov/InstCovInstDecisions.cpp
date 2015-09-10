@@ -169,7 +169,7 @@ namespace{
   } while (0)
 
 InstCovASTVisitor::~InstCovASTVisitor(void) {
-  if (!DIB.selfCheck()) {
+  if (!DIB.selfCheck4DC()) {
     llvm::errs() << "The debug info has problems\n";
     exit(1);
   }
