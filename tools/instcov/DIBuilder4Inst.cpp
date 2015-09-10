@@ -29,7 +29,7 @@ void DIBuilder4Inst::registerStmt(const Stmt *c, const Stmt *p,
   Loc.File = PLoc.getFilename();
   Loc.Line = PLoc.getLine();
   Loc.Col = PLoc.getColumn();
-  registerInfo(Uuid, Uuid_P, Loc);
+  registerDCInfo(Uuid, Uuid_P, Loc);
 }
 
 UUID_t DIBuilder4Inst::regAndGetUUID(const Stmt *s) {

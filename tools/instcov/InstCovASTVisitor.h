@@ -28,15 +28,20 @@
 #include "DIBuilder4Inst.h"
 
 namespace instcov {
+class InstCovAction {
+ public:
+  virtual void VisitTranslationUnit(clang::TranslationUnitDecl *D);
+};
+
 class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
-public:
+ public:
   typedef clang::RecursiveASTVisitor<InstCovASTVisitor> base_t;
   InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
       : TheRewriter(R), TheASTContext(C),
         DIB() {
   }
   ~InstCovASTVisitor(void);
-  
+
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
   bool VisitWhileStmt(clang::WhileStmt *s);
@@ -50,13 +55,13 @@ public:
 
   bool TraverseCallExpr(clang::CallExpr *s);
   bool TraverseFieldDecl(clang::FieldDecl *d);
-  
+
   bool TraverseIfStmt(clang::IfStmt *s);
   bool TraverseWhileStmt(clang::WhileStmt *s);
-  
+
   // insert decision & conditions for assignment operators and normal VarDecls
   void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
-  
+
   void MCDCVisitIfStmt(clang::IfStmt *s);
   void MCDCVisitForStmt(clang::ForStmt *s);
   void MCDCVisitWhileStmt(clang::WhileStmt *s);

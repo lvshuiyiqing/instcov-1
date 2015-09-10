@@ -31,29 +31,45 @@ class DbgInfoMgr {
  private:
   DbgInfoMgr(const DbgInfoMgr &right);
   const DbgInfoMgr &operator = (const DbgInfoMgr &right);
-  
- public:
-  virtual void registerInfo(UUID_t c, UUID_t p, const LocInfo &loc);
 
-  const DbgInfo &getDbgInfo(UUID_t Uuid) const {
+ public:
+  void registerFuncInfo(UUID_t uuid, const std::string &funcName, const LocInfo &loc);
+  virtual void registerDCInfo(UUID_t c, UUID_t p, const LocInfo &loc);
+
+  const DbgInfo_DC *getDbgInfoDC(UUID_t Uuid) const {
+    return llvm::dyn_cast<const DbgInfo_DC>(DbgInfos.find(Uuid)->second);
+  }
+  DbgInfo_DC *theDbgInfoDC(UUID_t Uuid) {
+    return llvm::dyn_cast<DbgInfo_DC>(DbgInfos.find(Uuid)->second);
+  }
+  const DbgInfo *getDbgInfo(UUID_t Uuid) const {
     return DbgInfos.find(Uuid)->second;
   }
-  const std::map<UUID_t, DbgInfo> &getDbgInfos(void) const {
+  DbgInfo *theDbgInfo(UUID_t Uuid) {
+    return DbgInfos.find(Uuid)->second;
+  }
+
+  const std::map<UUID_t, DbgInfo *> &getDbgInfos(void) const {
     return DbgInfos;
   }
   bool isExist(UUID_t Uuid) const {
     return RegisteredUuids.count(Uuid);
   }
+  bool isDC(UUID_t Uuid) const {
+    return RegisteredDCs.count(Uuid);
+  }
+
   void dump(const std::string &MainFileName) const;
-  bool selfCheck(void) const;
-  std::size_t getNumNodes(UUID_t Uuid) const;
+  bool selfCheck4DC(void) const;
+  std::size_t getNumNodes4DC(UUID_t Uuid) const;
 
  private:
   void dumpOne(std::ostream &File, UUID_t Uuid) const;
 
  private:
-  std::map<UUID_t, DbgInfo> DbgInfos;
+  std::map<UUID_t, DbgInfo*> DbgInfos;
   std::set<UUID_t> RegisteredUuids;
+  std::set<UUID_t> RegisteredDCs;
   std::vector<UUID_t> QueueOrder;
 };
 }
