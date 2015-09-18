@@ -1,4 +1,4 @@
-//===-- InstCovInstDecisions.cpp --- decision instrumentation ---*- C++ -*-===//
+//===-- ASTVisitorDC.cpp ---------- D/C instrumentation ---------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the definitions for decision
-/// instrumentation functions in InstcovASTVisitor
+/// \brief This file contains the definitions for decision/condition
+/// instrumentation functions in ASTVisitorDC
 ///
 //===----------------------------------------------------------------------===//
 
@@ -28,7 +28,8 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/StringSet.h"
-#include "InstCovASTVisitor.h"
+#include "ASTVisitorDC.h"
+#include "InstCovActions.h"
 
 using namespace llvm;
 using namespace clang;
@@ -51,7 +52,30 @@ cl::opt<bool> InstRHS(
     cl::cat(InstCovCategory),
     cl::init(false));
 
+
+cl::opt<bool> InstConditions(
+    "inst-conditions",
+    cl::desc("enable condition instrumentation for MC/DC.\n"
+             "The instrumentation may change the program behavior\n"
+             "if the conditions have side-effects"
+             "Default value: false"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
+
+cl::opt<bool> NoShortCircuits(
+    "no-short-circuits",
+    cl::desc("the instrumentation will dump all conditions despite of "
+             "circuits.\n"
+             "By default, instcov will only dump evaluated conditions\n"),
+    cl::cat(InstCovCategory),
+    cl::init(false));
+
 extern llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
+
+void InstCovActionDC::VisitTranslationUnit(clang::TranslationUnitDecl *D) {
+  ASTVisitorDC Visitor(TheRewriter, TheASTContext, DIM);
+  Visitor.TraverseDecl(D);
+}
 
 namespace{
   std::string INSTCOV_FUNC_NAME = "instcov_dump";
@@ -168,16 +192,14 @@ namespace{
       return false;                                                     \
   } while (0)
 
-InstCovASTVisitor::~InstCovASTVisitor(void) {
-  if (!DIB.selfCheck4DC()) {
+ASTVisitorDC::~ASTVisitorDC(void) {
+  if (!DIB.getDIM().selfCheck4DC()) {
     llvm::errs() << "The debug info has problems\n";
     exit(1);
   }
-  DIB.dump(TheRewriter.getSourceMgr().getFileEntryForID(
-      TheRewriter.getSourceMgr().getMainFileID())->getName());
 }
 
-bool InstCovASTVisitor::checkLocation(Stmt *s) const {
+bool ASTVisitorDC::checkLocation(Stmt *s) const {
   if (MatchFileNames.empty()) {
     return true;
   }
@@ -187,7 +209,7 @@ bool InstCovASTVisitor::checkLocation(Stmt *s) const {
   return MatchFileNames.count(PresumedFileName);
 }
 
-bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
+bool ASTVisitorDC::VisitIfStmt(IfStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -207,21 +229,21 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
     Expr *RHSRoot = toRHSRoot(VDInit);
     MCDCVisitExpr(RHSRoot, s);
   }
-  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t uuid = DIB.getUUID(s);
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t uuid = DIB.getDCUUID(s);
   // Only care about If statements.
   Stmt *Then = s->getThen();
   Stmt *Else = s->getElse();
 
   if (VD && SimpleRHS) {
-    DIB.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
+    DIB.registerDC(VDInit, s, TheRewriter.getSourceMgr());
   }
 
   InstInfo ThenInfo, ElseInfo;
   ThenInfo.push_back(std::make_pair(uuid, 1));
   ElseInfo.push_back(std::make_pair(uuid, 0));
   if (VD && SimpleRHS) {
-    UUID_t UuidVD = DIB.getUUID(VDInit);
+    UUID_t UuidVD = DIB.getDCUUID(VDInit);
     ThenInfo.push_back(std::make_pair(UuidVD, 1));
     ElseInfo.push_back(std::make_pair(UuidVD, 0));
   }
@@ -240,20 +262,20 @@ bool InstCovASTVisitor::VisitIfStmt(IfStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitForStmt(ForStmt *s) {
+bool ASTVisitorDC::VisitForStmt(ForStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
   MCDCVisitForStmt(s);
-  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t uuid = DIB.getUUID(s);
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t uuid = DIB.getDCUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, InstInfo(1, std::make_pair(uuid, 0)));
   InstInBlock(s->getBody(), TheRewriter, InstInfo(1, std::make_pair(uuid, 1)));
   return true;
 }
 
-bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
+bool ASTVisitorDC::VisitWhileStmt(WhileStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -273,17 +295,17 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
     Expr *RHSRoot = toRHSRoot(VDInit);
     MCDCVisitExpr(RHSRoot, s);
   }
-  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t uuid = DIB.getUUID(s);
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t uuid = DIB.getDCUUID(s);
   if (VD && SimpleRHS) {
-    DIB.registerStmt(VDInit, s, TheRewriter.getSourceMgr());
+    DIB.registerDC(VDInit, s, TheRewriter.getSourceMgr());
   }
 
   InstInfo ThenInfo, ElseInfo;
   ThenInfo.push_back(std::make_pair(uuid, 1));
   ElseInfo.push_back(std::make_pair(uuid, 0));
   if (VD && SimpleRHS) {
-    UUID_t UuidVD = DIB.getUUID(VDInit);
+    UUID_t UuidVD = DIB.getDCUUID(VDInit);
     ThenInfo.push_back(std::make_pair(UuidVD, 1));
     ElseInfo.push_back(std::make_pair(UuidVD, 0));
   }
@@ -294,14 +316,14 @@ bool InstCovASTVisitor::VisitWhileStmt(WhileStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
+bool ASTVisitorDC::VisitDoStmt(DoStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
   MCDCVisitDoStmt(s);
-  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
-  UUID_t uuid = DIB.getUUID(s);
+  UUID_t uuid = DIB.getDCUUID(s);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
@@ -310,7 +332,7 @@ bool InstCovASTVisitor::VisitDoStmt(DoStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
+bool ASTVisitorDC::VisitSwitchStmt(SwitchStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -318,8 +340,8 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
     return true;
   }
   std::stringstream header_ss;
-  DIB.registerStmt(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t Uuid = DIB.getUUID(s);
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
+  UUID_t Uuid = DIB.getDCUUID(s);
   // BUG FIX: added a ";" before the VarDecl so that this will be legal after
   // a goto label
   header_ss << ";int instcov_f" << Uuid.toString() << " = 1;\n";
@@ -342,7 +364,7 @@ bool InstCovASTVisitor::VisitSwitchStmt(SwitchStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
+bool ASTVisitorDC::VisitBinaryOperator(BinaryOperator *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -353,7 +375,7 @@ bool InstCovASTVisitor::VisitBinaryOperator(BinaryOperator *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitReturnStmt(ReturnStmt *s) {
+bool ASTVisitorDC::VisitReturnStmt(ReturnStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -366,7 +388,7 @@ bool InstCovASTVisitor::VisitReturnStmt(ReturnStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitAbstractConditionalOperator(
+bool ASTVisitorDC::VisitAbstractConditionalOperator(
     AbstractConditionalOperator *s) {
   if (!checkLocation(s)) {
     return true;
@@ -375,11 +397,11 @@ bool InstCovASTVisitor::VisitAbstractConditionalOperator(
   return true;
 }
 
-bool InstCovASTVisitor::TraverseFieldDecl(FieldDecl *d) {
+bool ASTVisitorDC::TraverseFieldDecl(FieldDecl *d) {
   return true;
 }
 
-bool InstCovASTVisitor::isSimpleRHS(Expr *e) {
+bool ASTVisitorDC::isSimpleRHS(Expr *e) {
   while (true) {
     if (BinaryOperator *bo = dyn_cast<BinaryOperator>(e)) {
       if (bo->isLogicalOp()) {
@@ -404,7 +426,7 @@ bool InstCovASTVisitor::isSimpleRHS(Expr *e) {
   return true;
 }
 
-bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
+bool ASTVisitorDC::VisitDeclStmt(DeclStmt *s) {
   if (!checkLocation(s)) {
     return true;
   }
@@ -421,7 +443,7 @@ bool InstCovASTVisitor::VisitDeclStmt(DeclStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::TraverseCallExpr(CallExpr *e) {
+bool ASTVisitorDC::TraverseCallExpr(CallExpr *e) {
   if (!checkLocation(e)) {
     return true;
   }
@@ -432,11 +454,11 @@ bool InstCovASTVisitor::TraverseCallExpr(CallExpr *e) {
       return true;
     }
   }
-  RecursiveASTVisitor<InstCovASTVisitor>::TraverseCallExpr(e);
+  RecursiveASTVisitor<ASTVisitorDC>::TraverseCallExpr(e);
   return true;
 }
 
-bool InstCovASTVisitor::TraverseIfStmt(IfStmt *s) {
+bool ASTVisitorDC::TraverseIfStmt(IfStmt *s) {
   TRY_TO(WalkUpFromIfStmt(s));
   for (Stmt *SubStmt : s->children()) {
     // skip the VarDecl since we have already visited it
@@ -447,7 +469,7 @@ bool InstCovASTVisitor::TraverseIfStmt(IfStmt *s) {
   return true;
 }
 
-bool InstCovASTVisitor::TraverseWhileStmt(WhileStmt *s) {
+bool ASTVisitorDC::TraverseWhileStmt(WhileStmt *s) {
   TRY_TO(WalkUpFromWhileStmt(s));
   for (Stmt *SubStmt : s->children()) {
     // skip the VarDecl since we have already visited it
@@ -458,14 +480,14 @@ bool InstCovASTVisitor::TraverseWhileStmt(WhileStmt *s) {
   return true;
 }
 
-Expr *InstCovASTVisitor::toRHSRoot(Expr *e) {
+Expr *ASTVisitorDC::toRHSRoot(Expr *e) {
   while (CastExpr *ce = dyn_cast<ImplicitCastExpr>(e)) {
     e = ce->getSubExpr();
   }
   return e;
 }
 
-void InstCovASTVisitor::handleRHS4Assgn_NormalVarDecl(clang::Expr *e) {
+void ASTVisitorDC::handleRHS4Assgn_NormalVarDecl(clang::Expr *e) {
   if (isSimpleRHS(e)) {
     return;
   }
@@ -475,12 +497,135 @@ void InstCovASTVisitor::handleRHS4Assgn_NormalVarDecl(clang::Expr *e) {
   SourceLocation LocEnd = Lexer::getLocForEndOfToken(
       RHSRoot->getLocEnd(), 0,
       TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
-  DIB.registerStmt(RHSRoot, nullptr, TheRewriter.getSourceMgr());
+  DIB.registerDC(RHSRoot, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(LocStart, "(", true, true);
-  UUID_t uuid = DIB.getUUID(RHSRoot);
+  UUID_t uuid = DIB.getDCUUID(RHSRoot);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
      << ", 1), 0)";
   TheRewriter.InsertText(LocEnd, ss.str(), false, true);
+}
+
+std::vector<Expr *> ASTVisitorDC::extractConditions(Expr *e) {
+  std::vector<Expr *> Leaves;
+  std::stack<Expr *> UncheckedNodes;
+
+  UncheckedNodes.push(e);
+  while(!UncheckedNodes.empty()) {
+    Expr *Node = UncheckedNodes.top();
+    UncheckedNodes.pop();
+    if (BinaryOperator *bo = dyn_cast<BinaryOperator>(Node)) {
+      if (bo->isLogicalOp()) {
+        UncheckedNodes.push(bo->getRHS());
+        UncheckedNodes.push(bo->getLHS());
+        continue;
+      }
+    }
+    if (UnaryOperator *uo = dyn_cast<UnaryOperator>(Node)) {
+      if (uo->getOpcode() == UO_LNot) {
+        UncheckedNodes.push(uo->getSubExpr());
+        continue;
+      }
+    }
+    if (ParenExpr *pe = dyn_cast<ParenExpr>(Node)) {
+      UncheckedNodes.push(pe->getSubExpr());
+      continue;
+    }
+    // leaf nodes
+    Leaves.push_back(Node);
+    continue;
+  }
+  return Leaves;
+}
+
+void ASTVisitorDC::MCDCVisitExpr(Expr *e, Stmt *p) {
+  if (!InstConditions) {
+    return;
+  }
+  if (NoShortCircuits) {
+    TheRewriter.InsertText(e->getLocStart(), "(", true, true);
+    std::vector<Expr *> CondExprs = extractConditions(e);
+    for (auto &CondExpr : CondExprs) {
+      DIB.registerDC(CondExpr, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIB.getDCUUID(CondExpr);
+      std::string dumper;
+      llvm::raw_string_ostream os(dumper);
+      os << "instcov_dump(" << uuid.toArgString() << ", (";
+      CondExpr->printPretty(os, nullptr,
+                         PrintingPolicy(TheASTContext.getLangOpts()));
+      os << ") ? 1 : 0), ";
+      os.flush();
+      TheRewriter.InsertText(e->getLocStart(), dumper, true, true);
+    }
+    SourceLocation endLoc = Lexer::getLocForEndOfToken(
+        e->getLocEnd(), 0, TheRewriter.getSourceMgr(),
+        TheRewriter.getLangOpts());
+    TheRewriter.InsertText(endLoc, ")", false, true);
+  } else {
+    std::vector<Expr *> CondExprs = extractConditions(e);
+    for (auto &CondExpr : CondExprs) {
+      DIB.registerDC(CondExpr, p, TheRewriter.getSourceMgr());
+      UUID_t uuid = DIB.getDCUUID(CondExpr);
+      TheRewriter.InsertText(CondExpr->getLocStart(), "((", true, true);
+      std::string dumper;
+      llvm::raw_string_ostream os(dumper);
+      os << ") ? (" << "instcov_dump(" << uuid.toArgString() << ",1),1) : ("
+         << "instcov_dump(" << uuid.toArgString() << ",0),0)) ";
+      os.flush();
+      SourceLocation endLoc = Lexer::getLocForEndOfToken(
+          CondExpr->getLocEnd(), 0, TheRewriter.getSourceMgr(),
+          TheRewriter.getLangOpts());
+      TheRewriter.InsertText(endLoc, dumper, false, true);
+    }
+  }
+}
+
+void ASTVisitorDC::MCDCVisitIfStmt(IfStmt *s) {
+  if (!InstConditions) {
+    return;
+  }
+  VarDecl *VD = s->getConditionVariable();
+  if (VD && VD->hasInit()) {
+    VD->dump();
+  }
+  Expr *Expr4Instr = s->getCond();
+  if (s->getConditionVariable()) {
+    Expr4Instr = s->getConditionVariable()->getInit();
+  }
+  MCDCVisitExpr(Expr4Instr, s);
+}
+
+void ASTVisitorDC::MCDCVisitForStmt(ForStmt *s) {
+  if (!InstConditions) {
+    return;
+  }
+  if (s->getCond()) {
+    MCDCVisitExpr(s->getCond(), s);
+  }
+}
+
+void ASTVisitorDC::MCDCVisitWhileStmt(WhileStmt *s) {
+  if (!InstConditions) {
+    return;
+  }
+  Expr *Expr4Instr = s->getCond();
+  if (s->getConditionVariable()) {
+    Expr4Instr = s->getConditionVariable()->getInit();
+  }
+  MCDCVisitExpr(Expr4Instr, s);
+}
+
+void ASTVisitorDC::MCDCVisitDoStmt(DoStmt *s) {
+  if (!InstConditions) {
+    return;
+  }
+  MCDCVisitExpr(s->getCond(), s);
+}
+
+void ASTVisitorDC::MCDCVisitBinaryOperator(BinaryOperator *s) {
+  if (!InstConditions) {
+    return;
+  }
+  MCDCVisitExpr(s->getRHS(), s);
 }

@@ -1,4 +1,4 @@
-//===-- InstCovASTVisitor.h --- InstCovASTVisitor declaration ---*- C++ -*-===//
+//===-- ASTVisitorDC.h ---------- ASTVisitorDC declaration ------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,12 +8,10 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the declarations for InstcovASTVisitor
+/// \brief This file contains the declarations for ASTVisitorDC,
+/// \brief which instruments the decisions/conditions for MC/DC analysis
 ///
 //===----------------------------------------------------------------------===//
-
-#ifndef INSTCOV_ASTVISITOR_H_
-#define INSTCOV_ASTVISITOR_H_
 
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -25,22 +23,20 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "DIBuilder4Inst.h"
+#include "instcov/DbgInfoMgr.h"
+#include "InstDIBuilderDC.h"
 
-namespace instcov {
-class InstCovAction {
+class ASTVisitorDC : public clang::RecursiveASTVisitor<ASTVisitorDC> {
  public:
-  virtual void VisitTranslationUnit(clang::TranslationUnitDecl *D);
-};
+  typedef clang::RecursiveASTVisitor<ASTVisitorDC> base_t;
 
-class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
- public:
-  typedef clang::RecursiveASTVisitor<InstCovASTVisitor> base_t;
-  InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
+  ASTVisitorDC(clang::Rewriter &R,
+               clang::ASTContext &C,
+               instcov::DbgInfoMgr &DIM)
       : TheRewriter(R), TheASTContext(C),
-        DIB() {
+        DIB(DIM) {
   }
-  ~InstCovASTVisitor(void);
+  ~ASTVisitorDC(void);
 
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
@@ -80,8 +76,5 @@ class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
 
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
-  DIBuilder4Inst DIB;
+  instcov::InstDIBuilderDC DIB;
 };
-}
-
-#endif  // INSTCOV_ASTVISITOR_H_
