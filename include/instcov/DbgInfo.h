@@ -38,8 +38,12 @@ struct DbgInfo {
  public:
   enum DIKind {
     DIK_DC,
+    DIK_SWITCH,
     DIK_FUNC,
   };
+
+  static const std::size_t MAGIC_SIZE = 4;
+
   DbgInfo(DIKind kind)
       : Kind(kind), Loc(), Uuid() {}
   DbgInfo(DIKind kind, const LocInfo &loc, UUID_t uuid)
@@ -48,6 +52,9 @@ struct DbgInfo {
 
   // returns the written size
   virtual void dump2File(std::ostream &OS) const;
+  static DbgInfo *loadFromFile(std::istream &File);
+  virtual void loadBodyFromFile(std::istream &File) = 0;
+  virtual const char *getMagic(void) const = 0;
   DIKind getKind(void) const { return Kind; }
  private:
   const DIKind Kind;
@@ -64,11 +71,40 @@ struct DbgInfo_DC : public DbgInfo {
       : DbgInfo(DIK_DC, loc, uuid), Uuid_P(uuid_p) {}
 
   virtual void dump2File(std::ostream &OS) const;
+  virtual void loadBodyFromFile(std::istream &File);
 
   UUID_t Uuid_P;
   std::vector<UUID_t> Children;
   static bool classof(const DbgInfo *DI) {
     return DI->getKind() == DIK_DC;
+  }
+  virtual const char *getMagic(void) const {
+    return magic();
+  }
+  static const char *magic(void) {
+    static const char MAGIC[] = "DCDC";
+    return MAGIC;
+  }
+};
+
+struct DbgInfo_Switch : public DbgInfo {
+  DbgInfo_Switch(void)
+      : DbgInfo(DIK_SWITCH) {}
+  DbgInfo_Switch(const LocInfo &loc, UUID_t uuid)
+      : DbgInfo(DIK_SWITCH, loc, uuid) {}
+
+  virtual void dump2File(std::ostream &OS) const;
+  virtual void loadBodyFromFile(std::istream &File);
+
+  static bool classof(const DbgInfo *DI) {
+    return DI->getKind() == DIK_DC;
+  }
+  virtual const char *getMagic(void) const {
+    return magic();
+  }
+  static const char *magic(void) {
+    static const char MAGIC[] = "SWTC";
+    return MAGIC;
   }
 };
 
@@ -79,11 +115,16 @@ struct DbgInfo_Func : public DbgInfo {
       : DbgInfo(DIK_FUNC, loc, uuid), FuncName(funcName) {}
 
   virtual void dump2File(std::ostream &OS) const;
+  virtual void loadBodyFromFile(std::istream &File);
 
   std::string FuncName;
 
-  static bool classof(const DbgInfo *DI) {
-    return DI->getKind() == DIK_FUNC;
+  virtual const char *getMagic(void) const {
+    return magic();
+  }
+  static const char *magic(void) {
+    static const char MAGIC[] = "FUNC";
+    return MAGIC;
   }
 };
 }

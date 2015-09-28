@@ -15,9 +15,9 @@
 #include "instcov/DbgInfoMgr.h"
 #include "instcov/uuid.h"
 #include <iostream>
-#include <fstream>
 #include <stack>
 
+using namespace llvm;
 using namespace instcov;
 
 namespace {
@@ -26,14 +26,7 @@ const char INSTCOV_VERSION[] = "1";
 }
 
 void DbgInfo::dump2File(std::ostream &OS) const {
-  switch (Kind) {
-    case DIK_DC:
-      OS.write("DCDC", 4);
-      break;
-    case DIK_FUNC:
-      OS.write("FUNC", 4);
-      break;
-  }
+  OS.write(getMagic(), 4);
   std::size_t FNSize = Loc.File.size()+1;
   OS.write((const char *)&FNSize, sizeof(FNSize));
   OS.write(Loc.File.c_str(), FNSize);
@@ -48,6 +41,49 @@ void DbgInfo::dump2File(std::ostream &OS) const {
   OS.write((const char*)&Uuid, sizeof(Uuid));
 }
 
+void DbgInfo::loadBodyFromFile(std::istream &File) {
+  std::size_t FNSize;
+  File.read((char *)&FNSize, sizeof(FNSize));
+  char *buffer = new char[FNSize];
+  File.read(buffer, FNSize);
+  Loc.File.assign(buffer, buffer+FNSize-1);
+  delete buffer;
+  const uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding) - (4 + sizeof(FNSize) + FNSize) % sizeof(Padding);
+  if (PaddingSize) {
+    File.seekg(PaddingSize, std::ios::cur);
+  }
+  File.read((char *)&Loc.Line, sizeof(Loc.Line));
+  File.read((char *)&Loc.Col, sizeof(Loc.Col));
+  File.read((char *)&Uuid, sizeof(Uuid));
+}
+
+void DbgInfo_DC::loadBodyFromFile(std::istream &File) {
+  DbgInfo::loadBodyFromFile(File);
+  File.read((char *)&Uuid_P, sizeof(Uuid_P));
+}
+
+void DbgInfo_Func::loadBodyFromFile(std::istream &File) {
+  DbgInfo::loadBodyFromFile(File);
+  std::size_t FileNameSize;
+  File.read((char *)&FileNameSize, sizeof(FileNameSize));
+  char *buffer = new char[FileNameSize];
+  File.read(buffer, FileNameSize);
+  Loc.File.assign(buffer, buffer+FileNameSize-1);
+  delete buffer;
+  const uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding) - (4 + sizeof(FileNameSize) + FileNameSize) % sizeof(Padding);
+  if (PaddingSize) {
+    File.seekg(PaddingSize, std::ios::cur);
+  }
+}
+
+void DbgInfo_Switch::loadBodyFromFile(std::istream &File) {
+  DbgInfo::loadBodyFromFile(File);
+}
+
 void DbgInfo_DC::dump2File(std::ostream &OS) const {
   DbgInfo::dump2File(OS);
   OS.write((const char*)&Uuid_P, sizeof(Uuid_P));
@@ -58,12 +94,41 @@ void DbgInfo_Func::dump2File(std::ostream &OS) const {
   std::size_t FuncNameSize = FuncName.size() + 1;
   OS.write((const char*)&FuncNameSize, sizeof(FuncNameSize));
   OS.write(FuncName.c_str(), FuncNameSize);
+  const uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding) - (4 + sizeof(FuncNameSize) + FuncNameSize) % sizeof(Padding);
+  if (PaddingSize) {
+    OS.write((const char *)&Padding, PaddingSize);
+  }
+}
+
+void DbgInfo_Switch::dump2File(std::ostream &OS) const {
+  DbgInfo::dump2File(OS);
 }
 
 std::string LocInfo::toString(void) const {
   std::stringstream ss;
   ss << Line << ":" << Col << ":" << File;
   return ss.str();
+}
+
+DbgInfo *DbgInfo::loadFromFile(std::istream &File) {
+  char type_buff[5] = {0};
+  File.read(type_buff, 4);
+  std::string type = type_buff;
+  DbgInfo *DI = 0;
+  if (type == "DCDC") {
+    DI = new DbgInfo_DC();
+  } else if (type == "SWTH") {
+    DI = new DbgInfo_Switch();
+  } else if (type == "FUNC") {
+    DI = new DbgInfo_Func();
+  } else {
+    std::cerr << "unrecognized debug info type" << std::endl;
+    exit(1);
+  }
+  DI->loadBodyFromFile(File);
+  return DI;
 }
 
 DbgInfoMgr::DbgInfoMgr(void) {
@@ -94,14 +159,29 @@ void DbgInfoMgr::registerDCInfo(
   }
 }
 
-void DbgInfoMgr::dump(const std::string &MainFileName) const {
-  std::string DbgFileName = MainFileName + ".dbginfo";
-  std::ofstream File(DbgFileName, std::ios::binary);
-  if (!File) {
-    std::cerr << "cannot open debug info file, exiting" << std::endl;
+void DbgInfoMgr::registerFuncInfo(
+    UUID_t uuid, const std::string &funcName, const LocInfo &loc) {
+  if (isExist(uuid)) {
+    std::cerr << "this UUID is already registered, why another?" << std::endl;
     exit(1);
   }
+  DbgInfos[uuid] = new DbgInfo_Func(loc, uuid, funcName);
+  QueueOrder.push_back(uuid);
+  RegisteredUuids.insert(uuid);
+}
 
+void DbgInfoMgr::registerSwitchInfo(
+    UUID_t uuid, const LocInfo &loc) {
+  if (isExist(uuid)) {
+    std::cerr << "this UUID is already registered, why another?" << std::endl;
+    exit(1);
+  }
+  DbgInfos[uuid] = new DbgInfo_Switch(loc, uuid);
+  QueueOrder.push_back(uuid);
+  RegisteredUuids.insert(uuid);
+}
+
+void DbgInfoMgr::dump(std::ostream &File) const {
   File.write(INSTCOV_MAGIC, sizeof(INSTCOV_MAGIC)-1);
   File.write(INSTCOV_VERSION, sizeof(INSTCOV_VERSION)-1);
   const uint64_t Padding = 0;
@@ -124,6 +204,22 @@ void DbgInfoMgr::dumpOne(std::ostream &File, UUID_t Uuid) const {
   }
   const DbgInfo *DI = getDbgInfo(Uuid);
   DI->dump2File(File);
+}
+
+void DbgInfoMgr::load(std::istream &File) {
+  while (!File.eof()) {
+    loadOne(File);
+  }
+}
+
+void DbgInfoMgr::loadOne(std::istream &File) {
+  DbgInfo *DI = DbgInfo::loadFromFile(File);
+  if (isa<DbgInfo_DC>(DI)) {
+    RegisteredDCs.insert(DI->Uuid);
+  }
+  RegisteredUuids.insert(DI->Uuid);
+  DbgInfos.insert(std::make_pair(DI->Uuid, DI));
+  QueueOrder.push_back(DI->Uuid);
 }
 
 bool DbgInfoMgr::selfCheck4DC(void) const {
@@ -175,4 +271,15 @@ std::size_t DbgInfoMgr::getNumNodes4DC(UUID_t Uuid) const {
     S.push(std::make_pair(getDbgInfoDC(p_DI->Children[CID]), 0));
   }
   return NumNodes;
+}
+
+UUID_t DbgInfoMgr::toRoot4DC(UUID_t Uuid) const {
+  if (!Uuid || !isExist(Uuid)) {
+    return UUID_t();
+  }
+  UUID_t CurUuid = Uuid;
+  while (getDbgInfoDC(CurUuid)->Uuid_P) {
+    CurUuid = getDbgInfoDC(CurUuid)->Uuid_P;
+  }
+  return CurUuid;
 }

@@ -21,6 +21,11 @@ using namespace clang;
 
 void InstDIBuilderFunc::registerFunc(const clang::FunctionDecl *d,
                                      const clang::SourceManager &SM) {
+  if (Func2Uuid.count(d) == 1) {
+    llvm::errs() << "ERR: the function has already been registered, "
+                 << "why another?\n";
+    exit(1);
+  }
   if (!d->hasBody()) {
     llvm::errs() << "ERR: the function to be registered does not have body\n";
     exit(1);

@@ -18,14 +18,14 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "DIBuilder4View.h"
-#include "DISlotTree.h"
+#include "instcov/DISlotTree.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace instcov {
 class RecordMgr {
  public:
-  RecordMgr(void) {}
+  RecordMgr(const DbgInfoMgr &dim)
+      : DIM(dim) {}
   ~RecordMgr(void) {}
 
  private:
@@ -33,7 +33,7 @@ class RecordMgr {
   const RecordMgr &operator = (const RecordMgr &right);
 
  public:
-  DIBuilder4View &getDIB(void) { return DIB; }
+  const DbgInfoMgr &getDIM(void) { return DIM; }
   std::vector<std::shared_ptr<DISlotTree> > &getRecordTrees(void) {
     return RecordTrees;
   }
@@ -42,7 +42,7 @@ class RecordMgr {
   void dump(std::ostream &OS) const;
 
  private:
-  DIBuilder4View DIB;
+  const DbgInfoMgr &DIM;
   std::vector<std::shared_ptr<DISlotTree> > RecordTrees;
 };
 }

@@ -167,17 +167,6 @@ void DIBuilder4View::dumpPretty(std::ostream &OS) const {
   }
 }
 
-UUID_t DIBuilder4View::toRoot(UUID_t Uuid) const {
-  if (!Uuid || !isExist(Uuid)) {
-    return UUID_t();
-  }
-  UUID_t CurUuid = Uuid;
-  while (getDbgInfo(CurUuid).Uuid_P) {
-    CurUuid = getDbgInfo(CurUuid).Uuid_P;
-  }
-  return CurUuid;
-}
-
 void DIBuilder4View::allocateSID(UUID_t Uuid) {
   if (!Uuid) {
     return;
