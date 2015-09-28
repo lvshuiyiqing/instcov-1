@@ -17,13 +17,15 @@
 #define INSTCOV_DISLOTTREE_H_
 
 #include <map>
+#include <deque>
 #include <iostream>
-#include "DIBuilder4View.h"
+#include "instcov/DbgInfoMgr.h"
+#include "instcov/LogMgr.h"
 
 namespace instcov {
 class DISlotTree {
  public:
-  DISlotTree(UUID_t Root, const DIBuilder4View &dib);
+  DISlotTree(UUID_t Root, const DbgInfoMgr &dim);
   ~DISlotTree(void);
 
   void dump(std::ostream &OS) const;
@@ -31,17 +33,18 @@ class DISlotTree {
   bool canAccept(UUID_t Uuid) const;
   bool isFull(void) const { return NumEmptySlots == 0; }
   bool isRootFilled(void) const { return Records.count(R) != 0; }
+  LogEntry convert2LogEntry(void) const;
 
  private:
   void printTreeDFS(std::ostream &OS,
                     UUID_t Uuid,
                     uint64_t depth) const;
-  
+  void getUUIDsDFS(UUID_t Uuid, std::deque<UUID_t> &uuids) const;
  public:
   std::map<const UUID_t, uint64_t> Records;
   std::size_t NumEmptySlots;
   UUID_t R;
-  const DIBuilder4View &DIB;
+  const DbgInfoMgr &DIM;
 };
 }
 

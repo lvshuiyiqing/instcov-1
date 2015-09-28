@@ -34,7 +34,8 @@ class DbgInfoMgr {
 
  public:
   void registerFuncInfo(UUID_t uuid, const std::string &funcName, const LocInfo &loc);
-  virtual void registerDCInfo(UUID_t c, UUID_t p, const LocInfo &loc);
+  void registerDCInfo(UUID_t c, UUID_t p, const LocInfo &loc);
+  void registerSwitchInfo(UUID_t uuid, const LocInfo &loc);
 
   const DbgInfo_DC *getDbgInfoDC(UUID_t Uuid) const {
     return llvm::dyn_cast<const DbgInfo_DC>(DbgInfos.find(Uuid)->second);
@@ -59,12 +60,15 @@ class DbgInfoMgr {
     return RegisteredDCs.count(Uuid);
   }
 
-  void dump(const std::string &MainFileName) const;
+  void dump(std::ostream &File) const;
+  void load(std::istream &File);
   bool selfCheck4DC(void) const;
   std::size_t getNumNodes4DC(UUID_t Uuid) const;
+  UUID_t toRoot4DC(UUID_t Uuid) const;
 
  private:
   void dumpOne(std::ostream &File, UUID_t Uuid) const;
+  void loadOne(std::istream &File);
 
  private:
   std::map<UUID_t, DbgInfo*> DbgInfos;

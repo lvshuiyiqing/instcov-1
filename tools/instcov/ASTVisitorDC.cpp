@@ -30,19 +30,13 @@
 #include "llvm/ADT/StringSet.h"
 #include "ASTVisitorDC.h"
 #include "InstCovActions.h"
+#include "CheckLocation.h"
 
 using namespace llvm;
 using namespace clang;
 using namespace instcov;
 
 extern llvm::cl::OptionCategory InstCovCategory;
-
-cl::opt<bool> InstSwitch(
-    "inst-switch",
-    cl::desc("enable switch instrumentation.\n"
-             "Default value: false\n"),
-    cl::cat(InstCovCategory),
-    cl::init(false));
 
 cl::opt<bool> InstRHS(
     "inst-RHS",
@@ -70,120 +64,113 @@ cl::opt<bool> NoShortCircuits(
     cl::cat(InstCovCategory),
     cl::init(false));
 
-extern llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
+namespace {
+const std::string INSTCOV_FUNC_NAME = "instcov_dc_dump";
 
-void InstCovActionDC::VisitTranslationUnit(clang::TranslationUnitDecl *D) {
-  ASTVisitorDC Visitor(TheRewriter, TheASTContext, DIM);
-  Visitor.TraverseDecl(D);
+SourceLocation findSemiAfterLocation(Rewriter &R, SourceLocation sl) {
+  // llvm::errs() << "finding semicolon after location\n";
+  SourceManager &SM = R.getSourceMgr();
+  if (sl.isMacroID()) {
+    // in a macro, return invalid
+    SM.getDiagnostics().Report(sl, diag::err_mt_message)
+        << "ERR: the given location is inside a macro\n";
+    exit(1);
+  }
+  sl = Lexer::getLocForEndOfToken(sl, 0, SM, R.getLangOpts());
+  std::pair<FileID, unsigned> locInfo = SM.getDecomposedLoc(sl);
+
+  // Try to load the file buffer
+  bool invalidTemp = false;
+  StringRef file = SM.getBufferData(locInfo.first, &invalidTemp);
+  if (invalidTemp) {
+    SM.getDiagnostics().Report(sl, diag::err_mt_message)
+        << "ERR: cannot find the original location\n";
+    exit(1);
+  }
+
+  const char *tokenBegin = file.data() + locInfo.second;
+
+  Lexer lexer(SM.getLocForStartOfFile(locInfo.first),
+              R.getLangOpts(),
+              file.begin(), tokenBegin, file.end());
+  Token tok;
+  lexer.LexFromRawLexer(tok);
+  if (tok.isNot(tok::semi)) {
+    SM.getDiagnostics().Report(sl, diag::err_mt_message)
+        << "ERR: the next location is not a semicolon\n";
+    exit(1);
+  }
+  // llvm::errs() << "SUCCESS: semicolon found\n";
+  return tok.getLocation();
 }
 
-namespace{
-  std::string INSTCOV_FUNC_NAME = "instcov_dump";
 
-  SourceLocation findSemiAfterLocation(Rewriter &R, SourceLocation sl) {
-    // llvm::errs() << "finding semicolon after location\n";
-    SourceManager &SM = R.getSourceMgr();
-    if (sl.isMacroID()) {
-      // in a macro, return invalid
-      SM.getDiagnostics().Report(sl, diag::err_mt_message)
-          << "ERR: the given location is inside a macro\n";
-      exit(1);
-    }
-    sl = Lexer::getLocForEndOfToken(sl, 0, SM, R.getLangOpts());
-    std::pair<FileID, unsigned> locInfo = SM.getDecomposedLoc(sl);
-
-    // Try to load the file buffer
-    bool invalidTemp = false;
-    StringRef file = SM.getBufferData(locInfo.first, &invalidTemp);
-    if (invalidTemp) {
-      SM.getDiagnostics().Report(sl, diag::err_mt_message)
-          << "ERR: cannot find the original location\n";
-      exit(1);
-    }
-
-    const char *tokenBegin = file.data() + locInfo.second;
-
-    Lexer lexer(SM.getLocForStartOfFile(locInfo.first),
-                R.getLangOpts(),
-                file.begin(), tokenBegin, file.end());
-    Token tok;
-    lexer.LexFromRawLexer(tok);
-    if (tok.isNot(tok::semi)) {
-      SM.getDiagnostics().Report(sl, diag::err_mt_message)
-          << "ERR: the next location is not a semicolon\n";
-      exit(1);
-    }
-    // llvm::errs() << "SUCCESS: semicolon found\n";
-    return tok.getLocation();
+SourceLocation FindEndLoc(Stmt *s, Rewriter &R) {
+  SourceManager &SM = R.getSourceMgr();
+  SourceLocation EndSL = s->getLocEnd();
+  char TailChar = *SM.getCharacterData(EndSL);
+  if (TailChar == '}' || TailChar == ';') {
+    return EndSL.getLocWithOffset(1);
   }
+  return findSemiAfterLocation(R, EndSL).getLocWithOffset(1);
+}
 
+typedef std::vector<std::pair<UUID_t, uint64_t> > InstInfo;
 
-  SourceLocation FindEndLoc(Stmt *s, Rewriter &R) {
-    SourceManager &SM = R.getSourceMgr();
-    SourceLocation EndSL = s->getLocEnd();
-    char TailChar = *SM.getCharacterData(EndSL);
-    if (TailChar == '}' || TailChar == ';') {
-      return EndSL.getLocWithOffset(1);
-    }
-    return findSemiAfterLocation(R, EndSL).getLocWithOffset(1);
+void InstCompoundStmt(
+    CompoundStmt *s, Rewriter &R,
+    const InstInfo &instinfo) {
+  std::stringstream ss;
+  for (auto &Uuid_Bid : instinfo) {
+    ss << "\n  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString()
+       << ", " << Uuid_Bid.second << ");";
   }
+  R.InsertText(s->getLBracLoc().getLocWithOffset(1), ss.str(), true, true);
+}
 
-  typedef std::vector<std::pair<UUID_t, uint64_t> > InstInfo;
-
-  void InstCompoundStmt(
-      CompoundStmt *s, Rewriter &R,
-      const InstInfo &instinfo) {
-    std::stringstream ss;
-    for (auto &Uuid_Bid : instinfo) {
-      ss << "\n  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString()
-         << ", " << Uuid_Bid.second << ");";
-    }
-    R.InsertText(s->getLBracLoc().getLocWithOffset(1), ss.str(), true, true);
-  }
-
-  void InstSingleStmt(
-      Stmt *s, Rewriter &R,
-      const InstInfo &instinfo) {
-    std::stringstream ss;
-    ss << "{\n";
-    for (auto &Uuid_Bid : instinfo) {
-      ss << "  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
+void InstSingleStmt(
+    Stmt *s, Rewriter &R,
+    const InstInfo &instinfo) {
+  std::stringstream ss;
+  ss << "{\n";
+  for (auto &Uuid_Bid : instinfo) {
+    ss << "  " << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
        << Uuid_Bid.second << ");\n";
-    }
-    R.InsertText(s->getLocStart(), ss.str(), true, true);
-    R.InsertText(FindEndLoc(s, R), "\n}", false, true);
   }
+  R.InsertText(s->getLocStart(), ss.str(), true, true);
+  R.InsertText(FindEndLoc(s, R), "\n}", false, true);
+}
 
-  void InstInBlock(
-      Stmt *s, Rewriter &R,
-      const InstInfo &instinfo) {
-    if (isa<CompoundStmt>(s)) {
-      InstCompoundStmt(cast<CompoundStmt>(s), R, instinfo);
-    } else {
-      InstSingleStmt(s, R, instinfo);
-    }
+void InstInBlock(
+    Stmt *s, Rewriter &R,
+    const InstInfo &instinfo) {
+  if (isa<CompoundStmt>(s)) {
+    InstCompoundStmt(cast<CompoundStmt>(s), R, instinfo);
+  } else {
+    InstSingleStmt(s, R, instinfo);
   }
+}
 
-  void InstAfterBody(SourceLocation endLoc, Rewriter &R,
-                     const InstInfo &instinfo,
-                     bool indent = false, bool braces = false) {
-    std::stringstream ss;
-    ss << "\n";
-    if (braces) {
-      ss << "{\n";
-    }
-    for (auto &Uuid_Bid : instinfo) {
-      if (indent) {
-        ss << "  ";
-      }
-      ss << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
-         << Uuid_Bid.second << ");\n";
-    }
-    if (braces) {
-      ss << "}";
-    }
-    R.InsertText(endLoc, ss.str(), false, true);
+void InstAfterBody(SourceLocation endLoc, Rewriter &R,
+                   const InstInfo &instinfo,
+                   bool indent = false, bool braces = false) {
+  std::stringstream ss;
+  ss << "\n";
+  if (braces) {
+    ss << "{\n";
   }
+  for (auto &Uuid_Bid : instinfo) {
+    if (indent) {
+      ss << "  ";
+    }
+    ss << INSTCOV_FUNC_NAME << "(" << Uuid_Bid.first.toArgString() << ", "
+       << Uuid_Bid.second << ");\n";
+  }
+  if (braces) {
+    ss << "}";
+  }
+  R.InsertText(endLoc, ss.str(), false, true);
+}
 }
 
 #define TRY_TO(CALL_EXPR)                                                      \
@@ -199,18 +186,8 @@ ASTVisitorDC::~ASTVisitorDC(void) {
   }
 }
 
-bool ASTVisitorDC::checkLocation(Stmt *s) const {
-  if (MatchFileNames.empty()) {
-    return true;
-  }
-  SourceManager &SM = TheRewriter.getSourceMgr();
-  StringRef PresumedFileName =
-      SM.getPresumedLoc(s->getLocStart()).getFilename();
-  return MatchFileNames.count(PresumedFileName);
-}
-
 bool ASTVisitorDC::VisitIfStmt(IfStmt *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   VarDecl *VD = s->getConditionVariable();
@@ -263,7 +240,7 @@ bool ASTVisitorDC::VisitIfStmt(IfStmt *s) {
 }
 
 bool ASTVisitorDC::VisitForStmt(ForStmt *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   MCDCVisitForStmt(s);
@@ -276,7 +253,7 @@ bool ASTVisitorDC::VisitForStmt(ForStmt *s) {
 }
 
 bool ASTVisitorDC::VisitWhileStmt(WhileStmt *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   VarDecl *VD = s->getConditionVariable();
@@ -317,7 +294,7 @@ bool ASTVisitorDC::VisitWhileStmt(WhileStmt *s) {
 }
 
 bool ASTVisitorDC::VisitDoStmt(DoStmt *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   MCDCVisitDoStmt(s);
@@ -332,40 +309,8 @@ bool ASTVisitorDC::VisitDoStmt(DoStmt *s) {
   return true;
 }
 
-bool ASTVisitorDC::VisitSwitchStmt(SwitchStmt *s) {
-  if (!checkLocation(s)) {
-    return true;
-  }
-  if (!InstSwitch) {
-    return true;
-  }
-  std::stringstream header_ss;
-  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
-  UUID_t Uuid = DIB.getDCUUID(s);
-  // BUG FIX: added a ";" before the VarDecl so that this will be legal after
-  // a goto label
-  header_ss << ";int instcov_f" << Uuid.toString() << " = 1;\n";
-  TheRewriter.InsertText(s->getLocStart(), header_ss.str(), true, true);
-  SwitchCase *SC = s->getSwitchCaseList();
-  uint64_t bid = 2;
-  while (SC) {
-    if (!isa<CaseStmt>(SC->getSubStmt())) {
-      std::stringstream ss;
-      ss.clear();
-      ss << "if (instcov_f" << Uuid.toString() << " == 1) {\n"
-         << "  instcov_dump(" << Uuid.toArgString() << ", " << bid++ << ");\n"
-         << "  instcov_f" << Uuid.toString() << " = 0;\n"
-         << "}\n";
-      TheRewriter.InsertText(SC->getSubStmt()->getLocStart(), ss.str(),
-                             true, true);
-    }
-    SC = SC->getNextSwitchCase();
-  }
-  return true;
-}
-
 bool ASTVisitorDC::VisitBinaryOperator(BinaryOperator *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   if (!InstRHS || !s->isAssignmentOp()) {
@@ -376,7 +321,7 @@ bool ASTVisitorDC::VisitBinaryOperator(BinaryOperator *s) {
 }
 
 bool ASTVisitorDC::VisitReturnStmt(ReturnStmt *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   if (!InstRHS) {
@@ -390,7 +335,7 @@ bool ASTVisitorDC::VisitReturnStmt(ReturnStmt *s) {
 
 bool ASTVisitorDC::VisitAbstractConditionalOperator(
     AbstractConditionalOperator *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   MCDCVisitExpr(s->getCond());
@@ -427,7 +372,7 @@ bool ASTVisitorDC::isSimpleRHS(Expr *e) {
 }
 
 bool ASTVisitorDC::VisitDeclStmt(DeclStmt *s) {
-  if (!checkLocation(s)) {
+  if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
   if (!InstRHS) {
@@ -444,7 +389,7 @@ bool ASTVisitorDC::VisitDeclStmt(DeclStmt *s) {
 }
 
 bool ASTVisitorDC::TraverseCallExpr(CallExpr *e) {
-  if (!checkLocation(e)) {
+  if (!checkLocation(e, TheRewriter.getSourceMgr())) {
     return true;
   }
   if (FunctionDecl *decl = e->getDirectCallee()) {

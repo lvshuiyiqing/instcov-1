@@ -13,6 +13,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#ifndef INSTCOV_ASTVISITORDC_H_
+#define INSTCOV_ASTVISITORDC_H_
+
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -26,6 +29,7 @@
 #include "instcov/DbgInfoMgr.h"
 #include "InstDIBuilderDC.h"
 
+namespace instcov {
 class ASTVisitorDC : public clang::RecursiveASTVisitor<ASTVisitorDC> {
  public:
   typedef clang::RecursiveASTVisitor<ASTVisitorDC> base_t;
@@ -42,7 +46,6 @@ class ASTVisitorDC : public clang::RecursiveASTVisitor<ASTVisitorDC> {
   bool VisitForStmt(clang::ForStmt *s);
   bool VisitWhileStmt(clang::WhileStmt *s);
   bool VisitDoStmt(clang::DoStmt *s);
-  bool VisitSwitchStmt(clang::SwitchStmt *s);
   bool VisitBinaryOperator(clang::BinaryOperator *s);
   bool VisitDeclStmt(clang::DeclStmt *s);
   bool VisitReturnStmt(clang::ReturnStmt *s);
@@ -65,7 +68,6 @@ class ASTVisitorDC : public clang::RecursiveASTVisitor<ASTVisitorDC> {
   void MCDCVisitBinaryOperator(clang::BinaryOperator *s);
 
  private:
-  bool checkLocation(clang::Stmt *s) const;
   void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p = 0);
 
   static bool isSimpleRHS(clang::Expr *e);
@@ -78,3 +80,6 @@ class ASTVisitorDC : public clang::RecursiveASTVisitor<ASTVisitorDC> {
   clang::ASTContext &TheASTContext;
   instcov::InstDIBuilderDC DIB;
 };
+}
+
+#endif  // INSTCOV_ASTVISITORDC_H_

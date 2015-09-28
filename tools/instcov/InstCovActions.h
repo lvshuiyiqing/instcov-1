@@ -1,4 +1,4 @@
-//===-- InstCovAction.h --------- InstCovAction declaration -----*- C++ -*-===//
+//===-- InstCovActions.h ------- InstCovActions declaration -----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -16,7 +16,8 @@
 #ifndef INSTCOV_INSTCOVACTIONS_H_
 #define INSTCOV_INSTCOVACTIONS_H_
 
-
+#include "clang/Rewrite/Core/Rewriter.h"
+#include "clang/AST/AST.h"
 
 namespace instcov {
 class DbgInfoMgr;
@@ -26,36 +27,19 @@ class InstCovAction {
                 clang::ASTContext &C,
                 DbgInfoMgr &dim)
       : TheRewriter(R), TheASTContext(C), DIM(dim) {}
+  virtual ~InstCovAction(void) {}
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
   DbgInfoMgr &DIM;
 
  public:
   virtual void VisitTranslationUnit(clang::TranslationUnitDecl *D) = 0;
+  static InstCovAction *CreateAction(
+      const std::string &actionName,
+      clang::Rewriter &R,
+      clang::ASTContext &C,
+      DbgInfoMgr &dim);
 };
-
-class InstCovActionDC : public InstCovAction {
- public:
-  InstCovActionDC(clang::Rewriter &R,
-                  clang::ASTContext &C,
-                  DbgInfoMgr &dim)
-      : InstCovAction(R, C, dim) {}
-
- public:
-  virtual void VisitTranslationUnit(clang::TranslationUnitDecl *D);
-};
-
-class InstCovActionFunc : public InstCovAction {
- public:
-  InstCovActionFunc(clang::Rewriter &R,
-                    clang::ASTContext &C,
-                  DbgInfoMgr &dim)
-      : InstCovAction(R, C, dim) {}
-
- public:
-  virtual void VisitTranslationUnit(clang::TranslationUnitDecl *D);
-};
-
 }
 
 #endif  // INSTCOV_INSTCOVACTIONS_H_

@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <cstdio>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <algorithm>
@@ -70,18 +71,20 @@ class InstCovASTConsumer : public ASTConsumer {
   // declaration.
   virtual void HandleTranslationUnit(ASTContext &Context) {
     DbgInfoMgr DIM;
-    for (auto &actionString : OptActions) {
-      if (actionString == "dc") {
-        InstCovActionDC Action(TheRewriter, Context, DIM);
-        Action.VisitTranslationUnit(Context.getTranslationUnitDecl());
-        DIM.dump(TheRewriter.getSourceMgr().getFileEntryForID(
-            TheRewriter.getSourceMgr().getMainFileID())->getName());
-      } else if (actionString == "switch") {
-
-      } else if (actionString == "func") {
-
-      }
+    for (auto &actionName : OptActions) {
+      InstCovAction *action = InstCovAction::CreateAction(
+          actionName, TheRewriter, Context, DIM);
+      action->VisitTranslationUnit(Context.getTranslationUnitDecl());
+      delete action;
     }
+    std::string MainFileName = TheRewriter.getSourceMgr().getFileEntryForID(
+        TheRewriter.getSourceMgr().getMainFileID())->getName();
+    std::ofstream DbgInfoFile(MainFileName + ".dbginfo", std::ios::binary);
+    if (!DbgInfoFile) {
+      std::cerr << "cannot open debug info file, exiting" << std::endl;
+      exit(1);
+    }
+    DIM.dump(DbgInfoFile);
   }
  private:
   Rewriter TheRewriter;
