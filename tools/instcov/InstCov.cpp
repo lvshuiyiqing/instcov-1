@@ -87,7 +87,7 @@ class InstCovASTConsumer : public ASTConsumer {
     DIM.dump(DbgInfoFile);
   }
  private:
-  Rewriter TheRewriter;
+  Rewriter &TheRewriter;
 };
 
 class InstCovFrontendAction : public ASTFrontendAction {

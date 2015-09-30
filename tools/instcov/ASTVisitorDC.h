@@ -68,7 +68,7 @@ class ASTVisitorDC : public clang::RecursiveASTVisitor<ASTVisitorDC> {
   void MCDCVisitBinaryOperator(clang::BinaryOperator *s);
 
  private:
-  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p = 0);
+  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p);
 
   static bool isSimpleRHS(clang::Expr *e);
   // skip all top-level implicit casts and find the root expr

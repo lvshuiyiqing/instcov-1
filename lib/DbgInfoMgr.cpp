@@ -152,6 +152,10 @@ void DbgInfoMgr::registerDCInfo(
   RegisteredUuids.insert(c);
   RegisteredDCs.insert(c);
   if (p) {
+    if (!isExist(p)) {
+      std::cerr << "you need to register the parent DC first" << std::endl;
+      exit(1);
+    }
     if (DbgInfos[p]->getKind() != DbgInfo::DIK_DC) {
       std::cerr << "the parent is not DC, why?" << std::endl;
       exit(1);
@@ -227,7 +231,7 @@ bool DbgInfoMgr::selfCheck4DC(void) const {
   for (auto uuid : RegisteredDCs) {
     auto di = getDbgInfoDC(uuid);
     UUID_t Uuid_P = di->Uuid_P;
-    if (RegisteredDCs.count(Uuid_P) == 0) {
+    if (Uuid_P && RegisteredDCs.count(Uuid_P) == 0) {
       std::cerr << "DbgInfoMgr self-check: UUID " << Uuid_P.toString()
                 << " is a parent, but not registered" << std::endl;
       return false;
