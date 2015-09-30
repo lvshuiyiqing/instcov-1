@@ -40,25 +40,11 @@ std::string GenDumpFileName(void) {
   return DumpFile;
 }
 
-bool IsBinaryMode(void) {
-  char *env_text_mode = getenv("INSTCOV_TEXT_MODE");
-  if (env_text_mode&&
-      (!strcmp(env_text_mode, "YES") || !strcmp(env_text_mode, "TRUE"))) {
-    return false;
-  }
-  return true;
-}
-
 namespace {
 static class InstCovLogger {
  public:
   InstCovLogger(void) {
-    BinaryMode = IsBinaryMode();
-    if (BinaryMode) {
-      TraceFile.open(GenDumpFileName().c_str(), std::ios::binary);
-    } else {
-      TraceFile.open(GenDumpFileName().c_str());
-    }
+    TraceFile.open(GenDumpFileName().c_str(), std::ios::binary);
     LogMagic();
   }
 
@@ -78,29 +64,13 @@ static class InstCovLogger {
       TraceFile.write((const char *)&Padding, PaddingSize);
     }
   }
-  
-  void LogText(uint64_t id_high, uint64_t id_low, uint64_t bid) {
-    TraceFile << "(" << std::hex << "0x" << id_high << id_low  << ", "
-              << std::dec << bid << ")\n";
-  }
 
-  void LogBinary(uint64_t id_high, uint64_t id_low, uint64_t bid) {
-    TraceFile.write((const char *)&id_high, sizeof(id_high));
-    TraceFile.write((const char *)&id_low, sizeof(id_low));
-    TraceFile.write((const char *)&bid, sizeof(bid));
-  }
-  
-  void Log(uint64_t id_high, uint64_t id_low, uint64_t bid) {
-    if (BinaryMode) {
-      LogBinary(id_high, id_low, bid);
-    } else {
-      LogText(id_high, id_low, bid);
-    }
+  std::ofstream &getTraceFile(void) {
+    return TraceFile;
   }
 
  private:
   std::ofstream TraceFile;
-  bool BinaryMode;
 } staInstCovLogger;
 
 
@@ -147,7 +117,22 @@ static class SigHandler {
 } staSigHandler;
 }
 
-void instcov_dump(uint64_t id_high, uint64_t id_low, uint64_t bid) {
-  staInstCovLogger.Log(id_high, id_low, bid);
+void instcov_dc_dump(uint64_t id_high, uint64_t id_low, uint64_t bid) {
+  std::ofstream &TraceFile = staInstCovLogger.getTraceFile();
+  TraceFile.write((const char *)&id_high, sizeof(id_high));
+  TraceFile.write((const char *)&id_low, sizeof(id_low));
+  TraceFile.write((const char *)&bid, sizeof(bid));
 }
 
+void instcov_switch_dump(uint64_t id_high, uint64_t id_low, uint64_t bid) {
+  std::ofstream &TraceFile = staInstCovLogger.getTraceFile();
+  TraceFile.write((const char *)&id_high, sizeof(id_high));
+  TraceFile.write((const char *)&id_low, sizeof(id_low));
+  TraceFile.write((const char *)&bid, sizeof(bid));
+}
+
+void instcov_func_dump(uint64_t id_high, uint64_t id_low) {
+  std::ofstream &TraceFile = staInstCovLogger.getTraceFile();
+  TraceFile.write((const char *)&id_high, sizeof(id_high));
+  TraceFile.write((const char *)&id_low, sizeof(id_low));
+}

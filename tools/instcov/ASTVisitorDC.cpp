@@ -200,13 +200,13 @@ bool ASTVisitorDC::VisitIfStmt(IfStmt *s) {
   if (VD) {
     SimpleRHS = isSimpleRHS(VDInit);
   }
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
   if (!VD) {
     MCDCVisitIfStmt(s);
   } else if (!SimpleRHS){
     Expr *RHSRoot = toRHSRoot(VDInit);
     MCDCVisitExpr(RHSRoot, s);
   }
-  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIB.getDCUUID(s);
   // Only care about If statements.
   Stmt *Then = s->getThen();
@@ -243,8 +243,8 @@ bool ASTVisitorDC::VisitForStmt(ForStmt *s) {
   if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
-  MCDCVisitForStmt(s);
   DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
+  MCDCVisitForStmt(s);
   UUID_t uuid = DIB.getDCUUID(s);
   SourceLocation BodyEndLoc = FindEndLoc(s->getBody(), TheRewriter);
   InstAfterBody(BodyEndLoc, TheRewriter, InstInfo(1, std::make_pair(uuid, 0)));
@@ -266,13 +266,13 @@ bool ASTVisitorDC::VisitWhileStmt(WhileStmt *s) {
   if (VD) {
     SimpleRHS = isSimpleRHS(VD->getInit());
   }
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
   if (!VD) {
     MCDCVisitWhileStmt(s);
   } else if (!SimpleRHS) {
     Expr *RHSRoot = toRHSRoot(VDInit);
     MCDCVisitExpr(RHSRoot, s);
   }
-  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
   UUID_t uuid = DIB.getDCUUID(s);
   if (VD && SimpleRHS) {
     DIB.registerDC(VDInit, s, TheRewriter.getSourceMgr());
@@ -297,8 +297,8 @@ bool ASTVisitorDC::VisitDoStmt(DoStmt *s) {
   if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
-  MCDCVisitDoStmt(s);
   DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
+  MCDCVisitDoStmt(s);
   TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
   UUID_t uuid = DIB.getDCUUID(s);
   std::stringstream ss;
@@ -338,7 +338,16 @@ bool ASTVisitorDC::VisitAbstractConditionalOperator(
   if (!checkLocation(s, TheRewriter.getSourceMgr())) {
     return true;
   }
-  MCDCVisitExpr(s->getCond());
+  SourceLocation locStart = s->getCond()->getLocStart();
+  SourceLocation locEnd = s->getQuestionLoc();
+  DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
+  MCDCVisitExpr(s->getCond(), s);
+  TheRewriter.InsertText(locStart, "(", false, true);
+  UUID_t Uuid = DIB.getDCUUID(s);
+  std::stringstream ss;
+  ss << "?(" << INSTCOV_FUNC_NAME << "(" << Uuid.toArgString() << ", 1), 1)"
+     << ":(" << INSTCOV_FUNC_NAME << "(" << Uuid.toArgString() << ", 0), 0))";
+  TheRewriter.InsertText(locEnd, ss.str(), true, true);
   return true;
 }
 
@@ -437,12 +446,12 @@ void ASTVisitorDC::handleRHS4Assgn_NormalVarDecl(clang::Expr *e) {
     return;
   }
   Expr *RHSRoot = toRHSRoot(e);
+  DIB.registerDC(RHSRoot, nullptr, TheRewriter.getSourceMgr());
   MCDCVisitExpr(RHSRoot, RHSRoot);
   SourceLocation LocStart = RHSRoot->getLocStart();
   SourceLocation LocEnd = Lexer::getLocForEndOfToken(
       RHSRoot->getLocEnd(), 0,
       TheRewriter.getSourceMgr(), TheRewriter.getLangOpts());
-  DIB.registerDC(RHSRoot, nullptr, TheRewriter.getSourceMgr());
   TheRewriter.InsertText(LocStart, "(", true, true);
   UUID_t uuid = DIB.getDCUUID(RHSRoot);
   std::stringstream ss;
@@ -496,7 +505,7 @@ void ASTVisitorDC::MCDCVisitExpr(Expr *e, Stmt *p) {
       UUID_t uuid = DIB.getDCUUID(CondExpr);
       std::string dumper;
       llvm::raw_string_ostream os(dumper);
-      os << "instcov_dump(" << uuid.toArgString() << ", (";
+      os << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", (";
       CondExpr->printPretty(os, nullptr,
                          PrintingPolicy(TheASTContext.getLangOpts()));
       os << ") ? 1 : 0), ";
@@ -515,8 +524,9 @@ void ASTVisitorDC::MCDCVisitExpr(Expr *e, Stmt *p) {
       TheRewriter.InsertText(CondExpr->getLocStart(), "((", true, true);
       std::string dumper;
       llvm::raw_string_ostream os(dumper);
-      os << ") ? (" << "instcov_dump(" << uuid.toArgString() << ",1),1) : ("
-         << "instcov_dump(" << uuid.toArgString() << ",0),0)) ";
+      os << ") ? (" << INSTCOV_FUNC_NAME << "("
+         << uuid.toArgString() << ",1),1) : ("
+         << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ",0),0)) ";
       os.flush();
       SourceLocation endLoc = Lexer::getLocForEndOfToken(
           CondExpr->getLocEnd(), 0, TheRewriter.getSourceMgr(),
