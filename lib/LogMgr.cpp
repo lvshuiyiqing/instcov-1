@@ -89,73 +89,73 @@ void LogEntry::dump(std::ostream &OS) const {
   }
 }
 
-LogMgr::LogMgr() {
-}
+// LogMgr::LogMgr() {
+// }
 
-LogMgr::~LogMgr() {
-}
+// LogMgr::~LogMgr() {
+// }
 
-void LogMgr::loadFile(const std::string &fileName) {
-  std::ifstream InFile(fileName.c_str());
-  if (!InFile) {
-    std::cerr << "cannot open file: " << fileName << std::endl;
-    exit(1);
-  }
+// void LogMgr::loadFile(const std::string &fileName) {
+//   std::ifstream InFile(fileName.c_str());
+//   if (!InFile) {
+//     std::cerr << "cannot open file: " << fileName << std::endl;
+//     exit(1);
+//   }
 
-  FileNames.push_back(fileName);
-  std::stack<std::vector<std::pair<UUID_t, uint64_t> > > S;
-  S.push(std::vector<std::pair<UUID_t, uint64_t> >());
-  bool success = true;
-  size_t VID = 0;
-  while (true) {
-    auto PL = parseLine(InFile, success);
-    if (!success) {
-      break;
-    }
-    unsigned depth = 0;
-    UUID_t Uuid;
-    uint64_t Bid;
-    LocInfo LI;
-    std::tie(depth, Uuid, Bid, LI) = PL;
-    LocInfos[Uuid] = LI;
-    while (depth+1 < S.size()) {
-      if (S.top().empty()){
-        S.pop();
-      } else {
-        LogEntry Entry;
-        Entry.TID = FileNames.size();
-        Entry.VID = ++VID;
-        Entry.Cond2Val.clear();
-        Entry.Cond2Val.insert(S.top().begin(), S.top().end());
-        S.pop();
-        Entry.DecVal = S.top().back();
-        for (auto &&Cond_Val : Entry.Cond2Val) {
-          Children[Entry.DecVal.first].insert(Cond_Val.first);
-        }
-        LogEntries.push_back(Entry);
-      }
-    }
-    if (depth+1 == S.size()) {
-      S.top().push_back(std::make_pair(Uuid, Bid));
-      S.push(std::vector<std::pair<UUID_t, uint64_t> >());
-      continue;
-    }
-  }
-  while (1 < S.size()) {
-    if (S.top().empty()){
-      S.pop();
-    } else {
-      LogEntry Entry;
-      Entry.TID = FileNames.size();
-      Entry.VID = ++VID;
-      Entry.Cond2Val.clear();
-      Entry.Cond2Val.insert(S.top().begin(), S.top().end());
-      S.pop();
-      Entry.DecVal = S.top().back();
-      for (auto &Cond_Val : Entry.Cond2Val) {
-        Children[Entry.DecVal.first].insert(Cond_Val.first);
-      }
-      LogEntries.push_back(Entry);
-    }
-  }
-}
+//   FileNames.push_back(fileName);
+//   std::stack<std::vector<std::pair<UUID_t, uint64_t> > > S;
+//   S.push(std::vector<std::pair<UUID_t, uint64_t> >());
+//   bool success = true;
+//   size_t VID = 0;
+//   while (true) {
+//     auto PL = parseLine(InFile, success);
+//     if (!success) {
+//       break;
+//     }
+//     unsigned depth = 0;
+//     UUID_t Uuid;
+//     uint64_t Bid;
+//     LocInfo LI;
+//     std::tie(depth, Uuid, Bid, LI) = PL;
+//     LocInfos[Uuid] = LI;
+//     while (depth+1 < S.size()) {
+//       if (S.top().empty()){
+//         S.pop();
+//       } else {
+//         LogEntry Entry;
+//         Entry.TID = FileNames.size();
+//         Entry.VID = ++VID;
+//         Entry.Cond2Val.clear();
+//         Entry.Cond2Val.insert(S.top().begin(), S.top().end());
+//         S.pop();
+//         Entry.DecVal = S.top().back();
+//         for (auto &&Cond_Val : Entry.Cond2Val) {
+//           Children[Entry.DecVal.first].insert(Cond_Val.first);
+//         }
+//         LogEntries.push_back(Entry);
+//       }
+//     }
+//     if (depth+1 == S.size()) {
+//       S.top().push_back(std::make_pair(Uuid, Bid));
+//       S.push(std::vector<std::pair<UUID_t, uint64_t> >());
+//       continue;
+//     }
+//   }
+//   while (1 < S.size()) {
+//     if (S.top().empty()){
+//       S.pop();
+//     } else {
+//       LogEntry Entry;
+//       Entry.TID = FileNames.size();
+//       Entry.VID = ++VID;
+//       Entry.Cond2Val.clear();
+//       Entry.Cond2Val.insert(S.top().begin(), S.top().end());
+//       S.pop();
+//       Entry.DecVal = S.top().back();
+//       for (auto &Cond_Val : Entry.Cond2Val) {
+//         Children[Entry.DecVal.first].insert(Cond_Val.first);
+//       }
+//       LogEntries.push_back(Entry);
+//     }
+//   }
+// }

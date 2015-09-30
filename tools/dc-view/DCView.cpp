@@ -1,4 +1,4 @@
-//===-- RecordMgr.cpp ----- trace record manager definition -----*- C++ -*-===//
+//===-- DCView.cpp ---------- main file for dc-view -------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,24 +8,27 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the definition for trace record manager
+/// \brief This file contains the main function of dc-view
+/// \brief Used for viewing DC traces in a pretty way
 ///
 //===----------------------------------------------------------------------===//
 
 #include <iostream>
 #include <fstream>
-#include "RecordMgr.h"
+#include "instcov/RawRecordMgr.h"
+#include "instcov/RecordMgr.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
+#include "PrettyDumper.h"
 
 using namespace llvm;
 using namespace instcov;
 
-cl::opt<std::string> TraceFileName("t",
+cl::opt<std::string> TraceFileName(cl::Positional,
                                    cl::desc("<trace file>"));
-cl::list<std::string> FileNames(cl::Positional,
-                                cl::desc("[<debug info files> ...]"),
-                                cl::Required);
+cl::list<std::string> DIFileNames("di",
+                                  cl::desc("[<debug info files> ...]"),
+                                  cl::Required);
 cl::opt<std::string> OutputFileName(
     "o",
     cl::value_desc("output file name"),
@@ -58,11 +61,16 @@ int main(int argc, char *argv[]) {
       DumpFormat = "u:b (l:c:f)";
     }
   }
-  RecordMgr RM;
-  for (auto &FileName : FileNames) {
-    RM.getDIB().loadFile(FileName);
+  DbgInfoMgr DIM;
+  for (auto &DIFileName : DIFileNames) {
+    std::ifstream DIFile(DIFileName.c_str(), std::ios::binary);
+    if (!DIFile) {
+      std::cerr << "cannot open debug info file: " << DIFileName << std::endl;
+      exit(1);
+    }
+    DIM.load(DIFile);
   }
-  if (!RM.getDIB().selfCheck()) {
+  if (!DIM.selfCheck4DC()) {
     llvm::errs() << "debug information has problems!\n";
     exit(1);
   }
@@ -75,15 +83,19 @@ int main(int argc, char *argv[]) {
     llvm::errs() << "cannot open output file: " << OutputFileName << "\n";
     exit(1);
   }
+  PrettyDumper PD(DIM);
   if (DIOnly) {
-    RM.getDIB().dumpPretty(OutFile);
+    PD.dumpDIPretty(OutFile);
   } else {
     if (TraceFileName == "") {
       llvm::errs() << "trace file name is empty, please use -t argument\n";
       exit (1);
     }
-    RM.processTrace(TraceFileName);
-    RM.dump(OutFile);
+    RawRecordMgr RRM(DIM);
+    RecordMgr RM(DIM);
+    RRM.loadFromFile(TraceFileName);
+    RM.processTrace(RRM);
+    PD.dumpTracePretty(OutFile, RM);
   }
   return 0;
 }

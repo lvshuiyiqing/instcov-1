@@ -3,5 +3,7 @@ add_library(instcovBasic
   LogMgr.cpp
   PBOProblem.cpp
   DISlotTree.cpp
+  RawRecordMgr.cpp
   RecordMgr.cpp
+  RecordItem.cpp
 )

@@ -34,6 +34,8 @@ struct LocInfo {
   uint64_t Col;
 };
 
+struct RecordItem;
+
 struct DbgInfo {
  public:
   enum DIKind {
@@ -53,6 +55,8 @@ struct DbgInfo {
   // returns the written size
   virtual void dump2File(std::ostream &OS) const;
   static DbgInfo *loadFromFile(std::istream &File);
+  static RecordItem *loadRecordItem(std::istream &File);
+  virtual RecordItem *createRecordItem(void) const = 0;
   virtual void loadBodyFromFile(std::istream &File) = 0;
   virtual const char *getMagic(void) const = 0;
   DIKind getKind(void) const { return Kind; }
@@ -72,9 +76,8 @@ struct DbgInfo_DC : public DbgInfo {
 
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
+  virtual RecordItem *createRecordItem(void) const;
 
-  UUID_t Uuid_P;
-  std::vector<UUID_t> Children;
   static bool classof(const DbgInfo *DI) {
     return DI->getKind() == DIK_DC;
   }
@@ -85,6 +88,9 @@ struct DbgInfo_DC : public DbgInfo {
     static const char MAGIC[] = "DCDC";
     return MAGIC;
   }
+
+  UUID_t Uuid_P;
+  std::vector<UUID_t> Children;
 };
 
 struct DbgInfo_Switch : public DbgInfo {
@@ -95,6 +101,7 @@ struct DbgInfo_Switch : public DbgInfo {
 
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
+  virtual RecordItem *createRecordItem(void) const;
 
   static bool classof(const DbgInfo *DI) {
     return DI->getKind() == DIK_DC;
@@ -116,8 +123,7 @@ struct DbgInfo_Func : public DbgInfo {
 
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
-
-  std::string FuncName;
+  virtual RecordItem *createRecordItem(void) const;
 
   virtual const char *getMagic(void) const {
     return magic();
@@ -126,6 +132,8 @@ struct DbgInfo_Func : public DbgInfo {
     static const char MAGIC[] = "FUNC";
     return MAGIC;
   }
+
+  std::string FuncName;
 };
 }
 

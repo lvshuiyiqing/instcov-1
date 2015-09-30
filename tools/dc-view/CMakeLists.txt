@@ -1,7 +1,7 @@
 set(LLVM_LINK_COMPONENTS support)
 
 add_clang_executable(dc-view
-  DIBuilder4View.cpp
+  PrettyDumper.cpp
   DCView.cpp
 )
 

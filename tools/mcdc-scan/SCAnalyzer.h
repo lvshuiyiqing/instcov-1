@@ -34,8 +34,8 @@ class SCAnalyzer : public MCDCAnalyzer {
   }
 
  public:
-  virtual void registerEntry(const LogEntry *entry, const LogMgr &LM);
-  virtual void dump(std::ostream &OS, const LogMgr &LM) const;
+  virtual void registerEntry(const LogEntry *entry, const DbgInfoMgr &DIM);
+  virtual void dump(std::ostream &OS, const DbgInfoMgr &DIM) const;
   virtual void finalize(void);
 
   typedef std::string EvalVec_t;

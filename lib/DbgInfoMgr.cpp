@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "instcov/DbgInfoMgr.h"
+#include "instcov/RecordItem.h"
 #include "instcov/uuid.h"
 #include <iostream>
 #include <stack>
@@ -282,4 +283,16 @@ UUID_t DbgInfoMgr::toRoot4DC(UUID_t Uuid) const {
     CurUuid = getDbgInfoDC(CurUuid)->Uuid_P;
   }
   return CurUuid;
+}
+
+RecordItem *DbgInfo_DC::createRecordItem(void) const {
+  return new RecordItem_DC(Uuid);
+}
+
+RecordItem *DbgInfo_Switch::createRecordItem(void) const {
+  return new RecordItem_Switch(Uuid);
+}
+
+RecordItem *DbgInfo_Func::createRecordItem(void) const {
+  return new RecordItem_Func(Uuid);
 }
