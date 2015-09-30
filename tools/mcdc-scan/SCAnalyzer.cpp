@@ -43,11 +43,11 @@ bool isMatch(char LHS, char RHS) {
 }
 }
 
-void SCAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
+void SCAnalyzer::registerEntry(const LogEntry *entry, const DbgInfoMgr &DIM) {
   EvalVec_t NewEV;
   std::vector<UUID_t> ThisCondOrder;
   NewEV.reserve(entry->Cond2Val.size()+1);
-  auto corder = getSortedIterators(entry->Cond2Val, LM);
+  auto corder = getSortedIterators(entry->Cond2Val, DIM);
   for (auto &it_Cond_Val : corder) {
     Uuid2EVPos[it_Cond_Val->first] = NewEV.size();
     NewEV.push_back(bid2char(it_Cond_Val->second));
@@ -104,21 +104,21 @@ size_t SCAnalyzer::findMatch(const EvalVec_t &LHS,
   return ID;
 }
 
-void SCAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
+void SCAnalyzer::dump(std::ostream &OS, const DbgInfoMgr &DIM) const {
   std::size_t NumCovered = 0;
   std::size_t NumUncovered = 0;
   // decision level
-  auto dorder = getSortedIterators(Dec2Pairs, LM);
+  auto dorder = getSortedIterators(Dec2Pairs, DIM);
   for (auto &it_Dec_Pairs : dorder) {
     UUID_t UuidD = it_Dec_Pairs->first;
     OS << UuidD.toString()
-       << " (" << getLocString(LM, it_Dec_Pairs->first) << ")"
+       << " (" << getLocString(DIM, it_Dec_Pairs->first) << ")"
        << ":" << std::endl;
     // condition level
-    auto corder = getSortedIterators(it_Dec_Pairs->second, LM);
+    auto corder = getSortedIterators(it_Dec_Pairs->second, DIM);
     for (auto &it_Cond_Pairs : corder) {
       OS << "-" << it_Cond_Pairs->first.toString()
-         << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
+         << " (" << getLocString(DIM, it_Cond_Pairs->first) << ")";
       if (it_Cond_Pairs->second.empty()) {
         OS << " > Uncovered" << std::endl;
         ++NumUncovered;

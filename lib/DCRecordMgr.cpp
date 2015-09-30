@@ -1,4 +1,4 @@
-//===-- RecordMgr.cpp ----- trace record manager definition -----*- C++ -*-===//
+//===-- DCRecordMgr.cpp --- DC trace record manager definition --*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the definition for trace record manager
+/// \brief This file contains the definition for DC trace record manager
 ///
 //===----------------------------------------------------------------------===//
 
@@ -16,7 +16,7 @@
 #include <fstream>
 #include <stack>
 #include "llvm/Support/raw_ostream.h"
-#include "instcov/RecordMgr.h"
+#include "instcov/DCRecordMgr.h"
 
 using namespace instcov;
 using namespace llvm;

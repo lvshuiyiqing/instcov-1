@@ -23,7 +23,7 @@ using namespace instcov;
 extern cl::opt<bool> CountsOnly;
 extern cl::opt<bool> Verbose;
 
-void FastAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
+void FastAnalyzer::registerEntry(const LogEntry *entry, const DbgInfoMgr &DIM) {
   std::vector<bool> bits;
   std::vector<UUID_t> Uuids;
   bits.reserve(entry->Cond2Val.size()+1);
@@ -61,20 +61,20 @@ void FastAnalyzer::registerEntry(const LogEntry *entry, const LogMgr &LM) {
 void FastAnalyzer::finalize(void) {
 }
 
-void FastAnalyzer::dump(std::ostream &OS, const LogMgr &LM) const {
+void FastAnalyzer::dump(std::ostream &OS, const DbgInfoMgr &DIM) const {
   std::size_t NumCovered = 0;
   std::size_t NumUncovered = 0;
   // decision level
-  auto dorder = getSortedIterators(Data, LM);
+  auto dorder = getSortedIterators(Data, DIM);
   for (auto &it_Dec_Pairs : dorder) {
     OS << it_Dec_Pairs->first.toString()
-       << " (" << getLocString(LM, it_Dec_Pairs->first) << ")" << ":"
+       << " (" << getLocString(DIM, it_Dec_Pairs->first) << ")" << ":"
        << std::endl;
-    auto corder =getSortedIterators(it_Dec_Pairs->second, LM);
+    auto corder =getSortedIterators(it_Dec_Pairs->second, DIM);
     // condition level
     for (auto &it_Cond_Pairs : corder) {
       OS << "-" << it_Cond_Pairs->first.toString()
-         << " (" << getLocString(LM, it_Cond_Pairs->first) << ")";
+         << " (" << getLocString(DIM, it_Cond_Pairs->first) << ")";
       bool IsCovered = false;
       // hash level
       for (auto &Hash_Pairs : it_Cond_Pairs->second) {

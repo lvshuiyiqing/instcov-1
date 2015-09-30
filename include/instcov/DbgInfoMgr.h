@@ -50,6 +50,9 @@ class DbgInfoMgr {
     return DbgInfos.find(Uuid)->second;
   }
 
+  const std::set<UUID_t> &getRegisteredDCs(void) const {
+    return RegisteredDCs;
+  }
   const std::map<UUID_t, DbgInfo *> &getDbgInfos(void) const {
     return DbgInfos;
   }
@@ -76,6 +79,38 @@ class DbgInfoMgr {
   std::set<UUID_t> RegisteredDCs;
   std::vector<UUID_t> QueueOrder;
 };
+
+struct LocSorter {
+ public:
+  LocSorter(const DbgInfoMgr &dim)
+      : DIM(dim) {}
+  template<typename T>
+  bool operator()(const T &LHS, const T &RHS) const {
+    if (!DIM.isExist(LHS->first)) {
+      return true;
+    }
+    if (!DIM.isExist(RHS->first)) {
+      return false;
+    }
+    const LocInfo &LHS_LI = DIM.getDbgInfo(LHS->first)->Loc;
+    const LocInfo &RHS_LI = DIM.getDbgInfo(LHS->first)->Loc;
+    return std::make_tuple(LHS_LI.File, LHS_LI.Line, LHS_LI.Col) <
+      std::make_tuple(RHS_LI.File, RHS_LI.Line, RHS_LI.Col);
+  }
+ private:
+  const DbgInfoMgr &DIM;
+};
+
+template<typename T>
+std::vector<typename T::const_iterator>
+getSortedIterators(const T &C, const DbgInfoMgr &DIM) {
+  std::vector<typename T::const_iterator> vec;
+  for (auto it = C.begin(), ie = C.end(); it != ie; ++it) {
+    vec.push_back(it);
+  }
+  std::sort(vec.begin(), vec.end(), LocSorter(DIM));
+  return vec;
+}
 }
 
 #endif  // INSTCOV_DBGINFOMGR_H_

@@ -41,81 +41,49 @@ class LogEntry {
   std::size_t VID;
 };
 
-class LogMgr {
- public:
-  LogMgr(void);
-  ~LogMgr(void);
+// class LogMgr {
+//  public:
+//   LogMgr(void);
+//   ~LogMgr(void);
 
- private:
-  LogMgr(const LogMgr &from);
-  const LogMgr &operator = (const LogMgr &right);
+//  private:
+//   LogMgr(const LogMgr &from);
+//   const LogMgr &operator = (const LogMgr &right);
 
- public:
-  void loadFile(const std::string &fileName);
+//  public:
+//   void loadFile(const std::string &fileName);
 
-  const std::vector<std::string> &getFileNames() const {
-    return FileNames;
-  }
+//   const std::vector<std::string> &getFileNames() const {
+//     return FileNames;
+//   }
 
-  const std::vector<LogEntry> &getLogEntries() const {
-    return LogEntries;
-  }
+//   const std::vector<LogEntry> &getLogEntries() const {
+//     return LogEntries;
+//   }
 
-  const std::map<UUID_t, std::set<UUID_t> > &getChildren() const {
-    return Children;
-  }
+//   const std::map<UUID_t, std::set<UUID_t> > &getChildren() const {
+//     return Children;
+//   }
 
-  const std::map<UUID_t, LocInfo> &getLocInfos() const {
-    return LocInfos;
-  }
+//   const std::map<UUID_t, LocInfo> &getLocInfos() const {
+//     return LocInfos;
+//   }
 
-  bool hasLocInfo(UUID_t Uuid) const {
-    return LocInfos.count(Uuid);
-  }
+//   bool hasLocInfo(UUID_t Uuid) const {
+//     return LocInfos.count(Uuid);
+//   }
 
-  const LocInfo &getLocInfo(UUID_t Uuid) const {
-    return LocInfos.find(Uuid)->second;
-  }
+//   const LocInfo &getLocInfo(UUID_t Uuid) const {
+//     return LocInfos.find(Uuid)->second;
+//   }
 
- private:
-  std::vector<std::string> FileNames;
-  std::vector<LogEntry> LogEntries;
-  std::map<UUID_t, std::set<UUID_t> > Children;
-  std::map<UUID_t, LocInfo> LocInfos;
-};
+//  private:
+//   std::vector<std::string> FileNames;
+//   std::vector<LogEntry> LogEntries;
+//   std::map<UUID_t, std::set<UUID_t> > Children;
+//   std::map<UUID_t, LocInfo> LocInfos;
+// };
 
-
-struct LocSorter {
- public:
-  LocSorter(const LogMgr &lm)
-      : LM(lm) {}
-  template<typename T>
-  bool operator()(const T &LHS, const T &RHS) const {
-    if (LM.getLocInfos().count(LHS->first) == 0) {
-      return true;
-    }
-    if (LM.getLocInfos().count(RHS->first) == 0) {
-      return false;
-    }
-    const LocInfo &LHS_LI = LM.getLocInfos().find(LHS->first)->second;
-    const LocInfo &RHS_LI = LM.getLocInfos().find(RHS->first)->second;
-    return std::make_tuple(LHS_LI.File, LHS_LI.Line, LHS_LI.Col) <
-      std::make_tuple(RHS_LI.File, RHS_LI.Line, RHS_LI.Col);
-  }
- private:
-  const LogMgr &LM;
-};
-
-template<typename T>
-std::vector<typename T::const_iterator>
-getSortedIterators(const T &C, const LogMgr &LM) {
-  std::vector<typename T::const_iterator> vec;
-  for (auto it = C.begin(), ie = C.end(); it != ie; ++it) {
-    vec.push_back(it);
-  }
-  std::sort(vec.begin(), vec.end(), LocSorter(LM));
-  return vec;
-}
 
 }
 

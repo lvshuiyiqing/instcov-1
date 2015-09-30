@@ -353,19 +353,19 @@ void PBOEmitter::dumpPBVar2Str(std::ostream &OS) const {
 }
 
 void PBOEmitter::dumpSID2LocInfo(std::ostream &OS,
-                                 const LogMgr &LM) const {
+                                 const DbgInfoMgr &DIM) const {
   OS << "* LocInfo" << std::endl;
-  auto dorder = getSortedIterators(Analyzer.getDec2CondOrder(), LM);
+  auto dorder = getSortedIterators(Analyzer.getDec2CondOrder(), DIM);
   for (auto it_Dec_CondOrder : dorder) {
     UUID_t UuidD = it_Dec_CondOrder->first;
-    const LocInfo &LocD = LM.getLocInfo(UuidD);
+    const LocInfo &LocD = DIM.getDbgInfo(UuidD)->Loc;
     std::size_t SIDD = Uuid2SID.find(UuidD)->second;
     OS << "* SID=" << SIDD
        << ": UUID=" << UuidD.toString() << ", Parent=" << UUID_t().toString()
        << ", File=" << LocD.File << ", Line=" << LocD.Line
        << ", Col=" << LocD.Col << std::endl;
     for (auto UuidC : it_Dec_CondOrder->second) {
-      const LocInfo &LocC = LM.getLocInfo(UuidC);
+      const LocInfo &LocC = DIM.getDbgInfo(UuidC)->Loc;
       std::size_t SIDC = Uuid2SID.find(UuidC)->second;
       OS << "* SID=" << SIDC
          << ": UUID=" << UuidC.toString() << ", Parent=" << UuidD.toString()

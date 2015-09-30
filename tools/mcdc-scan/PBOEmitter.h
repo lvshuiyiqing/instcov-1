@@ -17,6 +17,7 @@
 
 #include "llvm/ADT/StringMap.h"
 #include "instcov/PBOProblem.h"
+#include "instcov/DbgInfoMgr.h"
 #include "SCAnalyzer.h"
 
 namespace instcov {
@@ -49,7 +50,7 @@ class PBOEmitter {
   }
 
   void dumpPBVar2Str(std::ostream &OS) const;
-  void dumpSID2LocInfo(std::ostream &OS, const LogMgr &LM) const;
+  void dumpSID2LocInfo(std::ostream &OS, const DbgInfoMgr &DIM) const;
 
  private:
   PBVar encodeStr(const std::string &str);

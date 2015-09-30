@@ -1,4 +1,4 @@
-//===-- RecordMgr.h ------ trace record manager declaration -----*- C++ -*-===//
+//===-- DCRecordMgr.h --- DC trace record manager declaration ---*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the declarations for trace record manager
+/// \brief This file contains the declarations for DC trace record manager
 ///
 //===----------------------------------------------------------------------===//
 
@@ -35,6 +35,9 @@ class RecordMgr {
  public:
   const DbgInfoMgr &getDIM(void) { return DIM; }
   std::vector<std::shared_ptr<DISlotTree> > &getRecordTrees(void) {
+    return RecordTrees;
+  }
+  const std::vector<std::shared_ptr<DISlotTree> > &getRecordTrees(void) const {
     return RecordTrees;
   }
   void processTrace(const std::string &FileName);
