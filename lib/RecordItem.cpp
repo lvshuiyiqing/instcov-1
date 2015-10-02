@@ -29,3 +29,22 @@ void RecordItem_Switch::loadBodyFromFile(std::istream &File) {
 
 void RecordItem_Func::loadBodyFromFile(std::istream &File) {
 }
+
+void RecordItem::dumpPretty(std::ostream &OS) const {
+  OS << "[" << getStrKind() << "] UUID="
+     << std::hex << Uuid.high << Uuid.low << std::dec;
+}
+
+void RecordItem_DC::dumpPretty(std::ostream &OS) const {
+  RecordItem::dumpPretty(OS);
+  OS << ", BID=" << BID;
+}
+
+void RecordItem_Switch::dumpPretty(std::ostream &OS) const {
+  RecordItem::dumpPretty(OS);
+  OS << ", BID=" << BID;
+}
+
+void RecordItem_Func::dumpPretty(std::ostream &OS) const {
+  RecordItem::dumpPretty(OS);
+}

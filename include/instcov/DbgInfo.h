@@ -60,6 +60,7 @@ struct DbgInfo {
   virtual void loadBodyFromFile(std::istream &File) = 0;
   virtual const char *getMagic(void) const = 0;
   DIKind getKind(void) const { return Kind; }
+  virtual void dumpPretty(std::ostream &OS) const = 0;
  private:
   const DIKind Kind;
 
@@ -88,6 +89,7 @@ struct DbgInfo_DC : public DbgInfo {
     static const char MAGIC[] = "DCDC";
     return MAGIC;
   }
+  virtual void dumpPretty(std::ostream &OS) const;
 
   UUID_t Uuid_P;
   std::vector<UUID_t> Children;
@@ -113,6 +115,7 @@ struct DbgInfo_Switch : public DbgInfo {
     static const char MAGIC[] = "SWTC";
     return MAGIC;
   }
+  virtual void dumpPretty(std::ostream &OS) const;
 };
 
 struct DbgInfo_Func : public DbgInfo {
@@ -132,6 +135,7 @@ struct DbgInfo_Func : public DbgInfo {
     static const char MAGIC[] = "FUNC";
     return MAGIC;
   }
+  virtual void dumpPretty(std::ostream &OS) const;
 
   std::string FuncName;
 };

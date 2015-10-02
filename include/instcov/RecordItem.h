@@ -35,6 +35,8 @@ struct RecordItem {
   virtual ~RecordItem(void) {}
   RIKind getKind(void) const { return Kind; }
   virtual void loadBodyFromFile(std::istream &File);
+  virtual const char *getStrKind(void) const = 0;
+  virtual void dumpPretty(std::ostream &OS) const = 0;
 
  private:
   const RIKind Kind;
@@ -54,6 +56,11 @@ struct RecordItem_DC : public RecordItem {
     return RI->getKind() == RIK_DC;
   }
   virtual void loadBodyFromFile(std::istream &File);
+  virtual const char *getStrKind(void) const {
+    static const char strKind[] = "DCDC";
+    return strKind;
+  }
+  virtual void dumpPretty(std::ostream &OS) const;
 
  public:
   uint64_t BID;
@@ -71,6 +78,11 @@ struct RecordItem_Switch : public RecordItem {
     return RI->getKind() == RIK_SWITCH;
   }
   virtual void loadBodyFromFile(std::istream &File);
+  virtual const char *getStrKind(void) const {
+    static const char strKind[] = "SWTH";
+    return strKind;
+  }
+  virtual void dumpPretty(std::ostream &OS) const;
 
  public:
   uint64_t BID;
@@ -85,6 +97,11 @@ struct RecordItem_Func : public RecordItem {
     return RI->getKind() == RIK_FUNC;
   }
   virtual void loadBodyFromFile(std::istream &File);
+  virtual const char *getStrKind(void) const {
+    static const char strKind[] = "FUNC";
+    return strKind;
+  }
+  virtual void dumpPretty(std::ostream &OS) const;
 
 };
 }
