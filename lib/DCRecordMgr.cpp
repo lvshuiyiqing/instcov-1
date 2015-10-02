@@ -65,7 +65,7 @@ void RecordMgr::processTrace(const std::string &FileName) {
   }
   std::stack<std::shared_ptr<DISlotTree> > TreeStack;
   // read records
-  while ((InFile.peek(), !InFile.eof())) {
+  while ((InFile.peek(), InFile && !InFile.eof())) {
     UUID_t Uuid;
     uint64_t bid;
     readOneRecord(InFile, Uuid, bid);

@@ -51,7 +51,7 @@ void RawRecordMgr::loadFromFile(const std::string &FileName) {
   InFile.seekg(PaddingSize, std::ios::cur);
 
   // read records
-  while ((InFile.peek(), !InFile.eof())) {
+  while ((InFile.peek(), InFile && !InFile.eof())) {
     UUID_t Uuid;
     InFile.read((char *)&Uuid, sizeof(Uuid));
     if (!DIM.isExist(Uuid)) {

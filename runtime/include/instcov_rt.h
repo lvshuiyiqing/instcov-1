@@ -22,7 +22,7 @@ extern "C" {
 #endif  // __cplusplus
   void instcov_dc_dump(uint64_t id_high, uint64_t id_low, uint64_t bid);
   void instcov_switch_dump(uint64_t id_high, uint64_t id_low, uint64_t bid);
-  void instcov_func_dump(uint64_t id_high, uint64_t id_low, uint64_t bid);
+  void instcov_func_dump(uint64_t id_high, uint64_t id_low);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

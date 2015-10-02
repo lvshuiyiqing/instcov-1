@@ -144,7 +144,7 @@ DbgInfo *DbgInfo::loadFromFile(std::istream &File) {
   } else if (type == "FUNC") {
     DI = new DbgInfo_Func();
   } else {
-    std::cerr << "unrecognized debug info type" << std::endl;
+    std::cerr << "unrecognized debug info type: " << type << std::endl;
     exit(1);
   }
   DI->loadBodyFromFile(File);
@@ -231,7 +231,27 @@ void DbgInfoMgr::dumpOne(std::ostream &File, UUID_t Uuid) const {
 }
 
 void DbgInfoMgr::load(std::istream &File) {
-  while (!File.eof()) {
+  char Magic[sizeof(INSTCOV_MAGIC)-1];
+  char Version[sizeof(INSTCOV_VERSION)-1];
+  File.read(Magic, sizeof(Magic));
+  if (File.bad() || memcmp(INSTCOV_MAGIC, Magic, sizeof(Magic))) {
+    std::cerr << "cannot recognize magic " << "\n";
+    exit(1);
+  }
+  File.read(Version, sizeof(Version));
+  if (File.bad() || memcmp(INSTCOV_VERSION, Version, sizeof(Version))) {
+    std::cerr << "cannot recognize version " << "\n";
+    exit(1);
+
+  }
+  uint64_t Padding = 0;
+  std::size_t PaddingSize =
+      sizeof(Padding)
+      - (sizeof(INSTCOV_MAGIC) - 1 + sizeof(INSTCOV_VERSION) -1)
+      % sizeof(Padding);
+  File.seekg(PaddingSize, std::ios::cur);
+
+  while (File.peek(), File && !File.eof()) {
     loadOne(File);
   }
 }
