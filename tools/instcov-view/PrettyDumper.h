@@ -21,6 +21,7 @@
 #include <string>
 #include <iostream>
 #include "instcov/DbgInfoMgr.h"
+#include "instcov/RawRecordMgr.h"
 #include "instcov/RecordMgr.h"
 #include "instcov/LogMgr.h"
 
@@ -43,14 +44,16 @@ class PrettyDumper {
     return Uuid2SID.find(Uuid)->second;
   }
 
-  void dumpTracePretty(std::ostream &OS, const RecordMgr &RM) const;
+  void dumpTracePretty(std::ostream &OS, const RawRecordMgr &RRM) const;
+  void dumpTracePrettyDC(std::ostream &OS, const RecordMgr &RM) const;
   void dumpDIPretty(std::ostream &OS) const;
+  void dumpDIPrettyDC(std::ostream &OS) const;
 
  private:
-  void dumpLogEntryPretty(std::ostream &OS, const LogEntry &LE) const;
-  void dumpLogEntryDCPretty(std::ostream &OS, std::size_t depth,
+  void dumpLogEntryPrettyDC(std::ostream &OS, const LogEntry &LE) const;
+  void dumpLogEntryItemPrettyDC(std::ostream &OS, std::size_t depth,
                             const std::pair<UUID_t, uint64_t> &DC) const;
-  void dumpDIPrettyDFS(std::ostream &OS, UUID_t Uuid, std::size_t depth) const;
+  void dumpDIPrettyDC_DFS(std::ostream &OS, UUID_t Uuid, std::size_t depth) const;
   void allocateSID(UUID_t Uuid);
   void allocateAllSIDs(void);
 

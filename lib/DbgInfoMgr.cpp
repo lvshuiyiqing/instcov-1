@@ -107,6 +107,25 @@ void DbgInfo_Switch::dump2File(std::ostream &OS) const {
   DbgInfo::dump2File(OS);
 }
 
+void DbgInfo::dumpPretty(std::ostream &OS) const {
+  OS << "[" << getMagic() << "]"
+     << "Loc=" << Loc.toString() << ", UUID="
+     << std::hex << Uuid.high << Uuid.low << std::dec;
+}
+
+void DbgInfo_DC::dumpPretty(std::ostream &OS) const {
+  DbgInfo::dumpPretty(OS);
+  OS << ", Parent=" << std::hex << Uuid_P.high << Uuid_P.low << std::dec;
+}
+
+void DbgInfo_Switch::dumpPretty(std::ostream &OS) const {
+  DbgInfo::dumpPretty(OS);
+}
+
+void DbgInfo_Func::dumpPretty(std::ostream &OS) const {
+  DbgInfo::dumpPretty(OS);
+}
+
 std::string LocInfo::toString(void) const {
   std::stringstream ss;
   ss << Line << ":" << Col << ":" << File;

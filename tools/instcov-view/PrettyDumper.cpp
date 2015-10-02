@@ -23,8 +23,6 @@
 using namespace llvm;
 using namespace instcov;
 
-extern cl::opt<std::string> DumpFormat;
-
 PrettyDumper::PrettyDumper(const DbgInfoMgr &dim)
     : DIM(dim) {
   allocateAllSIDs();
@@ -64,7 +62,7 @@ struct CmpFunc {
 };
 }
 
-void PrettyDumper::dumpDIPretty(std::ostream &OS) const {
+void PrettyDumper::dumpDIPrettyDC(std::ostream &OS) const {
   std::vector<const DbgInfo_DC *> RootDIs;
   for (auto &Uuid : DIM.getRegisteredDCs()) {
     const DbgInfo_DC *DI = DIM.getDbgInfoDC(Uuid);
@@ -74,11 +72,17 @@ void PrettyDumper::dumpDIPretty(std::ostream &OS) const {
   }
   std::sort(RootDIs.begin(), RootDIs.end(), CmpFunc());
   for (auto &RootDI : RootDIs) {
-    dumpDIPrettyDFS(OS, RootDI->Uuid, 0);
+    dumpDIPrettyDC_DFS(OS, RootDI->Uuid, 0);
   }
 }
 
-void PrettyDumper::dumpDIPrettyDFS(std::ostream &OS,
+void PrettyDumper::dumpDIPretty(std::ostream &OS) const {
+  for (auto &Uuid_DI :DIM.getDbgInfos()) {
+    Uuid_DI.second->dumpPretty(OS);
+  }
+}
+
+void PrettyDumper::dumpDIPrettyDC_DFS(std::ostream &OS,
                                    UUID_t Uuid,
                                    std::size_t depth) const {
   const DbgInfo_DC &DI = *DIM.getDbgInfoDC(Uuid);
@@ -86,51 +90,37 @@ void PrettyDumper::dumpDIPrettyDFS(std::ostream &OS,
   for (std::size_t i = 0; i < depth; ++i) {
     OS << "-";
   }
-  for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
-    switch (DumpFormat[i]) {
-      case 'u':
-        OS << std::hex << DI.Uuid.high << DI.Uuid.low << std::dec;
-        break;
-      case 's':
-        OS << sid;
-        break;
-      case 'l':
-        OS << DI.Loc.Line;
-        break;
-      case 'c':
-        OS << DI.Loc.Col;
-        break;
-      case 'f':
-        OS << DI.Loc.File;
-        break;
-      default:
-        OS << DumpFormat[i];
-        break;
-    }
-  }
+  DI.dumpPretty(OS);
   OS << "\n";
   for (auto &Child : DI.Children) {
-    dumpDIPrettyDFS(OS, Child, depth+1);
+    dumpDIPrettyDC_DFS(OS, Child, depth+1);
+  }
+}
+
+void PrettyDumper::dumpTracePrettyDC(std::ostream &OS,
+                                     const RecordMgr &RM) const {
+  for (auto &RT : RM.getRecordTrees()) {
+    dumpLogEntryPrettyDC(OS, RT->convert2LogEntry());
   }
 }
 
 void PrettyDumper::dumpTracePretty(std::ostream &OS,
-                                   const RecordMgr &RM) const {
-  for (auto &RT : RM.getRecordTrees()) {
-    dumpLogEntryPretty(OS, RT->convert2LogEntry());
+                                   const RawRecordMgr &RRM) const {
+  for (auto &RI : RRM.getRecordItems()) {
+    RI->dumpPretty(OS);
   }
 }
 
-void PrettyDumper::dumpLogEntryPretty(std::ostream &OS,
+void PrettyDumper::dumpLogEntryPrettyDC(std::ostream &OS,
                                       const LogEntry &LE) const {
-  dumpLogEntryDCPretty(OS, 0, LE.DecVal);
+  dumpLogEntryItemPrettyDC(OS, 0, LE.DecVal);
   auto SortedCondVals = getSortedIterators(LE.Cond2Val, DIM);
   for (auto &it_Cond_Val : SortedCondVals) {
-    dumpLogEntryDCPretty(OS, 1, *it_Cond_Val);
+    dumpLogEntryItemPrettyDC(OS, 1, *it_Cond_Val);
   }
 }
 
-void PrettyDumper::dumpLogEntryDCPretty(
+void PrettyDumper::dumpLogEntryItemPrettyDC(
     std::ostream &OS,
     std::size_t depth,
     const std::pair<UUID_t, uint64_t> &DC) const {
@@ -138,32 +128,8 @@ void PrettyDumper::dumpLogEntryDCPretty(
     OS << "-";
   }
   const DbgInfo_DC &DI = *DIM.getDbgInfoDC(DC.first);
-  for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
-    switch (DumpFormat[i]) {
-      case 'u':
-        OS << std::hex << DC.first.high << DC.first.low << std::dec;
-        break;
-      case 'l':
-        OS << DI.Loc.Line;
-        break;
-      case 'c':
-        OS << DI.Loc.Col;
-        break;
-      case 'f':
-        OS << DI.Loc.File;
-        break;
-      case 'b':
-        if (DC.second != BID_NA){
-          OS << DC.second;
-        } else {
-          OS << "NA";
-        }
-        break;
-      default:
-        OS << DumpFormat[i];
-        break;
-    }
-  }
+  OS << "BID=" << DC.second << " ";
+  DI.dumpPretty(OS);
   OS << "\n";
 }
 

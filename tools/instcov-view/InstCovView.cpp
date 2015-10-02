@@ -1,4 +1,4 @@
-//===-- DCView.cpp ---------- main file for dc-view -------------*- C++ -*-===//
+//===-- InstCovView.cpp ----- main file for instcov-view --------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -35,32 +35,19 @@ cl::opt<std::string> OutputFileName(
     cl::desc("Specify the output file name,\n"
              "the default is \"parsed_trace.pt\""),
     cl::init(""));
-cl::opt<std::string> DumpFormat(
-    "f",
-    cl::value_desc("dump format"),
-    cl::desc("Specify the dump format. The format is a string.\n"
-             "Each character corresponds to a field.\n"
-             "u: uuid, s: simplified id, l: line number, c: column number,\n"
-             "f: file name, b: branch id.\n"
-             "Other characters will be print verbosely."
-             "The default format is \"u:b (l:c:f)\""),
-    cl::init(""));
 
-cl::opt<bool> DIOnly(
+cl::opt<bool> OptDC(
+    "dc",
+    cl::desc("organize the decisions/conditions in the trace/debug\n"
+             "information in a tree format\n"));
+cl::opt<bool> OptDI(
     "di-only",
     cl::desc("process the debug infomation file only.\n"
-             "The trace file will not be processed.\n"
-             "The default dump format will be \"u (l:c:f)\""));
+             "The trace file will not be processed.\n"));
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
-  if (DumpFormat == "") {
-    if (DIOnly) {
-      DumpFormat = "u (l:c:f)";
-    } else {
-      DumpFormat = "u:b (l:c:f)";
-    }
-  }
+
   DbgInfoMgr DIM;
   for (auto &DIFileName : DIFileNames) {
     std::ifstream DIFile(DIFileName.c_str(), std::ios::binary);
@@ -84,18 +71,26 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   PrettyDumper PD(DIM);
-  if (DIOnly) {
-    PD.dumpDIPretty(OutFile);
+  if (OptDI) {
+    if (OptDC) {
+      PD.dumpDIPrettyDC(OutFile);
+    } else {
+      PD.dumpDIPretty(OutFile);
+    }
   } else {
     if (TraceFileName == "") {
       llvm::errs() << "trace file name is empty, please use -t argument\n";
       exit (1);
     }
     RawRecordMgr RRM(DIM);
-    RecordMgr RM(DIM);
     RRM.loadFromFile(TraceFileName);
-    RM.processTrace(RRM);
-    PD.dumpTracePretty(OutFile, RM);
+    if (OptDC) {
+      RecordMgr RM(DIM);
+      RM.processTrace(RRM);
+      PD.dumpTracePrettyDC(OutFile, RM);
+    } else {
+      PD.dumpTracePretty(OutFile, RRM);
+    }
   }
   return 0;
 }
