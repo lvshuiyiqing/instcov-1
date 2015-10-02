@@ -45,6 +45,33 @@ cl::opt<bool> OptDI(
     cl::desc("process the debug infomation file only.\n"
              "The trace file will not be processed.\n"));
 
+struct OutFile {
+  OutFile(const std::string &FileName) {
+    if (FileName == "") {
+      IsStdOut = true;
+      OS = &std::cout;
+    } else {
+      IsStdOut = false;
+      OS = new std::ofstream(FileName.c_str());
+      if (!(*OS)) {
+        std::cerr << "cannot open file for output: " << FileName << std::endl;
+        exit(1);
+      }
+    }
+  }
+  ~OutFile(void) {
+    if (!IsStdOut) {
+      delete OS;
+    }
+  }
+  std::ostream &getStream(void) const {
+    return *OS;
+  }
+ private:
+  bool IsStdOut;
+  std::ostream *OS;
+};
+
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
 
@@ -61,21 +88,14 @@ int main(int argc, char *argv[]) {
     llvm::errs() << "debug information has problems!\n";
     exit(1);
   }
-  if (OutputFileName.empty()) {
-    llvm::errs() << "output file name is empty, please use -o argument\n";
-    exit(1);
-  }
-  std::ofstream OutFile(OutputFileName.c_str());
-  if (!OutFile) {
-    llvm::errs() << "cannot open output file: " << OutputFileName << "\n";
-    exit(1);
-  }
+
+  OutFile OS(OutputFileName);
   PrettyDumper PD(DIM);
   if (OptDI) {
     if (OptDC) {
-      PD.dumpDIPrettyDC(OutFile);
+      PD.dumpDIPrettyDC(OS.getStream());
     } else {
-      PD.dumpDIPretty(OutFile);
+      PD.dumpDIPretty(OS.getStream());
     }
   } else {
     if (TraceFileName == "") {
@@ -87,9 +107,9 @@ int main(int argc, char *argv[]) {
     if (OptDC) {
       RecordMgr RM(DIM);
       RM.processTrace(RRM);
-      PD.dumpTracePrettyDC(OutFile, RM);
+      PD.dumpTracePrettyDC(OS.getStream(), RM);
     } else {
-      PD.dumpTracePretty(OutFile, RRM);
+      PD.dumpTracePretty(OS.getStream(), RRM);
     }
   }
   return 0;

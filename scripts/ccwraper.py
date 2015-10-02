@@ -7,11 +7,14 @@ import instcov_env
 import subprocess
 
 def run(argv):
-    args = [instcov_env.CC] + argv + ['-w']
+    args = [instcov_env.CC] + argv
     if os.name == 'nt':
-        args += ['/link', '/LIBPATH:'+instcov_env.INSTCOV_LIBRARY_PATH, 'instcov_rt.lib']
+        args += ['/link', '/LIBPATH:'+instcov_env.INSTCOV_LIBRARY_PATH,
+                'instcov_rt.lib']
     else:
-        args += ['-L', instcov_env.INSTCOV_LIBRARY_PATH, '-linstcov_rt', '-lstdc++']
+        args += ['-L', instcov_env.INSTCOV_LIBRARY_PATH, '-linstcov_rt',
+                '-lstdc++']
+    print ' '.join(args)
     return subprocess.call(args)
 
 if __name__ == "__main__":
