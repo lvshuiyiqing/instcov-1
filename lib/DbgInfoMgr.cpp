@@ -171,6 +171,10 @@ void DbgInfoMgr::registerDCInfo(
   QueueOrder.push_back(c);
   RegisteredUuids.insert(c);
   RegisteredDCs.insert(c);
+  registerDCParent(c, p);
+}
+
+void DbgInfoMgr::registerDCParent(UUID_t c, UUID_t p) {
   if (p) {
     if (!isExist(p)) {
       std::cerr << "you need to register the parent DC first" << std::endl;
@@ -262,14 +266,7 @@ void DbgInfoMgr::loadOne(std::istream &File) {
   if (isa<DbgInfo_DC>(DI)) {
     RegisteredDCs.insert(DI->Uuid);
     DbgInfo_DC *DIDC = cast<DbgInfo_DC>(DI);
-    if (DIDC->Uuid_P) {
-      if (RegisteredDCs.count(DIDC->Uuid_P) == 0) {
-        std::cerr << "the parent UUID is not registered" << std::endl;
-        exit(1);
-      }
-      DbgInfo_DC *DI_P = cast<DbgInfo_DC>(DbgInfos[DIDC->Uuid_P]);
-      DI_P->Children.push_back(DI->Uuid);
-    }
+    registerDCParent(DIDC->Uuid, DIDC->Uuid_P);
   }
   RegisteredUuids.insert(DI->Uuid);
   DbgInfos.insert(std::make_pair(DI->Uuid, DI));

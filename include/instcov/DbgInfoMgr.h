@@ -70,6 +70,7 @@ class DbgInfoMgr {
   UUID_t toRoot4DC(UUID_t Uuid) const;
 
  private:
+  void registerDCParent(UUID_t c, UUID_t p);
   void dumpOne(std::ostream &File, UUID_t Uuid) const;
   void loadOne(std::istream &File);
 
