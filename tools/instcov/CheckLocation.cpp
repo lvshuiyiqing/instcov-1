@@ -21,13 +21,25 @@ using namespace clang;
 
 extern llvm::StringSet<llvm::MallocAllocator> MatchFileNames;
 
+namespace {
+StringRef trimFileName(const StringRef &Str) {
+#ifdef WIN32
+  const char SEP = '\\';
+#else  // WIN32
+  const char SEP = '/';
+#endif  // WIN32
+  return Str.substr(Str.find_last_of(SEP)+1);
+}
+}
+
 bool instcov::checkLocation(Stmt *s, clang::SourceManager &SM) {
   if (MatchFileNames.empty()) {
     return true;
   }
   StringRef PresumedFileName =
       SM.getPresumedLoc(s->getLocStart()).getFilename();
-  return MatchFileNames.count(PresumedFileName);
+  StringRef Trimmed = trimFileName(PresumedFileName);
+  return MatchFileNames.count(Trimmed);
 }
 
 bool instcov::checkLocation(Decl *d, clang::SourceManager &SM) {
@@ -36,5 +48,6 @@ bool instcov::checkLocation(Decl *d, clang::SourceManager &SM) {
   }
   StringRef PresumedFileName =
       SM.getPresumedLoc(d->getLocStart()).getFilename();
-  return MatchFileNames.count(PresumedFileName);
+  StringRef Trimmed = trimFileName(PresumedFileName);
+  return MatchFileNames.count(Trimmed);
 }

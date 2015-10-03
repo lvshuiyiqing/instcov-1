@@ -61,7 +61,7 @@ class InstCovActionSwitch : public InstCovAction {
 
  public:
   virtual void VisitTranslationUnit(clang::TranslationUnitDecl *D) {
-    ASTVisitorFunc Visitor(TheRewriter, TheASTContext, DIM);
+    ASTVisitorSwitch Visitor(TheRewriter, TheASTContext, DIM);
     Visitor.TraverseDecl(D);
   }
 

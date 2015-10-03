@@ -23,6 +23,7 @@ namespace instcov {
 typedef std::size_t PBVar;
 
 struct PBVarPrinter {
+  virtual ~PBVarPrinter(void) {}
   virtual std::string operator()(PBVar Var) const = 0;
 };
 
@@ -99,6 +100,7 @@ void emitConstrs(
 struct PBOProblem {
   PBOProblem(void)
       : NumVars(0), NumConstrs(0) {}
+  virtual ~PBOProblem() {}
   std::size_t NumVars;
   std::size_t NumConstrs;
 
@@ -109,11 +111,10 @@ struct PBOProblem {
   void emitPretty(std::ostream &OS,
                   const std::map<PBVar, std::string> &ID2Str) const;
   void emitRaw(std::ostream &OS) const;
-  
+
   PBLinear ObjFunc;
   std::vector<PBConstr> GeneralConstrs;
 };
 }
 
 #endif  // PBOPROBLEM_H_
-

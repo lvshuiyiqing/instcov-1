@@ -130,7 +130,11 @@ void PrettyDumper::dumpLogEntryItemPrettyDC(
     OS << "-";
   }
   const DbgInfo_DC &DI = *DIM.getDbgInfoDC(DC.first);
-  OS << "BID=" << DC.second << " ";
+  if (DC.second != BID_NA){
+    OS << "BID=" << DC.second << " ";
+  } else {
+    OS << "BID=NA ";
+  }
   DI.dumpPretty(OS);
   OS << "\n";
 }

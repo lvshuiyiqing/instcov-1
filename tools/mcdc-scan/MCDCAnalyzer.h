@@ -29,6 +29,7 @@ class MCDCAnalyzer {
   const AnalyzerKind Kind;
 
  public:
+  virtual ~MCDCAnalyzer(void) {}
   AnalyzerKind getKind() const { return Kind; }
 
   MCDCAnalyzer(AnalyzerKind K) : Kind(K) {}
