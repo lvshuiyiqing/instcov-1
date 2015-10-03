@@ -112,7 +112,7 @@ struct DbgInfo_Switch : public DbgInfo {
     return magic();
   }
   static const char *magic(void) {
-    static const char MAGIC[] = "SWTC";
+    static const char MAGIC[] = "SWTH";
     return MAGIC;
   }
   virtual void dumpPretty(std::ostream &OS) const;

@@ -67,15 +67,15 @@ void DbgInfo_DC::loadBodyFromFile(std::istream &File) {
 
 void DbgInfo_Func::loadBodyFromFile(std::istream &File) {
   DbgInfo::loadBodyFromFile(File);
-  std::size_t FileNameSize;
-  File.read((char *)&FileNameSize, sizeof(FileNameSize));
-  char *buffer = new char[FileNameSize];
-  File.read(buffer, FileNameSize);
-  Loc.File.assign(buffer, buffer+FileNameSize-1);
+  std::size_t FuncNameSize;
+  File.read((char *)&FuncNameSize, sizeof(FuncNameSize));
+  char *buffer = new char[FuncNameSize];
+  File.read(buffer, FuncNameSize);
+  FuncName.assign(buffer, buffer+FuncNameSize-1);
   delete buffer;
   const uint64_t Padding = 0;
   std::size_t PaddingSize =
-      sizeof(Padding) - (4 + sizeof(FileNameSize) + FileNameSize) % sizeof(Padding);
+      sizeof(Padding) - (4 + sizeof(FuncNameSize) + FuncNameSize) % sizeof(Padding);
   if (PaddingSize) {
     File.seekg(PaddingSize, std::ios::cur);
   }
@@ -110,12 +110,12 @@ void DbgInfo_Switch::dump2File(std::ostream &OS) const {
 void DbgInfo::dumpPretty(std::ostream &OS) const {
   OS << "[" << getMagic() << "]"
      << "Loc=" << Loc.toString() << ", UUID="
-     << std::hex << Uuid.high << Uuid.low << std::dec;
+     << Uuid.toString();
 }
 
 void DbgInfo_DC::dumpPretty(std::ostream &OS) const {
   DbgInfo::dumpPretty(OS);
-  OS << ", Parent=" << std::hex << Uuid_P.high << Uuid_P.low << std::dec;
+  OS << ", Parent=" << Uuid_P.toString();
 }
 
 void DbgInfo_Switch::dumpPretty(std::ostream &OS) const {
@@ -124,6 +124,7 @@ void DbgInfo_Switch::dumpPretty(std::ostream &OS) const {
 
 void DbgInfo_Func::dumpPretty(std::ostream &OS) const {
   DbgInfo::dumpPretty(OS);
+  OS << ", Name=" << FuncName;
 }
 
 std::string LocInfo::toString(void) const {
@@ -260,6 +261,15 @@ void DbgInfoMgr::loadOne(std::istream &File) {
   DbgInfo *DI = DbgInfo::loadFromFile(File);
   if (isa<DbgInfo_DC>(DI)) {
     RegisteredDCs.insert(DI->Uuid);
+    DbgInfo_DC *DIDC = cast<DbgInfo_DC>(DI);
+    if (DIDC->Uuid_P) {
+      if (RegisteredDCs.count(DIDC->Uuid_P) == 0) {
+        std::cerr << "the parent UUID is not registered" << std::endl;
+        exit(1);
+      }
+      DbgInfo_DC *DI_P = cast<DbgInfo_DC>(DbgInfos[DIDC->Uuid_P]);
+      DI_P->Children.push_back(DI->Uuid);
+    }
   }
   RegisteredUuids.insert(DI->Uuid);
   DbgInfos.insert(std::make_pair(DI->Uuid, DI));

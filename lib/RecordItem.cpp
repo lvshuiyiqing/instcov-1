@@ -32,7 +32,7 @@ void RecordItem_Func::loadBodyFromFile(std::istream &File) {
 
 void RecordItem::dumpPretty(std::ostream &OS) const {
   OS << "[" << getStrKind() << "] UUID="
-     << std::hex << Uuid.high << Uuid.low << std::dec;
+     << Uuid.toString();
 }
 
 void RecordItem_DC::dumpPretty(std::ostream &OS) const {

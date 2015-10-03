@@ -55,7 +55,7 @@ bool ASTVisitorSwitch::VisitSwitchStmt(SwitchStmt *s) {
   header_ss << ";int instcov_sf" << Uuid.toString() << " = 1;\n";
   TheRewriter.InsertText(s->getLocStart(), header_ss.str(), true, true);
   SwitchCase *SC = s->getSwitchCaseList();
-  uint64_t bid = 2;
+  uint64_t bid = 0;
   while (SC) {
     if (!isa<CaseStmt>(SC->getSubStmt())) {
       std::stringstream ss;

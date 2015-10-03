@@ -58,6 +58,11 @@ bool ASTVisitorFunc::VisitFunctionDecl(FunctionDecl *d) {
   if (!d->hasBody()) {
     return true;
   }
+  if (DIB.getFuncUUID(d)) {
+    // already visited once
+    std::cerr << "already visited this function" << std::endl;
+    exit(1);
+  }
   clang::CompoundStmt *body = cast<CompoundStmt>(d->getBody());
   if (body == NULL) {
     return true;

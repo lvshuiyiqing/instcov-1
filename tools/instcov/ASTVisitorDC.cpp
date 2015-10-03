@@ -299,13 +299,13 @@ bool ASTVisitorDC::VisitDoStmt(DoStmt *s) {
   }
   DIB.registerDC(s, nullptr, TheRewriter.getSourceMgr());
   MCDCVisitDoStmt(s);
-  TheRewriter.InsertText(s->getCond()->getLocStart(), "(", true, true);
+  TheRewriter.InsertText(s->getCond()->getLocStart(), "(", false, true);
   UUID_t uuid = DIB.getDCUUID(s);
   std::stringstream ss;
   ss << ") ? (" << INSTCOV_FUNC_NAME << "(" << uuid.toArgString()
      << ", 0), 1) : (" << INSTCOV_FUNC_NAME << "("<< uuid.toArgString()
      << ", 1), 0)";
-  TheRewriter.InsertText(s->getRParenLoc(), ss.str(), false, true);
+  TheRewriter.InsertText(s->getRParenLoc(), ss.str(), true, true);
   return true;
 }
 
