@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include "instcov/RawRecordMgr.h"
-#include "instcov/RecordMgr.h"
+#include "instcov/DCRecordMgr.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
 #include "PrettyDumper.h"

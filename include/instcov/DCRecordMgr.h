@@ -1,4 +1,4 @@
-//===-- DCRecordMgr.h --- DC trace record manager declaration ---*- C++ -*-===//
+//===-- RecordMgr.h ------ trace record manager declaration -----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the declarations for DC trace record manager
+/// \brief This file contains the declarations for trace record manager
 ///
 //===----------------------------------------------------------------------===//
 
@@ -19,6 +19,7 @@
 #include <string>
 #include <memory>
 #include "instcov/DISlotTree.h"
+#include "instcov/RawRecordMgr.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace instcov {
@@ -40,7 +41,7 @@ class RecordMgr {
   const std::vector<std::shared_ptr<DISlotTree> > &getRecordTrees(void) const {
     return RecordTrees;
   }
-  void processTrace(const std::string &FileName);
+  void processTrace(const RawRecordMgr &RM);
 
   void dump(std::ostream &OS) const;
 

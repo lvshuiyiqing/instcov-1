@@ -22,7 +22,7 @@
 #include <iostream>
 #include "instcov/DbgInfoMgr.h"
 #include "instcov/RawRecordMgr.h"
-#include "instcov/RecordMgr.h"
+#include "instcov/DCRecordMgr.h"
 #include "instcov/LogMgr.h"
 
 namespace instcov {
