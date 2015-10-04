@@ -36,7 +36,7 @@ void InstDIBuilderFunc::registerFunc(const clang::FunctionDecl *d,
   Loc.File = PLoc.getFilename();
   Loc.Line = PLoc.getLine();
   Loc.Col = PLoc.getColumn();
-  DIM.registerFuncInfo(Uuid, d->getNameInfo().getAsString(), Loc);
+  DIM.registerInfoFunc(Uuid, d->getNameInfo().getAsString(), Loc);
 }
 
 UUID_t InstDIBuilderFunc::getFuncUUID(const clang::FunctionDecl *d) const {

@@ -29,7 +29,7 @@ void InstDIBuilderDC::registerDC(const Stmt *c, const Stmt *p,
   Loc.File = PLoc.getFilename();
   Loc.Line = PLoc.getLine();
   Loc.Col = PLoc.getColumn();
-  DIM.registerDCInfo(Uuid, Uuid_P, Loc);
+  DIM.registerInfoDC(Uuid, Uuid_P, Loc);
 }
 
 UUID_t InstDIBuilderDC::regAndGetUUID(const Stmt *s) {

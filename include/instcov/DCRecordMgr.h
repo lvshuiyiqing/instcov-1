@@ -1,4 +1,4 @@
-//===-- RecordMgr.h ------ trace record manager declaration -----*- C++ -*-===//
+//===-- DCRecordMgr.h ------- dc record manager declaration -----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,47 +8,49 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the declarations for trace record manager
+/// \brief This file contains the declarations for dc record manager
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef INSTCOV_RECORDMGR_H_
-#define INSTCOV_RECORDMGR_H_
+#ifndef INSTCOV_DCRECORDMGR_H_
+#define INSTCOV_DCRECORDMGR_H_
 
 #include <vector>
 #include <string>
 #include <memory>
-#include "instcov/DISlotTree.h"
-#include "instcov/RawRecordMgr.h"
 #include "llvm/Support/raw_ostream.h"
+#include "RawRecordMgr.h"
 
 namespace instcov {
-class RecordMgr {
+class RawRecordMgr;
+class DbgInfoMgr;
+class DCRecordBuilder;
+
+class DCRecordMgr {
  public:
-  RecordMgr(const DbgInfoMgr &dim)
+  DCRecordMgr(const DbgInfoMgr &dim)
       : DIM(dim) {}
-  ~RecordMgr(void) {}
+  ~DCRecordMgr(void) {}
 
  private:
-  RecordMgr(const RecordMgr &from);
-  const RecordMgr &operator = (const RecordMgr &right);
+  DCRecordMgr(const DCRecordMgr &from);
+  const DCRecordMgr &operator = (const DCRecordMgr &right);
 
  public:
   const DbgInfoMgr &getDIM(void) { return DIM; }
-  std::vector<std::shared_ptr<DISlotTree> > &getRecordTrees(void) {
-    return RecordTrees;
+  std::vector<std::shared_ptr<DCRecordBuilder> > &getRecordBuilders(void) {
+    return RecordBuilders;
   }
-  const std::vector<std::shared_ptr<DISlotTree> > &getRecordTrees(void) const {
-    return RecordTrees;
+  const std::vector<std::shared_ptr<DCRecordBuilder> >
+  &getRecordBuilders(void) const {
+    return RecordBuilders;
   }
   void processTrace(const RawRecordMgr &RM);
 
-  void dump(std::ostream &OS) const;
-
  private:
   const DbgInfoMgr &DIM;
-  std::vector<std::shared_ptr<DISlotTree> > RecordTrees;
+  std::vector<std::shared_ptr<DCRecordBuilder> > RecordBuilders;
 };
 }
 
-#endif  // INSTCOV_RECORDMGR_H_
+#endif  // INSTCOV_DCRECORDMGR_H_

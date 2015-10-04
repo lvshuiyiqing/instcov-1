@@ -1,4 +1,4 @@
-//===-- DISlotTree.h ----- debug info slot tree declaration -----*- C++ -*-===//
+//===-- DCRecordBuilder.h ----- DCRecordBuilder declaration -----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,32 +8,31 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the declarations of the tree for debug info
-/// slots (to be/already) read from the trace file
+/// \brief This file contains the declarations of DCRecordBuilder
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef INSTCOV_DISLOTTREE_H_
-#define INSTCOV_DISLOTTREE_H_
+#ifndef INSTCOV_DCRECORDBUILDER_H_
+#define INSTCOV_DCRECORDBUILDER_H_
 
 #include <map>
 #include <deque>
 #include <iostream>
 #include "instcov/DbgInfoMgr.h"
-#include "instcov/LogMgr.h"
+#include "instcov/DCRecord.h"
 
 namespace instcov {
-class DISlotTree {
+class DCRecordBuilder {
  public:
-  DISlotTree(UUID_t Root, const DbgInfoMgr &dim);
-  ~DISlotTree(void);
+  DCRecordBuilder(UUID_t Root, const DbgInfoMgr &dim);
+  ~DCRecordBuilder(void);
 
   void dump(std::ostream &OS) const;
   void fill(UUID_t Uuid, uint64_t bid);
   bool canAccept(UUID_t Uuid) const;
   bool isFull(void) const { return NumEmptySlots == 0; }
   bool isRootFilled(void) const { return Records.count(R) != 0; }
-  LogEntry convert2LogEntry(void) const;
+  DCRecord convert2DCRecord(void) const;
 
  private:
   void printTreeDFS(std::ostream &OS,
@@ -48,4 +47,4 @@ class DISlotTree {
 };
 }
 
-#endif  // INSTCOV_DISLOTTREE_H_
+#endif  // INSTCOV_DCRECORDBUILDER_H_

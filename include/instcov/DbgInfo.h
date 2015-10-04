@@ -16,6 +16,7 @@
 #define INSTCOV_DBGINFO_H_
 
 #include <string>
+#include <vector>
 #include <iostream>
 #include "llvm/Support/Casting.h"
 #include "instcov/uuid.h"
@@ -34,7 +35,7 @@ struct LocInfo {
   uint64_t Col;
 };
 
-struct RecordItem;
+struct RawRecord;
 
 struct DbgInfo {
  public:
@@ -55,8 +56,8 @@ struct DbgInfo {
   // returns the written size
   virtual void dump2File(std::ostream &OS) const;
   static DbgInfo *loadFromFile(std::istream &File);
-  static RecordItem *loadRecordItem(std::istream &File);
-  virtual RecordItem *createRecordItem(void) const = 0;
+  static RawRecord *loadRawRecord(std::istream &File);
+  virtual RawRecord *createRawRecord(void) const = 0;
   virtual void loadBodyFromFile(std::istream &File) = 0;
   virtual const char *getMagic(void) const = 0;
   DIKind getKind(void) const { return Kind; }
@@ -77,7 +78,7 @@ struct DbgInfo_DC : public DbgInfo {
 
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
-  virtual RecordItem *createRecordItem(void) const;
+  virtual RawRecord *createRawRecord(void) const;
 
   static bool classof(const DbgInfo *DI) {
     return DI->getKind() == DIK_DC;
@@ -103,7 +104,7 @@ struct DbgInfo_Switch : public DbgInfo {
 
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
-  virtual RecordItem *createRecordItem(void) const;
+  virtual RawRecord *createRawRecord(void) const;
 
   static bool classof(const DbgInfo *DI) {
     return DI->getKind() == DIK_DC;
@@ -126,7 +127,7 @@ struct DbgInfo_Func : public DbgInfo {
 
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
-  virtual RecordItem *createRecordItem(void) const;
+  virtual RawRecord *createRawRecord(void) const;
 
   virtual const char *getMagic(void) const {
     return magic();

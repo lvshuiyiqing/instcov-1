@@ -18,10 +18,11 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "instcov/RecordItem.h"
 #include "instcov/DbgInfoMgr.h"
 
 namespace instcov {
+struct RawRecord;
+
 class RawRecordMgr {
  public:
   RawRecordMgr(const DbgInfoMgr &dim)
@@ -34,13 +35,13 @@ class RawRecordMgr {
 
  public:
   const DbgInfoMgr &getDIM(void) const { return DIM; }
-  const std::vector<RecordItem *> getRecordItems(void) const {
-    return RecordItems;
+  const std::vector<RawRecord *> getRecords(void) const {
+    return Records;
   }
   void loadFromFile(const std::string &FileName);
 
  private:
-  std::vector<RecordItem *> RecordItems;
+  std::vector<RawRecord *> Records;
   const DbgInfoMgr &DIM;
 };
 }

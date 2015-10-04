@@ -33,14 +33,14 @@ class FastAnalyzer : public MCDCAnalyzer {
 
  public:
   typedef struct {
-    std::vector<const LogEntry *> TrueSide;
-    std::vector<const LogEntry *> FalseSide;
+    std::vector<const DCRecord *> TrueSide;
+    std::vector<const DCRecord *> FalseSide;
   } CData_entry_t;
   typedef std::unordered_map<size_t, CData_entry_t> CData_t;
   typedef std::map<UUID_t, CData_t> DData_t;
   typedef std::map<UUID_t, DData_t> Data_t;
 
-  virtual void registerEntry(const LogEntry *entry, const DbgInfoMgr &LM);
+  virtual void registerEntry(const DCRecord *DCR, const DbgInfoMgr &LM);
   virtual void finalize(void);
 
   const Data_t &getData(void) const { return Data; }

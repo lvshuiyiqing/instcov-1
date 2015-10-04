@@ -17,6 +17,8 @@
 #include <set>
 #include <algorithm>
 #include "PrettyDumper.h"
+#include "instcov/RawRecord.h"
+#include "instcov/DCRecordBuilder.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -87,7 +89,6 @@ void PrettyDumper::dumpDIPrettyDC_DFS(std::ostream &OS,
                                    UUID_t Uuid,
                                    std::size_t depth) const {
   const DbgInfo_DC &DI = *DIM.getDbgInfoDC(Uuid);
-  uint64_t sid = getSID(Uuid);
   for (std::size_t i = 0; i < depth; ++i) {
     OS << "-";
   }
@@ -99,30 +100,30 @@ void PrettyDumper::dumpDIPrettyDC_DFS(std::ostream &OS,
 }
 
 void PrettyDumper::dumpTracePrettyDC(std::ostream &OS,
-                                     const RecordMgr &RM) const {
-  for (auto &RT : RM.getRecordTrees()) {
-    dumpLogEntryPrettyDC(OS, RT->convert2LogEntry());
+                                     const DCRecordMgr &DCRM) const {
+  for (auto &DCRB : DCRM.getRecordBuilders()) {
+    dumpDCRecordPretty(OS, DCRB->convert2DCRecord());
   }
 }
 
 void PrettyDumper::dumpTracePretty(std::ostream &OS,
                                    const RawRecordMgr &RRM) const {
-  for (auto &RI : RRM.getRecordItems()) {
-    RI->dumpPretty(OS);
+  for (auto &RR : RRM.getRecords()) {
+    RR->dumpPretty(OS);
     OS << "\n";
   }
 }
 
-void PrettyDumper::dumpLogEntryPrettyDC(std::ostream &OS,
-                                      const LogEntry &LE) const {
-  dumpLogEntryItemPrettyDC(OS, 0, LE.DecVal);
-  auto SortedCondVals = getSortedIterators(LE.Cond2Val, DIM);
+void PrettyDumper::dumpDCRecordPretty(std::ostream &OS,
+                                      const DCRecord &DCR) const {
+  dumpDCRecordItemPretty(OS, 0, DCR.DecVal);
+  auto SortedCondVals = getSortedIterators(DCR.Cond2Val, DIM);
   for (auto &it_Cond_Val : SortedCondVals) {
-    dumpLogEntryItemPrettyDC(OS, 1, *it_Cond_Val);
+    dumpDCRecordItemPretty(OS, 1, *it_Cond_Val);
   }
 }
 
-void PrettyDumper::dumpLogEntryItemPrettyDC(
+void PrettyDumper::dumpDCRecordItemPretty(
     std::ostream &OS,
     std::size_t depth,
     const std::pair<UUID_t, uint64_t> &DC) const {

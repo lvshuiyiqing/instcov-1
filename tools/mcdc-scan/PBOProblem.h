@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef PBOPROBLEM_H_
-#define PBOPROBLEM_H_
+#ifndef INSTCOV_PBOPROBLEM_H_
+#define INSTCOV_PBOPROBLEM_H_
 
 #include <vector>
 #include <map>
@@ -117,4 +117,4 @@ struct PBOProblem {
 };
 }
 
-#endif  // PBOPROBLEM_H_
+#endif  // INSTCOV_PBOPROBLEM_H_

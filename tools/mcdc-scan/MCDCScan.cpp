@@ -14,9 +14,10 @@
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Casting.h"
-#include "instcov/LogMgr.h"
+#include "instcov/DCRecord.h"
 #include "instcov/RawRecordMgr.h"
 #include "instcov/DCRecordMgr.h"
+#include "instcov/DCRecordBuilder.h"
 #include "MCDCAnalyzer.h"
 #include "FastAnalyzer.h"
 #include "SCAnalyzer.h"
@@ -105,15 +106,15 @@ int main(int argc, char *argv[]) {
   for (auto &TraceFileName : TraceFileNames) {
     RawRecordMgr RRM(DIM);
     RRM.loadFromFile(TraceFileName);
-    RecordMgr RM(DIM);
-    RM.processTrace(RRM);
+    DCRecordMgr DCRM(DIM);
+    DCRM.processTrace(RRM);
     std::size_t VID = 0;
-    for (auto &RecordTree : RM.getRecordTrees()) {
-      LogEntry LE = RecordTree->convert2LogEntry();
-      LE.TID = TID;
-      LE.VID = VID;
+    for (auto &RecordBuilder : DCRM.getRecordBuilders()) {
+      DCRecord DCR = RecordBuilder->convert2DCRecord();
+      DCR.TID = TID;
+      DCR.VID = VID;
       ++VID;
-      analyzer->registerEntry(&LE, DIM);
+      analyzer->registerEntry(&DCR, DIM);
     }
     ++TID;
   }

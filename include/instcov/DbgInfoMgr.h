@@ -33,9 +33,9 @@ class DbgInfoMgr {
   const DbgInfoMgr &operator = (const DbgInfoMgr &right);
 
  public:
-  void registerFuncInfo(UUID_t uuid, const std::string &funcName, const LocInfo &loc);
-  void registerDCInfo(UUID_t c, UUID_t p, const LocInfo &loc);
-  void registerSwitchInfo(UUID_t uuid, const LocInfo &loc);
+  void registerInfoFunc(UUID_t uuid, const std::string &funcName, const LocInfo &loc);
+  void registerInfoDC(UUID_t c, UUID_t p, const LocInfo &loc);
+  void registerInfoSwitch(UUID_t uuid, const LocInfo &loc);
 
   const DbgInfo_DC *getDbgInfoDC(UUID_t Uuid) const {
     return llvm::dyn_cast<const DbgInfo_DC>(DbgInfos.find(Uuid)->second);
