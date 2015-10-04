@@ -34,8 +34,8 @@ class MCDCAnalyzer {
 
   MCDCAnalyzer(AnalyzerKind K) : Kind(K) {}
 
-  virtual void registerEntry(const DCRecord *DCR,
-                             const DbgInfoMgr &DIM) = 0;
+  virtual void registerDCRecord(const DCRecord *DCR,
+                                const DbgInfoMgr &DIM) = 0;
   virtual void dump(std::ostream &OS,
                     const DbgInfoMgr &DIM) const = 0;
   virtual void finalize(void) = 0;

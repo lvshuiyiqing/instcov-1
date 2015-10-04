@@ -44,7 +44,7 @@ bool isMatch(char LHS, char RHS) {
 }
 }
 
-void SCAnalyzer::registerEntry(const DCRecord *DCR, const DbgInfoMgr &DIM) {
+void SCAnalyzer::registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM) {
   EvalVec_t NewEV;
   std::vector<UUID_t> ThisCondOrder;
   NewEV.reserve(DCR->Cond2Val.size()+1);

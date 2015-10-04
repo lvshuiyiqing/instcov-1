@@ -34,7 +34,7 @@ class SCAnalyzer : public MCDCAnalyzer {
   }
 
  public:
-  virtual void registerEntry(const DCRecord *DCR, const DbgInfoMgr &DIM);
+  virtual void registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM);
   virtual void dump(std::ostream &OS, const DbgInfoMgr &DIM) const;
   virtual void finalize(void);
 
