@@ -40,7 +40,7 @@ class FastAnalyzer : public MCDCAnalyzer {
   typedef std::map<UUID_t, CData_t> DData_t;
   typedef std::map<UUID_t, DData_t> Data_t;
 
-  virtual void registerEntry(const DCRecord *DCR, const DbgInfoMgr &LM);
+  virtual void registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &LM);
   virtual void finalize(void);
 
   const Data_t &getData(void) const { return Data; }

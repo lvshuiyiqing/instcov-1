@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
       DCR.TID = TID;
       DCR.VID = VID;
       ++VID;
-      analyzer->registerEntry(&DCR, DIM);
+      analyzer->registerDCRecord(&DCR, DIM);
     }
     ++TID;
   }

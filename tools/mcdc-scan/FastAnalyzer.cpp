@@ -24,7 +24,7 @@ using namespace instcov;
 extern cl::opt<bool> CountsOnly;
 extern cl::opt<bool> Verbose;
 
-void FastAnalyzer::registerEntry(const DCRecord *DCR, const DbgInfoMgr &DIM) {
+void FastAnalyzer::registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM) {
   std::vector<bool> bits;
   std::vector<UUID_t> Uuids;
   bits.reserve(DCR->Cond2Val.size()+1);
