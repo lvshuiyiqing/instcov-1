@@ -16,7 +16,7 @@
 #define INSTCOV_PBOEMITTER_H_
 
 #include "llvm/ADT/StringMap.h"
-#include "instcov/PBOProblem.h"
+#include "PBOProblem.h"
 #include "instcov/DbgInfoMgr.h"
 #include "SCAnalyzer.h"
 

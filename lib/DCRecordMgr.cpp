@@ -15,41 +15,44 @@
 #include <cstdlib>
 #include <fstream>
 #include <stack>
+#include <vector>
 #include "llvm/Support/raw_ostream.h"
 #include "instcov/DCRecordMgr.h"
+#include "instcov/RawRecord.h"
+#include "instcov/DCRecordBuilder.h"
 
 using namespace instcov;
 using namespace llvm;
 
-void RecordMgr::processTrace(const RawRecordMgr &RM) {
-  std::stack<std::shared_ptr<DISlotTree> > TreeStack;
+void DCRecordMgr::processTrace(const RawRecordMgr &RM) {
+  std::stack<std::shared_ptr<DCRecordBuilder> > DCRecordStack;
   // read records
-  for (auto &RI : RM.getRecordItems()) {
-    if (!isa<RecordItem_DC>(RI)) {
+  for (auto &RR : RM.getRecords()) {
+    if (!isa<RawRecord_DC>(RR)) {
       continue;
     }
-    RecordItem_DC *RIDC = cast<RecordItem_DC>(RI);
-    if (DIM.isDC(RIDC->Uuid) == 0) {
+    RawRecord_DC *RRDC = cast<RawRecord_DC>(RR);
+    if (DIM.isDC(RRDC->Uuid) == 0) {
       llvm::errs() << "cannot find UUID in debug info database!!\n"
                    << "did you run the program again after recompiling?\n";
       exit(1);
     }
-    if (TreeStack.empty() || !TreeStack.top()->canAccept(RIDC->Uuid)) {
+    if (DCRecordStack.empty() || !DCRecordStack.top()->canAccept(RRDC->Uuid)) {
       // llvm::errs() << "creating a new tree\n";
-      TreeStack.push(std::shared_ptr<DISlotTree>(
-          new DISlotTree(getDIM().toRoot4DC(RIDC->Uuid), getDIM())));
+      DCRecordStack.push(std::shared_ptr<DCRecordBuilder>(
+          new DCRecordBuilder(getDIM().toRoot4DC(RRDC->Uuid), getDIM())));
     }
     // llvm::errs() << "current root:"  << TreeStack.top()->R->Uuid.toString() << "\n";
-    TreeStack.top()->fill(RIDC->Uuid, RIDC->BID);
-    if (TreeStack.top()->isRootFilled()) {
-      RecordTrees.push_back(TreeStack.top());
-      TreeStack.pop();
+    DCRecordStack.top()->fill(RRDC->Uuid, RRDC->BID);
+    if (DCRecordStack.top()->isRootFilled()) {
+      RecordBuilders.push_back(DCRecordStack.top());
+      DCRecordStack.pop();
     }
   }
 }
 
-void RecordMgr::dump(std::ostream &OS) const {
-  for (auto &RecordTree : RecordTrees) {
-    RecordTree->dump(OS);
-  }
-}
+// void DCRecordMgr::dump(std::ostream &OS) const {
+//   for (auto &RecordTree : RecordTrees) {
+//     RecordTree->dump(OS);
+//   }
+// }

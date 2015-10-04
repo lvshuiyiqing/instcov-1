@@ -4,6 +4,7 @@ add_clang_executable(mcdc-scan
   MCDCScan.cpp
   FastAnalyzer.cpp
   SCAnalyzer.cpp
+  PBOProblem.cpp
   PBOEmitter.cpp
 )
 

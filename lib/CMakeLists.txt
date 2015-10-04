@@ -1,9 +1,9 @@
 add_library(instcovBasic
-  DbgInfoMgr.cpp
-  LogMgr.cpp
-  PBOProblem.cpp
-  DISlotTree.cpp
-  RawRecordMgr.cpp
+  DCRecord.cpp
+  DCRecordBuilder.cpp
   DCRecordMgr.cpp
-  RecordItem.cpp
+  DbgInfo.cpp
+  DbgInfoMgr.cpp
+  RawRecord.cpp
+  RawRecordMgr.cpp
 )

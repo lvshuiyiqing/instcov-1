@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <algorithm>
+#include "instcov/RawRecord.h"
 #include "SCAnalyzer.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -43,21 +44,21 @@ bool isMatch(char LHS, char RHS) {
 }
 }
 
-void SCAnalyzer::registerEntry(const LogEntry *entry, const DbgInfoMgr &DIM) {
+void SCAnalyzer::registerEntry(const DCRecord *DCR, const DbgInfoMgr &DIM) {
   EvalVec_t NewEV;
   std::vector<UUID_t> ThisCondOrder;
-  NewEV.reserve(entry->Cond2Val.size()+1);
-  auto corder = getSortedIterators(entry->Cond2Val, DIM);
+  NewEV.reserve(DCR->Cond2Val.size()+1);
+  auto corder = getSortedIterators(DCR->Cond2Val, DIM);
   for (auto &it_Cond_Val : corder) {
     Uuid2EVPos[it_Cond_Val->first] = NewEV.size();
     NewEV.push_back(bid2char(it_Cond_Val->second));
     ThisCondOrder.push_back(it_Cond_Val->first);
-    Dec2Pairs[entry->DecVal.first][it_Cond_Val->first]; // register in the results
+    Dec2Pairs[DCR->DecVal.first][it_Cond_Val->first]; // register in the results
   }
-  Uuid2EVPos[entry->DecVal.first] = NewEV.size();
-  NewEV.push_back(bid2char(entry->DecVal.second));
-  Dec2EV2TIDs[entry->DecVal.first][NewEV].insert(entry->TID);
-  Dec2CondOrder[entry->DecVal.first] = ThisCondOrder;
+  Uuid2EVPos[DCR->DecVal.first] = NewEV.size();
+  NewEV.push_back(bid2char(DCR->DecVal.second));
+  Dec2EV2TIDs[DCR->DecVal.first][NewEV].insert(DCR->TID);
+  Dec2CondOrder[DCR->DecVal.first] = ThisCondOrder;
 }
 
 void SCAnalyzer::finalize(void) {

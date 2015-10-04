@@ -15,7 +15,7 @@
 #ifndef INSTCOV_MCDCANALYZER_H_
 #define INSTCOV_MCDCANALYZER_H_
 
-#include "instcov/LogMgr.h"
+#include "instcov/DCRecord.h"
 #include "instcov/DbgInfoMgr.h"
 
 namespace instcov {
@@ -34,7 +34,7 @@ class MCDCAnalyzer {
 
   MCDCAnalyzer(AnalyzerKind K) : Kind(K) {}
 
-  virtual void registerEntry(const LogEntry *entry,
+  virtual void registerEntry(const DCRecord *DCR,
                              const DbgInfoMgr &DIM) = 0;
   virtual void dump(std::ostream &OS,
                     const DbgInfoMgr &DIM) const = 0;

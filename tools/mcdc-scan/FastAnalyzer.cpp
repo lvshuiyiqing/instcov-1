@@ -14,6 +14,7 @@
 
 #include <functional>
 #include <algorithm>
+#include "instcov/RawRecord.h"
 #include "FastAnalyzer.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -23,33 +24,33 @@ using namespace instcov;
 extern cl::opt<bool> CountsOnly;
 extern cl::opt<bool> Verbose;
 
-void FastAnalyzer::registerEntry(const LogEntry *entry, const DbgInfoMgr &DIM) {
+void FastAnalyzer::registerEntry(const DCRecord *DCR, const DbgInfoMgr &DIM) {
   std::vector<bool> bits;
   std::vector<UUID_t> Uuids;
-  bits.reserve(entry->Cond2Val.size()+1);
-  Uuids.reserve(entry->Cond2Val.size()+1);
-  for (auto &Cond_Assgn : entry->Cond2Val) {
+  bits.reserve(DCR->Cond2Val.size()+1);
+  Uuids.reserve(DCR->Cond2Val.size()+1);
+  for (auto &Cond_Assgn : DCR->Cond2Val) {
     if (Cond_Assgn.second == BID_NA) {
       std::cerr << "FastAnalyzer do not accept NA entries, skipping this one"
-                << "<" << entry->TID << "," << entry->VID << ">" << std::endl;
+                << "<" << DCR->TID << "," << DCR->VID << ">" << std::endl;
     }
     bits.push_back(Cond_Assgn.second);
     Uuids.push_back(Cond_Assgn.first);
   }
-  bits.push_back(entry->DecVal.second);
+  bits.push_back(DCR->DecVal.second);
   for (size_t i = 0; i < Uuids.size(); ++i) {
     if (bits[i]) {
       size_t hash_value = std::hash<std::vector<bool> >()(bits);
-      Data[entry->DecVal.first][Uuids[i]][hash_value]
-          .TrueSide.push_back(entry);
+      Data[DCR->DecVal.first][Uuids[i]][hash_value]
+          .TrueSide.push_back(DCR);
     } else {
       // flip corresponding bits
       bits[i] = !bits[i];
       bits.back() = !bits.back();
 
       size_t hash_value = std::hash<std::vector<bool> >()(bits);
-      Data[entry->DecVal.first][Uuids[i]][hash_value]
-          .FalseSide.push_back(entry);
+      Data[DCR->DecVal.first][Uuids[i]][hash_value]
+          .FalseSide.push_back(DCR);
 
       // flip back
       bits[i] = !bits[i];

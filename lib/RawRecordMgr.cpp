@@ -15,6 +15,7 @@
 #include <fstream>
 #include "llvm/Support/raw_ostream.h"
 #include "instcov/RawRecordMgr.h"
+#include "instcov/RawRecord.h"
 
 using namespace instcov;
 
@@ -60,8 +61,8 @@ void RawRecordMgr::loadFromFile(const std::string &FileName) {
       exit(1);
     }
     const DbgInfo *DI = DIM.getDbgInfo(Uuid);
-    RecordItem *RI = DI->createRecordItem();
-    RI->loadBodyFromFile(InFile);
-    RecordItems.push_back(RI);
+    RawRecord *RR = DI->createRawRecord();
+    RR->loadBodyFromFile(InFile);
+    Records.push_back(RR);
   }
 }

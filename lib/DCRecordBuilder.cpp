@@ -1,4 +1,4 @@
-//===-- DISlotTree.cpp ----- debug info slot tree definition ----*- C++ -*-===//
+//===-- DCRecordBuilder.cpp ----- DCRecordBuilder definition ----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -14,7 +14,8 @@
 //===----------------------------------------------------------------------===//
 
 #include <stack>
-#include "instcov/DISlotTree.h"
+#include "instcov/DCRecordBuilder.h"
+#include "instcov/RawRecord.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -23,19 +24,19 @@ using namespace instcov;
 
 extern cl::opt<std::string> DumpFormat;
 
-DISlotTree::DISlotTree(UUID_t Root, const DbgInfoMgr &dim)
+DCRecordBuilder::DCRecordBuilder(UUID_t Root, const DbgInfoMgr &dim)
     : R(Root), DIM(dim) {
   NumEmptySlots = DIM.getNumNodes4DC(R);
 }
 
-DISlotTree::~DISlotTree(void) {
+DCRecordBuilder::~DCRecordBuilder(void) {
 }
 
-bool DISlotTree::canAccept(UUID_t Uuid) const {
+bool DCRecordBuilder::canAccept(UUID_t Uuid) const {
   return (DIM.toRoot4DC(Uuid) == R) && Records.count(Uuid) == 0;
 }
 
-void DISlotTree::fill(UUID_t Uuid, uint64_t bid) {
+void DCRecordBuilder::fill(UUID_t Uuid, uint64_t bid) {
   if (Records.count(Uuid) == 1) {
     llvm::errs() << "record already filled in the tree, why another?\n";
     exit(1);
@@ -52,13 +53,13 @@ void DISlotTree::fill(UUID_t Uuid, uint64_t bid) {
   --NumEmptySlots;
 }
 
-void DISlotTree::dump(std::ostream &OS) const {
+void DCRecordBuilder::dump(std::ostream &OS) const {
   printTreeDFS(OS, R, 0);
 }
 
-void DISlotTree::printTreeDFS(std::ostream &OS,
-                              UUID_t Uuid,
-                              uint64_t depth) const {
+void DCRecordBuilder::printTreeDFS(std::ostream &OS,
+                                   UUID_t Uuid,
+                                   uint64_t depth) const {
   for (uint64_t i = 0; i < depth; ++i) {
     OS << "-";
   }
@@ -95,7 +96,7 @@ void DISlotTree::printTreeDFS(std::ostream &OS,
   }
 }
 
-void DISlotTree::getUUIDsDFS(UUID_t Uuid, std::deque<UUID_t> &uuids) const {
+void DCRecordBuilder::getUUIDsDFS(UUID_t Uuid, std::deque<UUID_t> &uuids) const {
   uuids.push_back(Uuid);
   const DbgInfo_DC &DI = *DIM.getDbgInfoDC(Uuid);
   for (auto &Child : DI.Children) {
@@ -103,18 +104,18 @@ void DISlotTree::getUUIDsDFS(UUID_t Uuid, std::deque<UUID_t> &uuids) const {
   }
 }
 
-LogEntry DISlotTree::convert2LogEntry(void) const {
+DCRecord DCRecordBuilder::convert2DCRecord(void) const {
   std::deque<UUID_t> Uuids;
   getUUIDsDFS(R, Uuids);
   Uuids.pop_front();
-  LogEntry LE;
-  LE.DecVal = *Records.find(R);
+  DCRecord DCR;
+  DCR.DecVal = *Records.find(R);
   for (auto &Child : Uuids) {
     if (Records.count(Child)) {
-      LE.Cond2Val.insert(*Records.find(Child));
+      DCR.Cond2Val.insert(*Records.find(Child));
     } else {
-      LE.Cond2Val[Child] = BID_NA;
+      DCR.Cond2Val[Child] = BID_NA;
     }
   }
-  return LE;
+  return DCR;
 }

@@ -32,7 +32,7 @@ void InstDIBuilderSwitch::registerSwitch(const clang::SwitchStmt *s,
   Loc.File = PLoc.getFilename();
   Loc.Line = PLoc.getLine();
   Loc.Col = PLoc.getColumn();
-  DIM.registerSwitchInfo(Uuid, Loc);
+  DIM.registerInfoSwitch(Uuid, Loc);
 }
 
 UUID_t InstDIBuilderSwitch::getSwitchUUID(const clang::SwitchStmt *s) const {

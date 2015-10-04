@@ -105,9 +105,9 @@ int main(int argc, char *argv[]) {
     RawRecordMgr RRM(DIM);
     RRM.loadFromFile(TraceFileName);
     if (OptDC) {
-      RecordMgr RM(DIM);
-      RM.processTrace(RRM);
-      PD.dumpTracePrettyDC(OS.getStream(), RM);
+      DCRecordMgr DCRM(DIM);
+      DCRM.processTrace(RRM);
+      PD.dumpTracePrettyDC(OS.getStream(), DCRM);
     } else {
       PD.dumpTracePretty(OS.getStream(), RRM);
     }
