@@ -16,7 +16,7 @@
 #include "llvm/Support/Casting.h"
 #include "instcov/LogMgr.h"
 #include "instcov/RawRecordMgr.h"
-#include "instcov/RecordMgr.h"
+#include "instcov/DCRecordMgr.h"
 #include "MCDCAnalyzer.h"
 #include "FastAnalyzer.h"
 #include "SCAnalyzer.h"

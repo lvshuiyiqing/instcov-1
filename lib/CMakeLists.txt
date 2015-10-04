@@ -4,6 +4,6 @@ add_library(instcovBasic
   PBOProblem.cpp
   DISlotTree.cpp
   RawRecordMgr.cpp
-  RecordMgr.cpp
+  DCRecordMgr.cpp
   RecordItem.cpp
 )
