@@ -147,8 +147,8 @@ An example:
 	wget http://llvm.org/releases/3.6.0/cfe-3.6.0.src.tar.xz
 	tar -xf llvm-3.6.0.src.tar.xz
 	tar -xf cfe-3.6.0.src.tar.xz
-	mv llvm-3.6.0 llvm
-	mv cfe-3.6.0 llvm/tools/clang
+	mv llvm-3.6.0.src llvm
+	mv cfe-3.6.0.src llvm/tools/clang
 	git clone <instcov-git-repo> instcov
 	ln -s instcov llvm/tools/clang/tools/extra/instcov
 	echo add_subdirectory(instcov) >> llvm/tools/clang/tools/extra/CMakeLists.txt
