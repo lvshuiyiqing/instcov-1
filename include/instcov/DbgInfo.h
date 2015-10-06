@@ -16,6 +16,9 @@
 #define INSTCOV_DBGINFO_H_
 
 #include <string>
+#include <vector>
+#include <iostream>
+#include "llvm/Support/Casting.h"
 #include "instcov/uuid.h"
 
 namespace instcov {
@@ -26,23 +29,118 @@ struct LocInfo {
       : File(file), Line(line), Col(col) {}
 
   std::string toString(void) const;
-  
+
   std::string File;
   uint64_t Line;
   uint64_t Col;
 };
 
-struct DbgInfo {
-  DbgInfo(void)
-      : Loc(), Uuid(), Uuid_P() {}
-  DbgInfo(const LocInfo &loc, UUID_t uuid, UUID_t uuid_p)
-      : Loc(loc), Uuid(uuid), Uuid_P(uuid_p) {}
+struct RawRecord;
 
+struct DbgInfo {
+ public:
+  enum DIKind {
+    DIK_DC,
+    DIK_SWITCH,
+    DIK_FUNC,
+  };
+
+  static const std::size_t MAGIC_SIZE = 4;
+
+  DbgInfo(DIKind kind)
+      : Kind(kind), Loc(), Uuid() {}
+  DbgInfo(DIKind kind, const LocInfo &loc, UUID_t uuid)
+      : Kind(kind), Loc(loc), Uuid(uuid) {}
+  virtual ~DbgInfo(void) {}
+
+  // returns the written size
+  virtual void dump2File(std::ostream &OS) const;
+  static DbgInfo *loadFromFile(std::istream &File);
+  static RawRecord *loadRawRecord(std::istream &File);
+  virtual RawRecord *createRawRecord(void) const = 0;
+  virtual void loadBodyFromFile(std::istream &File) = 0;
+  virtual const char *getMagic(void) const = 0;
+  DIKind getKind(void) const { return Kind; }
+  virtual void dumpPretty(std::ostream &OS) const = 0;
+ private:
+  const DIKind Kind;
+
+ public:
   LocInfo Loc;
   UUID_t Uuid;
+};
+
+struct DbgInfo_DC : public DbgInfo {
+  DbgInfo_DC(void)
+      : DbgInfo(DIK_DC), Uuid_P() {}
+  DbgInfo_DC(const LocInfo &loc, UUID_t uuid, UUID_t uuid_p)
+      : DbgInfo(DIK_DC, loc, uuid), Uuid_P(uuid_p) {}
+
+  virtual void dump2File(std::ostream &OS) const;
+  virtual void loadBodyFromFile(std::istream &File);
+  virtual RawRecord *createRawRecord(void) const;
+
+  static bool classof(const DbgInfo *DI) {
+    return DI->getKind() == DIK_DC;
+  }
+  virtual const char *getMagic(void) const {
+    return magic();
+  }
+  static const char *magic(void) {
+    static const char MAGIC[] = "DCDC";
+    return MAGIC;
+  }
+  virtual void dumpPretty(std::ostream &OS) const;
+
   UUID_t Uuid_P;
   std::vector<UUID_t> Children;
 };
+
+struct DbgInfo_Switch : public DbgInfo {
+  DbgInfo_Switch(void)
+      : DbgInfo(DIK_SWITCH) {}
+  DbgInfo_Switch(const LocInfo &loc, UUID_t uuid)
+      : DbgInfo(DIK_SWITCH, loc, uuid) {}
+
+  virtual void dump2File(std::ostream &OS) const;
+  virtual void loadBodyFromFile(std::istream &File);
+  virtual RawRecord *createRawRecord(void) const;
+
+  static bool classof(const DbgInfo *DI) {
+    return DI->getKind() == DIK_DC;
+  }
+  virtual const char *getMagic(void) const {
+    return magic();
+  }
+  static const char *magic(void) {
+    static const char MAGIC[] = "SWTH";
+    return MAGIC;
+  }
+  virtual void dumpPretty(std::ostream &OS) const;
+};
+
+struct DbgInfo_Func : public DbgInfo {
+  DbgInfo_Func(void)
+      : DbgInfo(DIK_FUNC), FuncName() {}
+  DbgInfo_Func(const LocInfo &loc, UUID_t uuid, const std::string &funcName)
+      : DbgInfo(DIK_FUNC, loc, uuid), FuncName(funcName) {}
+
+  virtual void dump2File(std::ostream &OS) const;
+  virtual void loadBodyFromFile(std::istream &File);
+  virtual RawRecord *createRawRecord(void) const;
+
+  virtual const char *getMagic(void) const {
+    return magic();
+  }
+  static const char *magic(void) {
+    static const char MAGIC[] = "FUNC";
+    return MAGIC;
+  }
+  virtual void dumpPretty(std::ostream &OS) const;
+
+  std::string FuncName;
+};
 }
+
 
 #endif  // INSTCOV_DBGINFO_H_

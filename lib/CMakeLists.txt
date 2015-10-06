@@ -1,5 +1,9 @@
 add_library(instcovBasic
+  DCRecord.cpp
+  DCRecordBuilder.cpp
+  DCRecordMgr.cpp
+  DbgInfo.cpp
   DbgInfoMgr.cpp
-  LogMgr.cpp
-  PBOProblem.cpp
-  )
+  RawRecord.cpp
+  RawRecordMgr.cpp
+)

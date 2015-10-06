@@ -3,9 +3,14 @@ set(LLVM_USED_LIBS clangTooling clangBasic)
 
 add_clang_executable(instcov
   InstCov.cpp
-  InstCovInstDecisions.cpp
-  InstCovInstConditions.cpp
-  DIBuilder4Inst.cpp
+  InstCovActions.cpp
+  InstDIBuilderDC.cpp
+  InstDIBuilderSwitch.cpp
+  InstDIBuilderFunc.cpp
+  ASTVisitorDC.cpp
+  ASTVisitorSwitch.cpp
+  ASTVisitorFunc.cpp
+  CheckLocation.cpp
   )
 target_link_libraries(instcov
   clangTooling
@@ -24,4 +29,3 @@ if (NOT APPLE AND NOT WIN32)
     uuid
     )
 endif()
-

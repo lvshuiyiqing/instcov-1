@@ -1,4 +1,4 @@
-//===-- InstCovASTVisitor.h --- InstCovASTVisitor declaration ---*- C++ -*-===//
+//===-- ASTVisitorDC.h ---------- ASTVisitorDC declaration ------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,12 +8,13 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the declarations for InstcovASTVisitor
+/// \brief This file contains the declarations for ASTVisitorDC,
+/// \brief which instruments the decisions/conditions for MC/DC analysis
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef INSTCOV_ASTVISITOR_H_
-#define INSTCOV_ASTVISITOR_H_
+#ifndef INSTCOV_ASTVISITORDC_H_
+#define INSTCOV_ASTVISITORDC_H_
 
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -25,23 +26,26 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "DIBuilder4Inst.h"
+#include "instcov/DbgInfoMgr.h"
+#include "InstDIBuilderDC.h"
 
 namespace instcov {
-class InstCovASTVisitor : public clang::RecursiveASTVisitor<InstCovASTVisitor> {
-public:
-  typedef clang::RecursiveASTVisitor<InstCovASTVisitor> base_t;
-  InstCovASTVisitor(clang::Rewriter &R, clang::ASTContext &C)
+class ASTVisitorDC : public clang::RecursiveASTVisitor<ASTVisitorDC> {
+ public:
+  typedef clang::RecursiveASTVisitor<ASTVisitorDC> base_t;
+
+  ASTVisitorDC(clang::Rewriter &R,
+               clang::ASTContext &C,
+               instcov::DbgInfoMgr &DIM)
       : TheRewriter(R), TheASTContext(C),
-        DIB() {
+        DIB(DIM) {
   }
-  ~InstCovASTVisitor(void);
-  
+  ~ASTVisitorDC(void);
+
   bool VisitIfStmt(clang::IfStmt *s);
   bool VisitForStmt(clang::ForStmt *s);
   bool VisitWhileStmt(clang::WhileStmt *s);
   bool VisitDoStmt(clang::DoStmt *s);
-  bool VisitSwitchStmt(clang::SwitchStmt *s);
   bool VisitBinaryOperator(clang::BinaryOperator *s);
   bool VisitDeclStmt(clang::DeclStmt *s);
   bool VisitReturnStmt(clang::ReturnStmt *s);
@@ -50,13 +54,13 @@ public:
 
   bool TraverseCallExpr(clang::CallExpr *s);
   bool TraverseFieldDecl(clang::FieldDecl *d);
-  
+
   bool TraverseIfStmt(clang::IfStmt *s);
   bool TraverseWhileStmt(clang::WhileStmt *s);
-  
+
   // insert decision & conditions for assignment operators and normal VarDecls
   void handleRHS4Assgn_NormalVarDecl(clang::Expr *e);
-  
+
   void MCDCVisitIfStmt(clang::IfStmt *s);
   void MCDCVisitForStmt(clang::ForStmt *s);
   void MCDCVisitWhileStmt(clang::WhileStmt *s);
@@ -64,8 +68,7 @@ public:
   void MCDCVisitBinaryOperator(clang::BinaryOperator *s);
 
  private:
-  bool checkLocation(clang::Stmt *s) const;
-  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p = 0);
+  void MCDCVisitExpr(clang::Expr *e, clang::Stmt *p);
 
   static bool isSimpleRHS(clang::Expr *e);
   // skip all top-level implicit casts and find the root expr
@@ -75,8 +78,8 @@ public:
 
   clang::Rewriter &TheRewriter;
   clang::ASTContext &TheASTContext;
-  DIBuilder4Inst DIB;
+  instcov::InstDIBuilderDC DIB;
 };
 }
 
-#endif  // INSTCOV_ASTVISITOR_H_
+#endif  // INSTCOV_ASTVISITORDC_H_
