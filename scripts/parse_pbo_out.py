@@ -130,7 +130,7 @@ class InfoMgr:
 
 def run(argv):
     if len(argv) != 2:
-        print "USAGE: parse_pbo_out.py <clasp-output-file> <pbo-info-file>"
+        print "USAGE: parse_pbo_out.py <clasp-output-file> <pbo-file>"
         return 1
 
     ClaspOutFile = open(argv[0], 'r')

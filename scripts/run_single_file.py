@@ -20,8 +20,7 @@ def run(argv):
         return res
     print "executing ./"+filename+' '+string.join(argv[1:])
     subprocess.call(['./'+filename] + argv[1:])
-    return instcov_view.run(['-t', 'dump.instcov', filename+'.i'+extension+'.dbginfo', '-o', filename+'.pt'])
+    subprocess.call(['mv', 'dump.instcov', filename+'.trace'])
 
 if __name__ == "__main__":
     sys.exit(run(sys.argv[1:]))
-  
