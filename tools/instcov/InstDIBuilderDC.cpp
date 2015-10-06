@@ -14,13 +14,13 @@
 
 #include "llvm/Support/raw_ostream.h"
 #include "clang/Basic/SourceManager.h"
-#include "DIBuilder4Inst.h"
+#include "InstDIBuilderDC.h"
 
 using namespace llvm;
 using namespace clang;
 using namespace instcov;
 
-void DIBuilder4Inst::registerStmt(const Stmt *c, const Stmt *p,
+void InstDIBuilderDC::registerDC(const Stmt *c, const Stmt *p,
                                   const SourceManager &SM) {
   UUID_t Uuid = regAndGetUUID(c);
   UUID_t Uuid_P = regAndGetUUID(p);
@@ -29,10 +29,10 @@ void DIBuilder4Inst::registerStmt(const Stmt *c, const Stmt *p,
   Loc.File = PLoc.getFilename();
   Loc.Line = PLoc.getLine();
   Loc.Col = PLoc.getColumn();
-  registerInfo(Uuid, Uuid_P, Loc);
+  DIM.registerInfoDC(Uuid, Uuid_P, Loc);
 }
 
-UUID_t DIBuilder4Inst::regAndGetUUID(const Stmt *s) {
+UUID_t InstDIBuilderDC::regAndGetUUID(const Stmt *s) {
   UUID_t Uuid;
   if (s) {
     if (Stmt2Uuid.count(s) == 0) {
@@ -43,7 +43,7 @@ UUID_t DIBuilder4Inst::regAndGetUUID(const Stmt *s) {
   return Uuid;
 }
 
-UUID_t DIBuilder4Inst::getUUID(const clang::Stmt *s) const {
+UUID_t InstDIBuilderDC::getDCUUID(const clang::Stmt *s) const {
   if (Stmt2Uuid.count(s) == 0) {
     return UUID_t();
   }

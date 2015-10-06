@@ -14,7 +14,10 @@
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Casting.h"
-#include "instcov/LogMgr.h"
+#include "instcov/DCRecord.h"
+#include "instcov/RawRecordMgr.h"
+#include "instcov/DCRecordMgr.h"
+#include "instcov/DCRecordBuilder.h"
 #include "MCDCAnalyzer.h"
 #include "FastAnalyzer.h"
 #include "SCAnalyzer.h"
@@ -26,9 +29,13 @@
 using namespace llvm;
 using namespace instcov;
 
-cl::list<std::string> FileNames(
+cl::list<std::string> TraceFileNames(
     cl::Positional,
     cl::desc("<parsed trace files> ..."),
+    cl::OneOrMore);
+cl::list<std::string> DIFileNames(
+    "di",
+    cl::desc("<debug info files> ..."),
     cl::OneOrMore);
 cl::opt<std::string> Analyzer(
     "analyzer",
@@ -62,9 +69,14 @@ cl::opt<std::string> OutFileName(
 
 int main(int argc, char *argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
-  LogMgr LM;
-  for (auto &FileName : FileNames) {
-    LM.loadFile(FileName);
+  DbgInfoMgr DIM;
+  for (auto &DIFileName : DIFileNames) {
+    std::ifstream DIFile(DIFileName.c_str(), std::ios::binary);
+    if (!DIFile) {
+      std::cerr << "cannot open debug info file: " << DIFileName << std::endl;
+      exit(1);
+    }
+    DIM.load(DIFile);
   }
   if (EmitPBO && Analyzer != "sc") {
     std::cerr << "PBO emitting should be used with sc analyzer"
@@ -90,9 +102,23 @@ int main(int argc, char *argv[]) {
   } else {
     std::cerr << "wrong analyzer: " << Analyzer << std::endl;
   }
-  for (auto &Entry : LM.getLogEntries()) {
-    analyzer->registerEntry(&Entry, LM);
+  std::size_t TID = 0;
+  for (auto &TraceFileName : TraceFileNames) {
+    RawRecordMgr RRM(DIM);
+    RRM.loadFromFile(TraceFileName);
+    DCRecordMgr DCRM(DIM);
+    DCRM.processTrace(RRM);
+    std::size_t VID = 0;
+    for (auto &RecordBuilder : DCRM.getRecordBuilders()) {
+      DCRecord DCR = RecordBuilder->convert2DCRecord();
+      DCR.TID = TID;
+      DCR.VID = VID;
+      ++VID;
+      analyzer->registerDCRecord(&DCR, DIM);
+    }
+    ++TID;
   }
+
   if (EmitPBO) {
     SCAnalyzer *SCA = cast<SCAnalyzer>(analyzer.get());
     PBOEmitter Emitter(*SCA);
@@ -103,10 +129,10 @@ int main(int argc, char *argv[]) {
       Problem.emitRaw(*OS);
     }
     Emitter.dumpPBVar2Str(*OS);
-    Emitter.dumpSID2LocInfo(*OS, LM);
+    Emitter.dumpSID2LocInfo(*OS, DIM);
   } else {
     analyzer->finalize();
-    analyzer->dump(*OS, LM);
+    analyzer->dump(*OS, DIM);
   }
   return 0;
 }

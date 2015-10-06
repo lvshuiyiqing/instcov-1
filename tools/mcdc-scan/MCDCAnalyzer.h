@@ -15,7 +15,8 @@
 #ifndef INSTCOV_MCDCANALYZER_H_
 #define INSTCOV_MCDCANALYZER_H_
 
-#include "instcov/LogMgr.h"
+#include "instcov/DCRecord.h"
+#include "instcov/DbgInfoMgr.h"
 
 namespace instcov {
 class MCDCAnalyzer {
@@ -28,18 +29,21 @@ class MCDCAnalyzer {
   const AnalyzerKind Kind;
 
  public:
+  virtual ~MCDCAnalyzer(void) {}
   AnalyzerKind getKind() const { return Kind; }
 
   MCDCAnalyzer(AnalyzerKind K) : Kind(K) {}
 
-  virtual void registerEntry(const LogEntry *entry, const LogMgr &LM) = 0;
-  virtual void dump(std::ostream &OS, const LogMgr &LM) const = 0;
+  virtual void registerDCRecord(const DCRecord *DCR,
+                                const DbgInfoMgr &DIM) = 0;
+  virtual void dump(std::ostream &OS,
+                    const DbgInfoMgr &DIM) const = 0;
   virtual void finalize(void) = 0;
 
  public:
-  static std::string getLocString(const LogMgr &LM, UUID_t Uuid) {
-    if (LM.getLocInfos().count(Uuid)) {
-      return LM.getLocInfos().find(Uuid)->second.toString();
+  static std::string getLocString(const DbgInfoMgr &DIM, UUID_t Uuid) {
+    if (DIM.isExist(Uuid)) {
+      return DIM.getDbgInfo(Uuid)->Loc.toString();
     }
     return "NA";
   }

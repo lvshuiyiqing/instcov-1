@@ -15,7 +15,7 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
-#include "instcov/PBOProblem.h"
+#include "PBOProblem.h"
 
 using namespace instcov;
 
@@ -36,7 +36,7 @@ void PBLinear::emit(std::ostream &OS, const PBVarPrinter &VP) const {
     if (IsFirst) {
       IsFirst = false;
     } else {
-      OS << " ";      
+      OS << " ";
     }
     Term.emit(OS, VP);
   }
@@ -80,7 +80,7 @@ void PBOProblem::emitObj(std::ostream &OS, const PBVarPrinter &VP) const {
 
 void PBOProblem::emitConstrs(std::ostream &OS, const PBVarPrinter &VP) const {
   OS << "* General Constrs" << std::endl;
-  instcov::emitConstrs(GeneralConstrs, OS, VP);  
+  instcov::emitConstrs(GeneralConstrs, OS, VP);
 }
 
 void PBOProblem::emit(std::ostream &OS, const PBVarPrinter &VP) const {
