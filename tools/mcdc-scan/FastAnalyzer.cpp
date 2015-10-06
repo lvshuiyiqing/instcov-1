@@ -123,5 +123,5 @@ void FastAnalyzer::dump(std::ostream &OS, const DbgInfoMgr &DIM) const {
     }
   }
   OS << "SUMMARY: " << NumCovered << "/" << NumCovered + NumUncovered
-     << "covered" << std::endl;
+     << " covered" << std::endl;
 }
