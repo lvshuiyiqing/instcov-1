@@ -27,7 +27,6 @@ class DCRecordBuilder {
   DCRecordBuilder(UUID_t Root, const DbgInfoMgr &dim);
   ~DCRecordBuilder(void);
 
-  void dump(std::ostream &OS) const;
   void fill(UUID_t Uuid, uint64_t bid);
   bool canAccept(UUID_t Uuid) const;
   bool isFull(void) const { return NumEmptySlots == 0; }
@@ -35,9 +34,6 @@ class DCRecordBuilder {
   DCRecord convert2DCRecord(void) const;
 
  private:
-  void printTreeDFS(std::ostream &OS,
-                    UUID_t Uuid,
-                    uint64_t depth) const;
   void getUUIDsDFS(UUID_t Uuid, std::deque<UUID_t> &uuids) const;
  public:
   std::map<const UUID_t, uint64_t> Records;

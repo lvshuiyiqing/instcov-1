@@ -51,10 +51,6 @@ void DCRecordBuilder::fill(UUID_t Uuid, uint64_t bid) {
   --NumEmptySlots;
 }
 
-void DCRecordBuilder::dump(std::ostream &OS) const {
-  printTreeDFS(OS, R, 0);
-}
-
 void DCRecordBuilder::getUUIDsDFS(UUID_t Uuid, std::deque<UUID_t> &uuids) const {
   uuids.push_back(Uuid);
   const DbgInfo_DC &DI = *DIM.getDbgInfoDC(Uuid);
