@@ -1,9 +1,9 @@
 # InstCov Internal Implementations
 
-The internal Implementation of InstCov is based on Clang.  InstCov operates on
-Clang AST. It recursively traverses the AST, and when a conditional statement
-node is visited, it instruments necessary recording code into the original
-source code using clang::Rewriter.
+The internal Implementation of InstCov is based on Clang. It operates on Clang
+AST. It recursively traverses the AST, and when a conditional statement node is
+visited, it instruments necessary recording code into the original source code
+using clang::Rewriter.
 
 The current implementation works with Clang 3.6.
 
@@ -27,6 +27,12 @@ We choose the first strategy in InstCov, since libclang does not recommend users
 to modify the AST (it is not safe and may cause serious problems), and clang CFG
 does not have information to map the BB branches back to the source code
 (ref. Zhenbo Xu).
+
+There are two choices to implement InstCov, either add it into the frontend
+actions of Clang, or make it a stand-alone tool using libclang. We choose the
+later one, since the first option actually integrates InstCov into Clang, and
+the program must be compiled using Clang, which might have platform-related
+issues.
 
 ## Overall workflow
 
@@ -69,17 +75,90 @@ beginning of the token before `;`. This is not a desired behavior, so we need to
 use `clang::Lexer` to search backwards to find a `;` token. This may be awkward,
 but it seems to be the only way.
 
-## What is Instrumented?
+## Instrumentation Basics (See developer's guides for more information)
+
+### What is Instrumented?
 
 We need to dump corresponding record into a log file when some point is
 visited. We need to assign each recording point a unique number for
 identification. We are planning to assign each conditional statement and each
 expression a unique id. (This feature is currently not implemented)
 
-What is actually instrumented into the source code is a `instcov_dump()`
-function calling the InstCov runtime library to log corresponding records.
+What is actually instrumented into the source code is a function calling the
+InstCov runtime library to log corresponding records or do runtime checks.
 
-### `if` statement
+Here we give each program entity (decisions & conditions) a UUID (128-bit
+unsigned integer). The instrumented function is a C-function, which has the
+following form:
+
+    #ifdef __cplusplus
+    extern "C" {
+    #endif  // __cplusplus
+    void foo(uint64_t uuid_high, uint64_t uuid_low[, <additional arguments>]);
+    #ifdef __cplusplus
+    }
+    #endif  // __cplusplus
+
+For instrumentation for MC/DC analysis, the additional arguments is a branch ID.
+We use `1` for the true branch and `0` for the false branch.
+
+Trace files begin with a magic string. All dumping is in binary format and is
+64-bit aligned.
+
+### Which Files to Instrument?
+
+Sometimes we only want to instrument some of these files, however the
+preprocessor contains all the included files. We usually don't care about the
+included files. It is almost always a bad idea to write function definitions in
+the header (except VERY SIMPLE C++ class methods). Thus, we want to let the user
+to instrument those files they want. There are two possible implementations I
+have tried.
+
+#### Expanding the macros only, and then instrument
+
+This seems very desirable choice, since Clang provides a smart preprocessing
+option that enables you to expand the macros only and not the included files.
+However, this may be problematic if there are some macro that defines to itself.
+
+For example, I have encountered such situation in `<stdio.h>` in Ubuntu
+distribution, which has the following line:
+
+	#define stdin stdin
+
+So, this idea is not good, since the macro will be expanded again, and the
+source location of `stdin` is still inside a macro.
+
+#### Do a full preprocess, and then instrument
+
+Now we know that the file should be preprocessed only once, thus we need to work
+on a fully preprocessed file. Fortunately, a preprocessed files has `#line`
+directives indicating the original source location (file and line number) before
+expansion. LibClang uses these directives to guess the location in the original
+file, which is called the *presumed* location. We use the presumed file name
+to determine whether the file need to be instrumented.
+
+### Debug information
+
+The debug information file contains the UUID and source location of entry, as
+well as additional information.  Debug information files also begin with a magic
+string, and is 64-bit aligned.
+
+### Trace format
+
+Trace files consist of a magic string and a sequence of record entries, each
+record entry contains a UUID and additioal information if applicable. Trace
+files are also 64-bit aligned.
+
+
+## Instrumentation for function coverage The instrumentation for function
+coverage is quite easy. We just need to add a logging function at the beginning
+of each function body.
+
+## Instrumentation and analysis for MC/DC
+
+### Instrumenting the decisions
+
+#### `if` statement
 
 Since `if` statement allows variable declaration in the condition, we'd better
 not modify the condition.
@@ -87,7 +166,7 @@ not modify the condition.
 We have identified several patterns of `if` statement, and tackle each of them:
 
 * If the `then` or `else` branch is a single statement (i.e. terminating with
-`;`), we surround the statement with braces `{}` and add a `instcov_dump()` call
+`;`), we surround the statement with braces `{}` and add a `instcov_dump_dc()` call
 just before the statement;
 
 * If the `then` branch is a compound statement (i.e. surrounded with `{}`), we
@@ -100,7 +179,7 @@ just insert a `instcov_dump()` after `{`;
   just after the then block.
 
 
-### `while` statement
+#### `while` statement
 
 Since `while` statement allows variable declaration in the condition, we'd
 better not modify the condition.
@@ -118,11 +197,11 @@ insert a `instcov_dump()` after `{`;
 * We insert a `instcov_dump()` call just after the loop body to record that the
 loop condition is evaluated to false.
 
-### `for` statement
+#### `for` statement
 
 The treatment for `for` statements are exactly the same with `while` statement.
 
-### `do` statement
+#### `do` statement
 
 The treatment for `do` statements is a little bit tricky. The reason why it is
 different is that the first iteration is unconditional, and no record should be
@@ -137,49 +216,7 @@ The instrumented code will be (we use `0` and `1` for C-compatibility):
 
 	do { } while ((cond) ? (instcov_dump(), 1) : (instcov_dump(), 0));
 
-### `switch` statement
-
-The implementation for `switch` statement recording is a little bit awkward.
-The most difficult part is that the execution can escape to the next switch case
-if the current switch case has no break statements. Therefore, if we only inject
-a `dump()` function at the front of each switch case body, one execution may
-have multiple dumps.
-
-The solution for this is to set up a flag before the switch statement is
-executed. Before dumping a record, we need to check the flag in advance, and
-then flip the flag. Note that the flag name uses the UUID to avoid conflict.
-
-Suppose the original program piece is:
-
-	switch (var) {
-	case value1:
-	case value2:
-		body1;
-	default:
-		body2;
-	}
-
-The instrumented code would be (note the leading semicolon, which is used to
-avoid syntax error after jump labels):
-
-	;int flag = 1;
-	switch (var) {
-	case value1:
-	case value2:
-		if (flag == 1) {
-			dump();
-			flag = 0;
-		}
-		body1;
-	default:
-		if (flag == 1) {
-			dump();
-			flag = 0;
-		}
-		body2;
-	}
-
-### MC/DC instrumentation
+### Instrumenting Conditions (not recommended, see the next section "Handling short circuits")
 
 For recording MC/DC coverage, we need to record the evaluation of conditions in
 each decision (`if/for/while/do` statement).  Note that the evaluation of
@@ -198,54 +235,25 @@ expression will be:
 `(a) ? instcov_dump() : instcov_dump(), (b) ? instcov_dump() :
 instcov_dump(), (c) ? instcov_dump() : instcov_dump(), expr`
 
-## About the `dump` function
-
-Here we give each program entity (decisions & conditions) a UUID (128-bit
-unsigned integer). The `dump` function is declared as follows:
-
-    #ifdef __cplusplus
-    extern "C" {
-    #endif  // __cplusplus
-    void dump(uint64_t uuid_high, uint64_t uuid_low, uint64_t bid);
-    #ifdef __cplusplus
-    }
-    #endif  // __cplusplus
-
-Here `bid` is the branch id. We use `1` for the true branch and `0` for the
-false branch.
-
-Before dumping the trace, a magic string is inserted first for file type
-recognition. All dumping is in binary format and is aligned by the size of
-`uint64_t`.
-
-## Debug information
-
-The debug information contains the UUID of this entity, the UUID of the
-parent entity, the file name, the line number and the column number.
-
-Before dumping the debug information, a magic string is inserted first for file
-type recognition. All dumping is in binary format and is aligned by the size of
-`uint64_t`.
-
-## Trace analysis
+### Organizing the traces
 
 Note that the trace file only contains a sequence of UUID-bid pairs.  We need
 to associate them with each other in MCDC coverage analysis.
 
-What `instcov-view` does is actually read the debug information from `.dbginfo`
-files, read the trace file, and link the trace entries.
+We need to first read the debug information from `.dbginfo`
+files, then read the trace file, and organize the trace entries.
 
 The trace entries are restructured into several tree structures. The root node
 of each tree is a decision. The leaf nodes are conditions. Other non-leaf nodes
-are sub-decisions ( **sub-decisions are currently not supported** ).
+are sub-decisions (**sub-decisions are currently not supported, the tree has
+only one layer** ).
 
-When a new entry is read from the trace file, `instcov-view` goes upwards to
-find the root node, and set up a tree of empty slots. The tree is built
-according to the debug information. Each slot needs to be filled with a
-corresponding trace entry. After the root node (decision) is filled, the total
-information for a visit to the root decision is completed, and is dumped as tree
-format. Then `instcov-view` starts over, reads new entries, build and dumps new
-slot trees.
+When a new entry is read from the trace file, we go upwards to find the root
+node, and set up a tree of empty slots. The tree is built according to the debug
+information. Each slot needs to be filled with a corresponding trace
+entry. After the root node (decision) is filled, the total information for a
+visit to the root decision is completed, and is dumped as tree format. Then we
+starts over, reads new entries, build and dumps new slot trees.
 
 Sometimes a node outside the tree may be read, or the node may be already filled
 inside the current tree. This means that the new node is definitely in a deeper
@@ -257,39 +265,7 @@ top tree, and pop it from the stack. Note that this can be guaranteed correct
 since we always dump the conditions in a fixed order, and then dump the decision
 in the end.
 
-## Which Files to Instrument?
-
-Sometimes we only want to instrument some of these files, however the
-preprocessor contains all the included files. We usually don't care about the
-included files. It is almost always a bad idea to write function definitions in
-the header (except VERY SIMPLE C++ class methods). Thus, we want to let the user
-to instrument those files they want. There are two possible implementations I
-have tried.
-
-### Expanding the macros only, and then instrument
-
-This seems very desirable choice, since Clang provides a smart preprocessing
-option that enables you to expand the macros only and not the included files.
-However, this may be problematic if there are some macro that defines to itself.
-
-For example, I have encountered such situation in `<stdio.h>` in Ubuntu
-distribution, which has the following line:
-
-	#define stdin stdin
-
-So, this idea is not good, since the macro will be expanded again, and the
-source location of `stdin` is still inside a macro.
-
-### Do a full preprocess, and then instrument
-
-Now we know that the file should be preprocessed only once, thus we need to work
-on a fully preprocessed file. Fortunately, a preprocessed files has `#line`
-directives indicating the original source location (file and line number) before
-expansion. LibClang uses these directives to guess the location in the original
-file, which is called the *presumed* location. We use the presumed file name
-to determine whether the file need to be instrumented.
-
-## Analyzing MC/DC coverage
+### Analyzing MC/DC coverage
 
 After we obtained the execution records, the next problem is how to analyze the
 MC/DC coverage on it. Our goal is to do it right and fast.
@@ -358,7 +334,7 @@ and check whether they are MC/DC pairs. The complexity is reduced from
 `O(v*v*d)` to `O(v*d)`, where `v` is the number of evaluation s, and `d` is the
 maximum number of conditions in a decision.
 
-## Handling short circuits
+### Handling short circuits
 
 The above designs dumps all conditions despite of short-circuits. However as we
 stated earlier, this may have problems when a condition have side-effects,
@@ -421,6 +397,50 @@ within the same decision.
    decision. We compare each pair of unique evaluation vectors, thus the
    decision visits having the same evaluation vectors will not be compare over
    and over again.
+
+
+
+## `switch` statement instrumentation
+
+The implementation for `switch` statement recording is a little bit awkward.
+The most difficult part is that the execution can escape to the next switch case
+if the current switch case has no break statements. Therefore, if we only inject
+a `dump()` function at the front of each switch case body, one execution may
+have multiple dumps.
+
+The solution for this is to set up a flag before the switch statement is
+executed. Before dumping a record, we need to check the flag in advance, and
+then flip the flag. Note that the flag name uses the UUID to avoid conflict.
+
+Suppose the original program piece is:
+
+	switch (var) {
+	case value1:
+	case value2:
+		body1;
+	default:
+		body2;
+	}
+
+The instrumented code would be (note the leading semicolon, which is used to
+avoid syntax error after jump labels):
+
+	;int flag = 1;
+	switch (var) {
+	case value1:
+	case value2:
+		if (flag == 1) {
+			dump();
+			flag = 0;
+		}
+		body1;
+	default:
+		if (flag == 1) {
+			dump();
+			flag = 0;
+		}
+		body2;
+	}
 
 
 ## Developer FAQs

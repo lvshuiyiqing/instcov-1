@@ -2,10 +2,14 @@
 
 ## Introduction
 
-InstCov is a Clang-based instrumentation tool for branch coverage, MCDC
-coverage, function coverage recording. It also provides an easy interface that
-supports extending to customized instrumentation for coverage analysis, dynamic
-verification, etc.
+InstCov is a generic platform for C/C++ code instrumentation based on Clang.  It
+provides an easy interface that allows you to perform customized instrumentation
+for specific purposes, such as coverage analysis, dynamic verification, etc.
+Currently, we have already implemented instrumentation and analysis for MC/DC
+coverage, branch coverage, function coverage and switch statement branch coverage.
+
+If you want to add customed intrumentation to InstCov, please see the
+developers' guide.
 
 ## Basic Usage
 
