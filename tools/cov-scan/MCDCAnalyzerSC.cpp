@@ -1,4 +1,4 @@
-//===-- SCAnalyzer.cpp ------ SC analyzer class definitions -----*- C++ -*-===//
+//===-- MCDCAnalyzerSC.cpp -------- SC analyzer definitions -----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,13 +8,13 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the class for SCAnalyzer
+/// \brief This file contains the class for short-circuit MCDC analyzer
 ///
 //===----------------------------------------------------------------------===//
 
 #include <algorithm>
 #include "instcov/RawRecord.h"
-#include "SCAnalyzer.h"
+#include "MCDCAnalyzerSC.h"
 #include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
@@ -44,7 +44,7 @@ bool isMatch(char LHS, char RHS) {
 }
 }
 
-void SCAnalyzer::registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM) {
+void MCDCAnalyzerSC::registerDCRecord(const DCRecord *DCR) {
   EvalVec_t NewEV;
   std::vector<UUID_t> ThisCondOrder;
   NewEV.reserve(DCR->Cond2Val.size()+1);
@@ -61,7 +61,7 @@ void SCAnalyzer::registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM) {
   Dec2CondOrder[DCR->DecVal.first] = ThisCondOrder;
 }
 
-void SCAnalyzer::finalize(void) {
+void MCDCAnalyzerSC::finalize(void) {
   for (auto &Dec_EV2TIDs : Dec2EV2TIDs) {
     UUID_t Uuid_D = Dec_EV2TIDs.first;
     for (auto it1 = Dec_EV2TIDs.second.begin(),
@@ -85,8 +85,8 @@ void SCAnalyzer::finalize(void) {
   }
 }
 
-size_t SCAnalyzer::findMatch(const EvalVec_t &LHS,
-                             const EvalVec_t &RHS) {
+size_t MCDCAnalyzerSC::findMatch(const EvalVec_t &LHS,
+                                 const EvalVec_t &RHS) {
   if (LHS.empty() || RHS.empty() || LHS.size() != RHS.size()) {
     return -1;
   }
@@ -105,7 +105,7 @@ size_t SCAnalyzer::findMatch(const EvalVec_t &LHS,
   return ID;
 }
 
-void SCAnalyzer::dump(std::ostream &OS, const DbgInfoMgr &DIM) const {
+void MCDCAnalyzerSC::dump(std::ostream &OS) const {
   std::size_t NumCovered = 0;
   std::size_t NumUncovered = 0;
   // decision level

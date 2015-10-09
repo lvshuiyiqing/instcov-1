@@ -24,6 +24,12 @@ const char INSTCOV_DUMP_MAGIC[] = "INSTCOV_DUMP";
 const char INSTCOV_DUMP_VERSION[] = "1";
 }
 
+RawRecordMgr::~RawRecordMgr(void) {
+  for (RawRecord *RR : Records) {
+    delete RR;
+  }
+}
+
 void RawRecordMgr::loadFromFile(const std::string &FileName) {
   std::ifstream InFile(FileName.c_str(), std::ios::binary);
   if (!InFile) {

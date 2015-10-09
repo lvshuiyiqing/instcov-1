@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <tuple>
 #include "llvm/Support/Casting.h"
 #include "instcov/uuid.h"
 
@@ -70,6 +71,18 @@ struct DbgInfo {
   UUID_t Uuid;
 };
 
+struct CmpDbgInfoLoc {
+  bool operator () (const DbgInfo *left,
+                    const DbgInfo *right) {
+    return std::make_tuple(left->Loc.File,
+                           left->Loc.Line,
+                           left->Loc.Col) <
+           std::make_tuple(right->Loc.File,
+                           right->Loc.Line,
+                           right->Loc.Col);
+  }
+};
+
 struct DbgInfo_DC : public DbgInfo {
   DbgInfo_DC(void)
       : DbgInfo(DIK_DC), Uuid_P() {}
@@ -107,7 +120,7 @@ struct DbgInfo_Switch : public DbgInfo {
   virtual RawRecord *createRawRecord(void) const;
 
   static bool classof(const DbgInfo *DI) {
-    return DI->getKind() == DIK_DC;
+    return DI->getKind() == DIK_SWITCH;
   }
   virtual const char *getMagic(void) const {
     return magic();
@@ -129,6 +142,9 @@ struct DbgInfo_Func : public DbgInfo {
   virtual void loadBodyFromFile(std::istream &File);
   virtual RawRecord *createRawRecord(void) const;
 
+  static bool classof(const DbgInfo *DI) {
+    return DI->getKind() == DIK_FUNC;
+  }
   virtual const char *getMagic(void) const {
     return magic();
   }

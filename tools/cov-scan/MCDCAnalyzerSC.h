@@ -1,4 +1,4 @@
-//===-- SCAnalyzer.h ------------ SC analyzer class -------------*- C++ -*-===//
+//===-- MCDCAnalyzerSC.h -------- SC analyzer class -------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef INSTCOV_SCANALYZER_H_
-#define INSTCOV_SCANALYZER_H_
+#ifndef INSTCOV_MCDCANALYZERSC_H_
+#define INSTCOV_MCDCANALYZERSC_H_
 
 #include <vector>
 #include <map>
@@ -25,17 +25,18 @@
 #include "MCDCAnalyzer.h"
 
 namespace instcov {
-class SCAnalyzer : public MCDCAnalyzer {
+class MCDCAnalyzerSC : public MCDCAnalyzer {
  public:
-  SCAnalyzer() : MCDCAnalyzer(AK_SC) {}
+  MCDCAnalyzerSC(const DbgInfoMgr &dim)
+      : MCDCAnalyzer(AK_SC, dim) {}
 
   static bool classof(const MCDCAnalyzer *A) {
     return A->getKind() == AK_SC;
   }
 
  public:
-  virtual void registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM);
-  virtual void dump(std::ostream &OS, const DbgInfoMgr &DIM) const;
+  virtual void registerDCRecord(const DCRecord *DCR);
+  virtual void dump(std::ostream &OS) const;
   virtual void finalize(void);
 
   typedef std::string EvalVec_t;
@@ -65,4 +66,4 @@ class SCAnalyzer : public MCDCAnalyzer {
 };
 }
 
-#endif  // INSTCOV_SCANALYZER_H_
+#endif  // INSTCOV_MCDCANALYZERSC_H_

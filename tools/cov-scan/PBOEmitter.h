@@ -18,7 +18,7 @@
 #include "llvm/ADT/StringMap.h"
 #include "PBOProblem.h"
 #include "instcov/DbgInfoMgr.h"
-#include "SCAnalyzer.h"
+#include "MCDCAnalyzerSC.h"
 
 namespace instcov {
 struct PBOProblemOpt : public PBOProblem {
@@ -39,8 +39,8 @@ struct PBOProblemOpt : public PBOProblem {
 
 class PBOEmitter {
  public:
-  typedef SCAnalyzer::EvalVec_t EvalVec_t;
-  PBOEmitter(const SCAnalyzer &analyzer)
+  typedef MCDCAnalyzerSC::EvalVec_t EvalVec_t;
+  PBOEmitter(const MCDCAnalyzerSC &analyzer)
       : Analyzer(analyzer) {}
 
   PBOProblemOpt emitPBO(void);
@@ -103,7 +103,7 @@ class PBOEmitter {
   std::vector<UUID_t> SID2Uuid;
   llvm::StringMap<PBVar> IDPool;
   std::map<PBVar, std::string> ID2Str;
-  const SCAnalyzer &Analyzer;  // for sorting the log entries
+  const MCDCAnalyzerSC &Analyzer;
 };
 }
 

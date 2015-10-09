@@ -1,4 +1,4 @@
-//===-- FastAnalyzer.cpp -- Fast MC/DC analyzer definitions -----*- C++ -*-===//
+//===-- MCDCAnalyzerFast.cpp -- FastMCDCAnalyzer definitions ----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,14 +8,14 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file contains the definitions of FastAnalyzer
+/// \brief This file contains the definitions of fast MC/DC analyzer
 ///
 //===----------------------------------------------------------------------===//
 
 #include <functional>
 #include <algorithm>
 #include "instcov/RawRecord.h"
-#include "FastAnalyzer.h"
+#include "MCDCAnalyzerFast.h"
 #include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
@@ -24,14 +24,14 @@ using namespace instcov;
 extern cl::opt<bool> CountsOnly;
 extern cl::opt<bool> Verbose;
 
-void FastAnalyzer::registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM) {
+void MCDCAnalyzerFast::registerDCRecord(const DCRecord *DCR) {
   std::vector<bool> bits;
   std::vector<UUID_t> Uuids;
   bits.reserve(DCR->Cond2Val.size()+1);
   Uuids.reserve(DCR->Cond2Val.size()+1);
   for (auto &Cond_Assgn : DCR->Cond2Val) {
     if (Cond_Assgn.second == BID_NA) {
-      std::cerr << "FastAnalyzer do not accept NA entries, skipping this one"
+      std::cerr << "MCDCAnalyzerFast do not accept NA entries, skipping"
                 << "<" << DCR->TID << "," << DCR->VID << ">" << std::endl;
     }
     bits.push_back(Cond_Assgn.second);
@@ -59,10 +59,10 @@ void FastAnalyzer::registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &DIM) 
   }
 }
 
-void FastAnalyzer::finalize(void) {
+void MCDCAnalyzerFast::finalize(void) {
 }
 
-void FastAnalyzer::dump(std::ostream &OS, const DbgInfoMgr &DIM) const {
+void MCDCAnalyzerFast::dump(std::ostream &OS) const {
   std::size_t NumCovered = 0;
   std::size_t NumUncovered = 0;
   // decision level

@@ -1,4 +1,4 @@
-//===-- FastAnalyzer.h -- Fast MC/DC analyzer class -------------*- C++ -*-===//
+//===-- MCDCAnalyzerFast.h -- Fast MC/DC analyzer class ---------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef INSTCOV_FASTANALYZER_H_
-#define INSTCOV_FASTANALYZER_H_
+#ifndef INSTCOV_MCDCANALYZERFAST_H_
+#define INSTCOV_MCDCANALYZERFAST_H_
 
 #include <vector>
 #include <map>
@@ -23,9 +23,10 @@
 #include "MCDCAnalyzer.h"
 
 namespace instcov {
-class FastAnalyzer : public MCDCAnalyzer {
+class MCDCAnalyzerFast : public MCDCAnalyzer {
  public:
-  FastAnalyzer() : MCDCAnalyzer(AK_Fast) {}
+  MCDCAnalyzerFast(const DbgInfoMgr &dim)
+      : MCDCAnalyzer(AK_Fast, dim) {}
 
   static bool classof(const MCDCAnalyzer *A) {
     return A->getKind() == AK_Fast;
@@ -40,7 +41,7 @@ class FastAnalyzer : public MCDCAnalyzer {
   typedef std::map<UUID_t, CData_t> DData_t;
   typedef std::map<UUID_t, DData_t> Data_t;
 
-  virtual void registerDCRecord(const DCRecord *DCR, const DbgInfoMgr &LM);
+  virtual void registerDCRecord(const DCRecord *DCR);
   virtual void finalize(void);
 
   const Data_t &getData(void) const { return Data; }
@@ -53,7 +54,7 @@ class FastAnalyzer : public MCDCAnalyzer {
   getSortedConditions(
       const DData_t &DData, const DbgInfoMgr &DIM);
 
-  virtual void dump(std::ostream &OS, const DbgInfoMgr &DIM) const;
+  virtual void dump(std::ostream &OS) const;
 
  private:
   Data_t Data;
@@ -61,4 +62,4 @@ class FastAnalyzer : public MCDCAnalyzer {
 
 }
 
-#endif  // INSTCOV_FASTANALYZER_H_
+#endif  // INSTCOV_MCDCANALYZERFAST_H_

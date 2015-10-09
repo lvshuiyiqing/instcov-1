@@ -27,7 +27,7 @@ class RawRecordMgr {
  public:
   RawRecordMgr(const DbgInfoMgr &dim)
       : DIM(dim) {}
-  ~RawRecordMgr(void) {}
+  ~RawRecordMgr(void);
 
  private:
   RawRecordMgr(const RawRecordMgr &from);
