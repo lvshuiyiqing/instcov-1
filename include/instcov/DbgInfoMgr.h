@@ -19,6 +19,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <algorithm>
 #include <iostream>
 #include "instcov/DbgInfo.h"
 

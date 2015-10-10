@@ -17,6 +17,7 @@
 #include "instcov/uuid.h"
 #include <iostream>
 #include <stack>
+#include <cstring>
 
 using namespace llvm;
 using namespace instcov;
