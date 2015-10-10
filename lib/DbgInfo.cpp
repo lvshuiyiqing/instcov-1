@@ -130,12 +130,8 @@ DbgInfo *DbgInfo::loadFromFile(std::istream &File) {
   File.read(type_buff, 4);
   std::string type = type_buff;
   DbgInfo *DI = 0;
-  if (type == DbgInfo_DC::magic()) {
-    DI = new DbgInfo_DC();
-  } else if (type == DbgInfo_Switch::magic()) {
-    DI = new DbgInfo_Switch();
-  } else if (type == DbgInfo_Func::magic()) {
-    DI = new DbgInfo_Func();
+  if (DbgInfo::Builder::getBuilder().has(type)) {
+    DI = DbgInfo::Builder::getBuilder().createDbgInfo(type);
   } else {
     std::cerr << "unrecognized debug info type: " << type << std::endl;
     exit(1);
@@ -143,3 +139,7 @@ DbgInfo *DbgInfo::loadFromFile(std::istream &File) {
   DI->loadBodyFromFile(File);
   return DI;
 }
+
+REGISTER_DBGINFO_CREATOR(DbgInfo_DC)
+REGISTER_DBGINFO_CREATOR(DbgInfo_Switch)
+REGISTER_DBGINFO_CREATOR(DbgInfo_Func)

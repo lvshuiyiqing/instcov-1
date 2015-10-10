@@ -42,26 +42,29 @@ cl::list<std::string> DIFileNames(
 cl::opt<std::string> OptMCDCAnalyzer(
     "mcdc-analyzer",
     cl::desc("select the MCDC analyzer. Options:\n"
-             "fast (a fast analyzer but do not accept NA entries)\n"
-             "sc (default, a slower analyzer but can deal with NA entries)\n"),
+             "fast (a fast analyzer but do not accept NA entries,\n"
+             "      no short-circuits are allowed)\n"
+             "sc (default, a slower analyzer but can deal with NA entries,"
+             "    allows short-circuits)\n"),
     cl::init("sc"));
-cl::opt<bool> CountsOnly("counts-only",
-                         cl::desc("only counts"),
-                         cl::init(false));
+cl::opt<bool> CountsOnly(
+    "mcdc-counts-only",
+    cl::desc("only output counts for mcdc analysis"),
+    cl::init(false));
 cl::opt<bool> Verbose(
-    "v",
+    "mcdc-verbose",
     cl::desc("dump more verbosely"),
     cl::init(false));
 
 cl::opt<bool> EmitPBO(
-    "emit-pbo",
+    "mcdc-emit-pbo",
     cl::desc("to emit a PBO problem,"
              "which is to be solved by a constraint solver\n"
              "Only combines with sc analyzer"),
     cl::init(false));
 
 cl::opt<bool> EmitPretty(
-    "emit-pretty",
+    "mcdc-emit-pretty",
     cl::desc("emit pretty-style PBO output"),
     cl::init(false));
 

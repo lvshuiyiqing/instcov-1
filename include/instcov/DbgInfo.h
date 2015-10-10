@@ -19,6 +19,8 @@
 #include <vector>
 #include <iostream>
 #include <tuple>
+#include <map>
+#include "llvm/ADT/StringMap.h"
 #include "llvm/Support/Casting.h"
 #include "instcov/uuid.h"
 
@@ -40,6 +42,7 @@ struct RawRecord;
 
 struct DbgInfo {
  public:
+  class Builder;
   enum DIKind {
     DIK_DC,
     DIK_SWITCH,
@@ -71,6 +74,43 @@ struct DbgInfo {
   UUID_t Uuid;
 };
 
+class DbgInfo::Builder {
+ private:
+  Builder(void) {}
+ public:
+  static Builder &getBuilder(void) {
+    static Builder staInstance;
+    return staInstance;
+  }
+  typedef DbgInfo *(*create_func_t)(void);
+  void registerCreateFunc(const std::string &magic, create_func_t func) {
+    RegisteredCreateFuncs[magic] = func;
+  }
+  bool has(const std::string &magic) const {
+    return RegisteredCreateFuncs.count(magic);
+  }
+  DbgInfo *createDbgInfo(const std::string &magic) const {
+    return (*(RegisteredCreateFuncs.find(magic)->second))();
+  }
+ private:
+  llvm::StringMap<create_func_t> RegisteredCreateFuncs;
+};
+
+// Call this macro exactly once in a cpp file for each DbgInfo leaf class
+#define REGISTER_DBGINFO_CREATOR(Class)                                 \
+  namespace {                                                           \
+  struct Register##Class {                                              \
+   public:                                                              \
+   Register##Class(void) {                                              \
+     DbgInfo::Builder::getBuilder().registerCreateFunc(                 \
+         Class::magic(), &createDbgInfo);                               \
+   }                                                                    \
+   static DbgInfo *createDbgInfo(void) {                                \
+     return new Class();                                                \
+   }                                                                    \
+  } staRegister##Class;                                                 \
+  }
+
 struct CmpDbgInfoLoc {
   bool operator () (const DbgInfo *left,
                     const DbgInfo *right) {
@@ -92,7 +132,6 @@ struct DbgInfo_DC : public DbgInfo {
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
   virtual RawRecord *createRawRecord(void) const;
-
   static bool classof(const DbgInfo *DI) {
     return DI->getKind() == DIK_DC;
   }

@@ -20,7 +20,7 @@ using namespace llvm;
 using namespace instcov;
 
 cl::opt<bool> WithConditions(
-    "with-conditions",
+    "dc-with-conditions",
     cl::desc("analyze conditions for DC analyzer"),
     cl::init(true));
 

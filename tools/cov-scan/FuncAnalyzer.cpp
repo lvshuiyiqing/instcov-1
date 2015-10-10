@@ -39,5 +39,6 @@ void FuncAnalyzer::dump(std::ostream &OS) const {
       OS << "[-]";
     }
     DI->dumpPretty(OS);
+    OS << std::endl;
   }
 }
