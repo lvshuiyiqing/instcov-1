@@ -101,7 +101,10 @@ int main(int argc, char *argv[]) {
     }
     OS = OutFile.get();
   }
-  if (OptAnalyzer == "mcdc") {
+  if (OptAnalyzer == "") {
+    std::cerr << "please specify the analyzer using \'-analyzer\'" << std::endl;
+    exit(1);
+  } else if (OptAnalyzer == "mcdc") {
     if (EmitPBO && OptMCDCAnalyzer != "sc") {
       std::cerr << "PBO emitting should be used with sc analyzer"
                 << std::endl;
