@@ -13,7 +13,9 @@ developers' guide.
 
 ## Basic Usage
 
-To use the tool, you need to follow these steps:
+To use the tool, you need to follow these steps (in Windows, you should run
+vcvarsall.bat first to set up your building environment, which is located in your
+MSVC installation directory):
 
 1.  Preprocess your original source code using clang with argument `-E` and
 	`-include instcov_rt.h` (with proper `-I` option so the compiler can find the
@@ -111,7 +113,8 @@ To use the tool, you need to follow these steps:
 
 Alternatively, you can use the wrapper scripts shipped with this package. **You
 need to customize the directories in script `instcov_env` before using them.**
-The descriptions for the scripts are as follows:
+The descriptions for the scripts (use the `.bat` extensions in Windows) are as
+follows:
 
 * `prep.py`: the preprocessor wrapper, it preprocesses the given files,
 including the InstCov runtime header, and dumps `<file>.<extension>` to
