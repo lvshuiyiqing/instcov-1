@@ -14,6 +14,7 @@ def run(argv):
     else:
         args += ['-L', instcov_env.INSTCOV_LIBRARY_PATH, '-linstcov_rt',
                 '-lstdc++']
+    print ' '.join(args)
     return subprocess.call(args)
 
 if __name__ == "__main__":
