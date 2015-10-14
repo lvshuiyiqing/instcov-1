@@ -160,7 +160,8 @@ will be considered an `MC/DC` pair on the first condition.
 If you assume there are no short-circuit in the program, and want to dump all
 conditions despite of short circuits, you can add `-no-short-circuits` to
 `instcov`. In this case, you can also run `mcdc-scan` faster by using
-`-analyzer=fast` argument.
+`-mcdc-analyzer=fast` argument. ** However, this feature is strongly not
+recommended. **
 
 If you are using the script files, modify the corresponding line in
 `instcov_env` to enable short-circuit handling.

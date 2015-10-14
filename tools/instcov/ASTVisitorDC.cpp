@@ -67,6 +67,10 @@ cl::opt<bool> NoShortCircuits(
 namespace {
 const std::string INSTCOV_FUNC_NAME = "instcov_dc_dump";
 
+
+/**
+ * This function is taken from Clang Transform.cpp
+ */
 SourceLocation findSemiAfterLocation(Rewriter &R, SourceLocation sl) {
   // llvm::errs() << "finding semicolon after location\n";
   SourceManager &SM = R.getSourceMgr();
