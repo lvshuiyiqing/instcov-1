@@ -56,9 +56,10 @@ MSVC installation directory):
 3.  Build the instrumented code. Plus you should link your program with
 	`libinstcov_rt.a`. Then your program should be instrumented.
 
-4.  After you run your program, the trace file will be written into
-	`instcov.dump`. You can change the file name by setting environment variable
-	`INSTCOV_FILE`.
+4.  Run your program. You may need to write your own test driver. After you run
+	your program, the trace file will be written into `instcov.dump`. You can
+	change the file name by setting environment variable `INSTCOV_FILE`, or just
+	by renaming the file.
 
 5.  (Optional) Run the analysis tool `instcov-view` to view the debug
     information file or the trace file in a pretty way:
