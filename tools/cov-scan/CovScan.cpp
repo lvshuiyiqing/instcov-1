@@ -19,7 +19,6 @@
 #include "instcov/DCRecordMgr.h"
 #include "instcov/DCRecordBuilder.h"
 #include "MCDCAnalyzer.h"
-#include "MCDCAnalyzerFast.h"
 #include "MCDCAnalyzerSC.h"
 #include "FuncAnalyzer.h"
 #include "DCAnalyzer.h"
@@ -39,14 +38,6 @@ cl::list<std::string> DIFileNames(
     "di",
     cl::desc("<debug info files> ..."),
     cl::OneOrMore);
-cl::opt<std::string> OptMCDCAnalyzer(
-    "mcdc-analyzer",
-    cl::desc("select the MCDC analyzer. Options:\n"
-             "fast (a fast analyzer but do not accept NA entries,\n"
-             "      no short-circuits are allowed)\n"
-             "sc (default, a slower analyzer but can deal with NA entries,"
-             "    allows short-circuits)\n"),
-    cl::init("sc"));
 cl::opt<bool> CountsOnly(
     "mcdc-counts-only",
     cl::desc("only output counts for mcdc analysis"),
@@ -105,19 +96,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "please specify the analyzer using \'-analyzer\'" << std::endl;
     exit(1);
   } else if (OptAnalyzer == "mcdc") {
-    if (EmitPBO && OptMCDCAnalyzer != "sc") {
-      std::cerr << "PBO emitting should be used with sc analyzer"
-                << std::endl;
-      return 1;
-    }
-    std::shared_ptr<MCDCAnalyzer> analyzer;
-    if (OptMCDCAnalyzer == "fast") {
-      analyzer.reset(new MCDCAnalyzerFast(DIM));
-    } else if (OptMCDCAnalyzer == "sc") {
-      analyzer.reset(new MCDCAnalyzerSC(DIM));
-    } else {
-      std::cerr << "wrong MCDC analyzer: " << OptMCDCAnalyzer << std::endl;
-    }
+    MCDCAnalyzerSC analyzer(DIM);
     std::size_t TID = 0;
     for (auto &TraceFileName : TraceFileNames) {
       RawRecordMgr RRM(DIM);
@@ -130,14 +109,13 @@ int main(int argc, char *argv[]) {
         DCR.TID = TID;
         DCR.VID = VID;
         ++VID;
-        analyzer->registerDCRecord(&DCR);
+        analyzer.registerDCRecord(&DCR);
       }
       ++TID;
     }
 
     if (EmitPBO) {
-      MCDCAnalyzerSC *SCA = cast<MCDCAnalyzerSC>(analyzer.get());
-      PBOEmitter Emitter(*SCA);
+      PBOEmitter Emitter(analyzer);
       PBOProblemOpt Problem = Emitter.emitPBO();
       if (EmitPretty) {
         Problem.emitPretty(*OS, Emitter.getID2Str());
@@ -147,8 +125,8 @@ int main(int argc, char *argv[]) {
       Emitter.dumpPBVar2Str(*OS);
       Emitter.dumpSID2LocInfo(*OS, DIM);
     } else {
-      analyzer->finalize();
-      analyzer->dump(*OS);
+      analyzer.finalize();
+      analyzer.dump(*OS);
     }
   } else if (OptAnalyzer == "dc") {
     DCAnalyzer analyzer(DIM);

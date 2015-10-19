@@ -10,10 +10,6 @@ def run(argv):
     ARGS = [instcov_env.INSTCOV_BIN_PATH+'/instcov', '-action=dc',
             '-action=switch', '-action=func',
             '-inst-conditions', '-inst-RHS']
-    if instcov_env.ENABLE_SHORT_CIRCUITING != True:
-        print "short circuit disabled"
-        ARGS += ['-no-short-circuits']
-
     ARGS += argv
     ARGS += ['--', '-w']
     return subprocess.call(ARGS)

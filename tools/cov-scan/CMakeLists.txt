@@ -4,7 +4,6 @@ add_clang_executable(cov-scan
   CovScan.cpp
   DCAnalyzer.cpp
   FuncAnalyzer.cpp
-  MCDCAnalyzerFast.cpp
   MCDCAnalyzerSC.cpp
   PBOProblem.cpp
   PBOEmitter.cpp

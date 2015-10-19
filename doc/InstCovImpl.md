@@ -216,7 +216,7 @@ The instrumented code will be (we use `0` and `1` for C-compatibility):
 
 	do { } while ((cond) ? (instcov_dump(), 1) : (instcov_dump(), 0));
 
-### Instrumenting Conditions (not recommended, see the next section "Handling short circuits")
+### Instrumenting Conditions
 
 For recording MC/DC coverage, we need to record the evaluation of conditions in
 each decision (`if/for/while/do` statement).  Note that the evaluation of
@@ -229,11 +229,18 @@ side effects (such as `++a > 0`), then the instrumented code will have different
 behavior with the original one.
 
 Suppose the original condition expression in the conditional statement is
-`cond`, which has decisions `a`, `b` and `c`. The trasformed condition
+`a && (b || c)`, which has decisions `a`, `b` and `c`. The trasformed condition
 expression will be:
 
-`(a) ? instcov_dump() : instcov_dump(), (b) ? instcov_dump() :
-instcov_dump(), (c) ? instcov_dump() : instcov_dump(), expr`
+	(a ? (dump(), 1) : (dump(), 0)) &&
+	((b ? (dump(), 1) : (dump(), 0)) ||
+	(c ? (dump(), 1) : (dump(), 0)))
+
+A special case is in C++, `if` and `while` conditions may have variable
+declaration. If the initializer expression is not boolean, then the
+instrumentation may change the program behavior. We need to check whether the
+initializer expression is of boolean type, and instrument the expression if the
+answer is yes.
 
 ### Organizing the traces
 
@@ -275,89 +282,6 @@ distinguish between different visits. We mark each visit by the test ID and
 visit ID. Here we call the evaluation result of the decision and the conditions
 for each visit a *evaluation vector*.
 
-To quickly identify the MC/DC pairs. Here we use a hashing trick. We know that a
-MC/DC pair is two evaluation vectors of a decision, having one of the conditions
-be evaluated differently, and all other conditions be evaluated the same, making
-the whole decision evaluated differently. Here we hash each evaluation vector
-into a integer value, making MC/DC pairs to be hashed into the same value.
-
-This is done as follows:
-
-1. For each condition of each decision, we initialize an empty hash table,
-   mapping integer values into pairs of containers (denote as the *True side*
-   and the *False Side*).
-
-2. For each evaluation vector, we build a Boolean vector, storing all the
-   condition values, as well as the decision result.
-
-3. For each condition of each evaluation vector, if the condition is evaluated
-   to True, then the Boolean vector is kept the same, and the corresponding hash
-   value is computed using the vector. Then we put the evaluation vector into
-   the True side container.
-
-	If the condition is evaluated to False, then the value of this condition and
-    the decision is flipped, and the corresponding hash value is computed using
-    the vector. Then we put the evaluation vector into the False side container.
-
-4. If for some hash value, the True side container and the False side container
-   are both non-empty, then any one from the True side and any one from the
-   False side forms a MC/DC pair on the condition.
-
-Here is an example:
-
-Suppose decision `d` is `a||b`. We have test cases:
-
-	T1: 0 0 -> 0
-	T2: 1 0 -> 1
-	T3: 0 1 -> 1
-	T4: 1 1 -> 1
-
-For the T1, we have vector `000`.  Decision `a` is false, so it is flipped into
-`101`, we store the evaluation vector on the false side of `a:101`.  Similarily,
-we store the evaluation vector on the false side of `b:011`.  We omit the
-following process. The resulting table is as follows (note that we omitted the
-visit ID):
-
-	a:101: {T2}, {T1} >> MC/DC pair
-	a:110: {}, {T3}
-	a:111: {T4}, {}
-
-	b:011: {T3}, {T1} >> MC/DC pair
-	b:110: {}, {T2}
-	b:111: {T4}, {}
-
-Now we recognized an MC/DC pair for `a`, which is `<T2,T1>`, and an MC/DC pair
-for `b`, which is `<T3,T1>`.
-
-By using the hasing technique, we can avoid enumerating evaluation vector pairs
-and check whether they are MC/DC pairs. The complexity is reduced from
-`O(v*v*d)` to `O(v*d)`, where `v` is the number of evaluation s, and `d` is the
-maximum number of conditions in a decision.
-
-### Handling short circuits
-
-The above designs dumps all conditions despite of short-circuits. However as we
-stated earlier, this may have problems when a condition have side-effects,
-because the instrumentation we described above will change the program behavior.
-
-To deal with short circuits, the condition evaluation result is dumped only when
-the corresponding condition is evaluated. The following example illustrates how
-an expression is instrumented. Suppose the expression is:
-
-	a && (b || c)
-
-The instrumented code will be:
-
-	(a ? (dump(), 1) : (dump(), 0)) &&
-	((b ? (dump(), 1) : (dump(), 0)) ||
-	(c ? (dump(), 1) : (dump(), 0)))
-
-A special case is in C++, `if` and `while` conditions may have variable
-declaration. If the initializer expression is not boolean, then the
-instrumentation may change the program behavior. We need to check whether the
-initializer expression is of boolean type, and instrument the expression if the
-answer is yes.
-
 In the resulting log file, some conditions may be missing. To find maching MC/DC
 pairs, we first check each evaluation vector pair to see whether the decision is
 evaluated to different results. If yes, we then check whether there are exactly
@@ -397,8 +321,6 @@ within the same decision.
    decision. We compare each pair of unique evaluation vectors, thus the
    decision visits having the same evaluation vectors will not be compare over
    and over again.
-
-
 
 ## `switch` statement instrumentation
 

@@ -144,10 +144,10 @@ the program and run `instcov-view`;
 
 ### Short-circuit handling in MC/DC analysis
 
-By default, instcov supports short-circuit handling. This means that only the
-conditions that are evaluated during execution is dumped. For example, if the
-decision is `a||b`, and if `a=true`, `b=true` at this point, the value of `b`
-will not dumped, thus labeled as `X` (unevaluated).
+Instcov supports short-circuit handling for MC/DC analysis. This means that only
+the conditions that are evaluated during execution is dumped. For example, if
+the decision is `a||b`, and if `a=true`, `b=true` at this point, the value of
+`b` will not dumped, thus labeled as `X` (unevaluated).
 
 When finding `MC/DC` pairs, if either side of assignment of a condition is `X`,
 then the two assignment of the condition is identical. For example, assignments:
@@ -156,15 +156,6 @@ then the two assignment of the condition is identical. For example, assignments:
 	FF=>F
 
 will be considered an `MC/DC` pair on the first condition.
-
-If you assume there are no short-circuit in the program, and want to dump all
-conditions despite of short circuits, you can add `-no-short-circuits` to
-`instcov`. In this case, you can also run `mcdc-scan` faster by using
-`-mcdc-analyzer=fast` argument. ** However, this feature is strongly not
-recommended. **
-
-If you are using the script files, modify the corresponding line in
-`instcov_env` to enable short-circuit handling.
 
 ### Assignment operators and variable declarations
 
