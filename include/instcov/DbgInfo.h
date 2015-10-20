@@ -1,9 +1,9 @@
 //===-- DbgInfo.h --------------- DbgInfo classes ---------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <tuple>
+#include <map>
+#include "llvm/ADT/StringMap.h"
 #include "llvm/Support/Casting.h"
 #include "instcov/uuid.h"
 
@@ -39,6 +42,7 @@ struct RawRecord;
 
 struct DbgInfo {
  public:
+  class Builder;
   enum DIKind {
     DIK_DC,
     DIK_SWITCH,
@@ -70,6 +74,55 @@ struct DbgInfo {
   UUID_t Uuid;
 };
 
+class DbgInfo::Builder {
+ private:
+  Builder(void) {}
+ public:
+  static Builder &getBuilder(void) {
+    static Builder staInstance;
+    return staInstance;
+  }
+  typedef DbgInfo *(*create_func_t)(void);
+  void registerCreateFunc(const std::string &magic, create_func_t func) {
+    RegisteredCreateFuncs[magic] = func;
+  }
+  bool has(const std::string &magic) const {
+    return RegisteredCreateFuncs.count(magic);
+  }
+  DbgInfo *createDbgInfo(const std::string &magic) const {
+    return (*(RegisteredCreateFuncs.find(magic)->second))();
+  }
+ private:
+  llvm::StringMap<create_func_t> RegisteredCreateFuncs;
+};
+
+// Call this macro exactly once in a cpp file for each DbgInfo leaf class
+#define REGISTER_DBGINFO_CREATOR(Class)                                 \
+  namespace {                                                           \
+  struct Register##Class {                                              \
+   public:                                                              \
+   Register##Class(void) {                                              \
+     DbgInfo::Builder::getBuilder().registerCreateFunc(                 \
+         Class::magic(), &createDbgInfo);                               \
+   }                                                                    \
+   static DbgInfo *createDbgInfo(void) {                                \
+     return new Class();                                                \
+   }                                                                    \
+  } staRegister##Class;                                                 \
+  }
+
+struct CmpDbgInfoLoc {
+  bool operator () (const DbgInfo *left,
+                    const DbgInfo *right) {
+    return std::make_tuple(left->Loc.File,
+                           left->Loc.Line,
+                           left->Loc.Col) <
+           std::make_tuple(right->Loc.File,
+                           right->Loc.Line,
+                           right->Loc.Col);
+  }
+};
+
 struct DbgInfo_DC : public DbgInfo {
   DbgInfo_DC(void)
       : DbgInfo(DIK_DC), Uuid_P() {}
@@ -79,7 +132,6 @@ struct DbgInfo_DC : public DbgInfo {
   virtual void dump2File(std::ostream &OS) const;
   virtual void loadBodyFromFile(std::istream &File);
   virtual RawRecord *createRawRecord(void) const;
-
   static bool classof(const DbgInfo *DI) {
     return DI->getKind() == DIK_DC;
   }
@@ -107,7 +159,7 @@ struct DbgInfo_Switch : public DbgInfo {
   virtual RawRecord *createRawRecord(void) const;
 
   static bool classof(const DbgInfo *DI) {
-    return DI->getKind() == DIK_DC;
+    return DI->getKind() == DIK_SWITCH;
   }
   virtual const char *getMagic(void) const {
     return magic();
@@ -129,6 +181,9 @@ struct DbgInfo_Func : public DbgInfo {
   virtual void loadBodyFromFile(std::istream &File);
   virtual RawRecord *createRawRecord(void) const;
 
+  static bool classof(const DbgInfo *DI) {
+    return DI->getKind() == DIK_FUNC;
+  }
   virtual const char *getMagic(void) const {
     return magic();
   }

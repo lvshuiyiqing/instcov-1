@@ -1,9 +1,9 @@
 //===-- DbgInfoDB.cpp ------ debug info database definition -----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -49,21 +49,6 @@ void PrettyDumper::allocateSID(UUID_t Uuid) {
   }
 }
 
-namespace {
-struct CmpFunc {
-  template<typename T>
-  bool operator () (const T &left,
-                    const T &right) {
-    return std::make_tuple(left->Loc.File,
-                           left->Loc.Line,
-                           left->Loc.Col) <
-      std::make_tuple(right->Loc.File,
-                      right->Loc.Line,
-                      right->Loc.Col);
-  }
-};
-}
-
 void PrettyDumper::dumpDIPrettyDC(std::ostream &OS) const {
   std::vector<const DbgInfo_DC *> RootDIs;
   for (auto &Uuid : DIM.getRegisteredDCs()) {
@@ -72,7 +57,7 @@ void PrettyDumper::dumpDIPrettyDC(std::ostream &OS) const {
       RootDIs.push_back(DI);
     }
   }
-  std::sort(RootDIs.begin(), RootDIs.end(), CmpFunc());
+  std::sort(RootDIs.begin(), RootDIs.end(), CmpDbgInfoLoc());
   for (auto &RootDI : RootDIs) {
     dumpDIPrettyDC_DFS(OS, RootDI->Uuid, 0);
   }
@@ -86,8 +71,8 @@ void PrettyDumper::dumpDIPretty(std::ostream &OS) const {
 }
 
 void PrettyDumper::dumpDIPrettyDC_DFS(std::ostream &OS,
-                                   UUID_t Uuid,
-                                   std::size_t depth) const {
+                                      UUID_t Uuid,
+                                      std::size_t depth) const {
   const DbgInfo_DC &DI = *DIM.getDbgInfoDC(Uuid);
   for (std::size_t i = 0; i < depth; ++i) {
     OS << "-";

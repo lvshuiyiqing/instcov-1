@@ -1,9 +1,9 @@
 //===-- MCDCAnalyzer.h ------- MC/DC analyzer class -------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -32,13 +32,13 @@ class MCDCAnalyzer {
   virtual ~MCDCAnalyzer(void) {}
   AnalyzerKind getKind() const { return Kind; }
 
-  MCDCAnalyzer(AnalyzerKind K) : Kind(K) {}
+  MCDCAnalyzer(AnalyzerKind K, const DbgInfoMgr &dim)
+      : Kind(K), DIM(dim) {}
 
-  virtual void registerDCRecord(const DCRecord *DCR,
-                                const DbgInfoMgr &DIM) = 0;
-  virtual void dump(std::ostream &OS,
-                    const DbgInfoMgr &DIM) const = 0;
+  virtual void registerDCRecord(const DCRecord *DCR) = 0;
+  virtual void dump(std::ostream &OS) const = 0;
   virtual void finalize(void) = 0;
+  const DbgInfoMgr &getDIM(void) const { return DIM; }
 
  public:
   static std::string getLocString(const DbgInfoMgr &DIM, UUID_t Uuid) {
@@ -47,6 +47,8 @@ class MCDCAnalyzer {
     }
     return "NA";
   }
+ protected:
+  const DbgInfoMgr &DIM;
 };
 }
 

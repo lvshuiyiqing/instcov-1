@@ -1,9 +1,9 @@
 //===-- RawRecordMgr.h -- raw trace record manager declaration --*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -27,7 +27,7 @@ class RawRecordMgr {
  public:
   RawRecordMgr(const DbgInfoMgr &dim)
       : DIM(dim) {}
-  ~RawRecordMgr(void) {}
+  ~RawRecordMgr(void);
 
  private:
   RawRecordMgr(const RawRecordMgr &from);

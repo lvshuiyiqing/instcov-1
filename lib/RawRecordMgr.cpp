@@ -1,9 +1,9 @@
 //===-- RawRecordMgr.h -- raw trace record manager definition ---*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -22,6 +22,12 @@ using namespace instcov;
 namespace {
 const char INSTCOV_DUMP_MAGIC[] = "INSTCOV_DUMP";
 const char INSTCOV_DUMP_VERSION[] = "1";
+}
+
+RawRecordMgr::~RawRecordMgr(void) {
+  for (RawRecord *RR : Records) {
+    delete RR;
+  }
 }
 
 void RawRecordMgr::loadFromFile(const std::string &FileName) {

@@ -1,9 +1,9 @@
 //===-- ASTVisitorDC.cpp ---------- D/C instrumentation ---------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -56,17 +56,13 @@ cl::opt<bool> InstConditions(
     cl::cat(InstCovCategory),
     cl::init(false));
 
-cl::opt<bool> NoShortCircuits(
-    "no-short-circuits",
-    cl::desc("the instrumentation will dump all conditions despite of "
-             "circuits.\n"
-             "By default, instcov will only dump evaluated conditions\n"),
-    cl::cat(InstCovCategory),
-    cl::init(false));
-
 namespace {
 const std::string INSTCOV_FUNC_NAME = "instcov_dc_dump";
 
+
+/**
+ * This function is taken from Clang Transform.cpp
+ */
 SourceLocation findSemiAfterLocation(Rewriter &R, SourceLocation sl) {
   // llvm::errs() << "finding semicolon after location\n";
   SourceManager &SM = R.getSourceMgr();
@@ -497,42 +493,21 @@ void ASTVisitorDC::MCDCVisitExpr(Expr *e, Stmt *p) {
   if (!InstConditions) {
     return;
   }
-  if (NoShortCircuits) {
-    TheRewriter.InsertText(e->getLocStart(), "(", true, true);
-    std::vector<Expr *> CondExprs = extractConditions(e);
-    for (auto &CondExpr : CondExprs) {
-      DIB.registerDC(CondExpr, p, TheRewriter.getSourceMgr());
-      UUID_t uuid = DIB.getDCUUID(CondExpr);
-      std::string dumper;
-      llvm::raw_string_ostream os(dumper);
-      os << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ", (";
-      CondExpr->printPretty(os, nullptr,
-                         PrintingPolicy(TheASTContext.getLangOpts()));
-      os << ") ? 1 : 0), ";
-      os.flush();
-      TheRewriter.InsertText(e->getLocStart(), dumper, true, true);
-    }
+  std::vector<Expr *> CondExprs = extractConditions(e);
+  for (auto &CondExpr : CondExprs) {
+    DIB.registerDC(CondExpr, p, TheRewriter.getSourceMgr());
+    UUID_t uuid = DIB.getDCUUID(CondExpr);
+    TheRewriter.InsertText(CondExpr->getLocStart(), "((", true, true);
+    std::string dumper;
+    llvm::raw_string_ostream os(dumper);
+    os << ") ? (" << INSTCOV_FUNC_NAME << "("
+       << uuid.toArgString() << ",1),1) : ("
+       << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ",0),0)) ";
+    os.flush();
     SourceLocation endLoc = Lexer::getLocForEndOfToken(
-        e->getLocEnd(), 0, TheRewriter.getSourceMgr(),
+        CondExpr->getLocEnd(), 0, TheRewriter.getSourceMgr(),
         TheRewriter.getLangOpts());
-    TheRewriter.InsertText(endLoc, ")", false, true);
-  } else {
-    std::vector<Expr *> CondExprs = extractConditions(e);
-    for (auto &CondExpr : CondExprs) {
-      DIB.registerDC(CondExpr, p, TheRewriter.getSourceMgr());
-      UUID_t uuid = DIB.getDCUUID(CondExpr);
-      TheRewriter.InsertText(CondExpr->getLocStart(), "((", true, true);
-      std::string dumper;
-      llvm::raw_string_ostream os(dumper);
-      os << ") ? (" << INSTCOV_FUNC_NAME << "("
-         << uuid.toArgString() << ",1),1) : ("
-         << INSTCOV_FUNC_NAME << "(" << uuid.toArgString() << ",0),0)) ";
-      os.flush();
-      SourceLocation endLoc = Lexer::getLocForEndOfToken(
-          CondExpr->getLocEnd(), 0, TheRewriter.getSourceMgr(),
-          TheRewriter.getLangOpts());
-      TheRewriter.InsertText(endLoc, dumper, false, true);
-    }
+    TheRewriter.InsertText(endLoc, dumper, false, true);
   }
 }
 

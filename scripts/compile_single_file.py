@@ -12,7 +12,7 @@ import ccwraper
 
 def run(argv):
     if len(argv) < 1:
-        print 'syntax: <path>/compile_single_file.sh <file>'
+        print 'syntax: <path>/compile_single_file.py <file>'
         return 1
     file = argv[0]
     filename, extension = os.path.splitext(file)

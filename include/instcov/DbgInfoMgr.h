@@ -1,9 +1,9 @@
 //===-- DbgInfoMgr.h ------ debug info manager declaration ------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -19,6 +19,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <algorithm>
 #include <iostream>
 #include "instcov/DbgInfo.h"
 
@@ -33,7 +34,8 @@ class DbgInfoMgr {
   const DbgInfoMgr &operator = (const DbgInfoMgr &right);
 
  public:
-  void registerInfoFunc(UUID_t uuid, const std::string &funcName, const LocInfo &loc);
+  void registerInfoFunc(UUID_t uuid, const std::string &funcName,
+                        const LocInfo &loc);
   void registerInfoDC(UUID_t c, UUID_t p, const LocInfo &loc);
   void registerInfoSwitch(UUID_t uuid, const LocInfo &loc);
 

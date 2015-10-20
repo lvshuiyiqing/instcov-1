@@ -20,7 +20,9 @@ def run(argv):
         return res
     print "executing ./"+filename+' '+string.join(argv[1:])
     subprocess.call(['./'+filename] + argv[1:])
-    subprocess.call(['mv', 'dump.instcov', filename+'.trace'])
-
+    if os.path.isfile(filename+'.trace'):
+      os.remove(filename+'.trace')
+    os.rename('dump.instcov', filename+'.trace')
+  
 if __name__ == "__main__":
     sys.exit(run(sys.argv[1:]))

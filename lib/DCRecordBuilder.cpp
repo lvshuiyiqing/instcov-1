@@ -1,9 +1,9 @@
 //===-- DCRecordBuilder.cpp ----- DCRecordBuilder definition ----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     The InstCov Code Instrumentation Tool
 //
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// This file is distributed under the MIT License.
+// See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -21,8 +21,6 @@
 
 using namespace llvm;
 using namespace instcov;
-
-extern cl::opt<std::string> DumpFormat;
 
 DCRecordBuilder::DCRecordBuilder(UUID_t Root, const DbgInfoMgr &dim)
     : R(Root), DIM(dim) {
@@ -51,49 +49,6 @@ void DCRecordBuilder::fill(UUID_t Uuid, uint64_t bid) {
   }
   Records[Uuid] = bid;
   --NumEmptySlots;
-}
-
-void DCRecordBuilder::dump(std::ostream &OS) const {
-  printTreeDFS(OS, R, 0);
-}
-
-void DCRecordBuilder::printTreeDFS(std::ostream &OS,
-                                   UUID_t Uuid,
-                                   uint64_t depth) const {
-  for (uint64_t i = 0; i < depth; ++i) {
-    OS << "-";
-  }
-  const DbgInfo_DC &DI = *DIM.getDbgInfoDC(Uuid);
-  for (std::size_t i = 0; i < DumpFormat.size(); ++i) {
-    switch (DumpFormat[i]) {
-      case 'u':
-        OS << std::hex << Uuid.high << Uuid.low << std::dec;
-        break;
-      case 'l':
-        OS << DI.Loc.Line;
-        break;
-      case 'c':
-        OS << DI.Loc.Col;
-        break;
-      case 'f':
-        OS << DI.Loc.File;
-        break;
-      case 'b':
-        if (Records.count(Uuid)){
-          OS << Records.find(Uuid)->second;
-        } else {
-          OS << "NA";
-        }
-        break;
-      default:
-        OS << DumpFormat[i];
-        break;
-    }
-  }
-  OS << "\n";
-  for (auto &Child : DI.Children) {
-    printTreeDFS(OS, Child, depth+1);
-  }
 }
 
 void DCRecordBuilder::getUUIDsDFS(UUID_t Uuid, std::deque<UUID_t> &uuids) const {
