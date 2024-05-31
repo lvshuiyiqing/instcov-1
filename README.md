@@ -8,5 +8,3 @@ verification. Currently, InstCov has implemented function coverage,
 decision/condition coverage and MC/DC coverage.
 
 ## Author(s)
-
-Zhiqiang Zhang, zhangzq@ios.ac.cn
